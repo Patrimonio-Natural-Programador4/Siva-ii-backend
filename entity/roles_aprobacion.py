@@ -16,7 +16,7 @@ class RolesAprobacion(Base):
         PrimaryKeyConstraint('id_rol_aprobacion', name='roles_aprobacion_pkey'),
     )
 
-    id_rol_aprobacion: Mapped[int] = mapped_column(Integer, Sequence('roles_aprobacion_id_rol_seq'), primary_key=True)
+    id_rol_aprobacion: Mapped[int] = mapped_column(Integer, Sequence('roles_aprobacion_id_rol_aprobacion_seq'), primary_key=True)
     nombre: Mapped[str] = mapped_column(Text)
     descripcion: Mapped[Optional[str]] = mapped_column(Text)
     activo: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('true'))

@@ -18,7 +18,7 @@ class FlujosAprobacionRuta(Base):
         PrimaryKeyConstraint('id_ruta', name='flujos_aprobacion_ruta_pkey')
     )
 
-    id_ruta: Mapped[int] = mapped_column(Integer, Sequence('flujos_aprobacion_roles_id_flujo_aprobacion_rol_seq'), primary_key=True)
+    id_ruta: Mapped[int] = mapped_column(Integer, Sequence('flujos_aprobacion_ruta_id_ruta_seq'), primary_key=True)
     id_flujo_aprobacion: Mapped[int] = mapped_column(Integer)
     id_rol_aprobacion: Mapped[int] = mapped_column(Integer)
     orden: Mapped[int] = mapped_column(Integer)

@@ -99,8 +99,6 @@ SCOPE = ["https://graph.microsoft.com/.default"]
 
 
 @router.get("")
-
-@router.get('')
 def listar_usuarios(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return UsuariosService.listar_usuarios(db)
     # configure_scopes()
