@@ -6,8 +6,8 @@ from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
 from dto.RolesDTO import AccesoControlesBase, AccesoModulosBase, RolesBase, RolesCreateBase
 from entity.roles import Roles
-from entity.acceso_modulos import AccesoModulos
-from entity.acceso_controles import AccesoControles
+from entity.module_access import ModuleAccess
+from entity.control_access import ControlAccess
 from exceptions import PruebaCreationError, PruebaNotFoundError
 from repository import RolesRepository
 
@@ -183,18 +183,18 @@ def _actualizar_acceso_modulos(rol: Roles, acceso_modulos: list[AccesoModulosBas
     ids_nuevos = {int(m.id_modulo) for m in acceso_modulos if m.id_modulo is not None}
 
     for id_modulo in (ids_actuales - ids_nuevos):
-        db.query(AccesoModulos).filter(
-            AccesoModulos.id_rol == id_rol,
-            AccesoModulos.id_modulo == id_modulo
+        db.query(ModuleAccess).filter(
+            ModuleAccess.role_id == id_rol,
+            ModuleAccess.module_id == id_modulo
         ).delete()
         logging.info(f"AccesoModulo eliminado: rol={id_rol} modulo={id_modulo}")
 
     for m in acceso_modulos:
         if m.id_modulo is not None and int(m.id_modulo) not in ids_actuales:
-            db.add(AccesoModulos(
-                id_rol=id_rol,
-                id_modulo=int(m.id_modulo),
-                acceso_modulo=True
+            db.add(ModuleAccess(
+                role_id=id_rol,
+                module_id=int(m.id_modulo),
+                has_access=True
             ))
             logging.info(f"AccesoModulo insertado: rol={id_rol} modulo={m.id_modulo}")
 
@@ -202,21 +202,21 @@ def _actualizar_acceso_modulos(rol: Roles, acceso_modulos: list[AccesoModulosBas
 def _actualizar_acceso_controles(rol: Roles, acceso_controles: list[AccesoControlesBase], db: Session) -> None:
     id_rol = int(rol.id)
     actuales = RolesRepository.listar_acceso_controles_rol(id_rol, db)
-    ids_actuales = {int(ac.id_control) for ac in actuales}
+    ids_actuales = {int(ac.control_id) for ac in actuales}
     ids_nuevos = {int(c.id_control) for c in acceso_controles if c.id_control is not None}
 
     for id_control in (ids_actuales - ids_nuevos):
-        db.query(AccesoControles).filter(
-            AccesoControles.id_rol == id_rol,
-            AccesoControles.id_control == id_control
+        db.query(ControlAccess).filter(
+            ControlAccess.role_id == id_rol,
+            ControlAccess.control_id == id_control
         ).delete()
         logging.info(f"AccesoControl eliminado: rol={id_rol} control={id_control}")
 
     for c in acceso_controles:
         if c.id_control is not None and int(c.id_control) not in ids_actuales:
-            db.add(AccesoControles(
-                id_rol=id_rol,
-                id_control=int(c.id_control),
-                acceso_control=True
+            db.add(ControlAccess(
+                role_id=id_rol,
+                control_id=int(c.id_control),
+                has_access=True
             ))
             logging.info(f"AccesoControl insertado: rol={id_rol} control={c.id_control}")

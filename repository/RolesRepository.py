@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session, selectinload
 from entity.roles import Roles
 from entity.permissions import Permissions
 from entity.modules import Modules
-from entity.controles import Controles
-from entity.acceso_modulos import AccesoModulos
-from entity.acceso_controles import AccesoControles
+from entity.controls import Controls
+from entity.module_access import ModuleAccess
+from entity.control_access import ControlAccess
 from exceptions import PruebaNotFoundError
 
 
@@ -123,31 +123,31 @@ def guardar(db: Session):
 
 # ── Controles ────────────────────────────────────────────────────────────────
 
-def listar_controles_por_modulo(ids_modulos: list[int], db: Session) -> list[Controles]:
+def listar_controles_por_modulo(ids_modulos: list[int], db: Session) -> list[Controls]:
     try:
         if not ids_modulos:
             return []
-        return db.query(Controles).filter(Controles.id_modulo.in_(ids_modulos)).order_by(Controles.codigo.asc()).all()
+        return db.query(Controls).filter(Controls.module_id.in_(ids_modulos)).order_by(Controls.code.asc()).all()
     except Exception as e:
-        logging.error(f"Failed to list controles: {str(e)}")
+        logging.error(f"Failed to list controls: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
 
 # ── AccesoModulos ─────────────────────────────────────────────────────────────
 
-def listar_acceso_modulos_rol(id_rol: int, db: Session) -> list[AccesoModulos]:
+def listar_acceso_modulos_rol(id_rol: int, db: Session) -> list[ModuleAccess]:
     try:
-        return db.query(AccesoModulos).filter(AccesoModulos.id_rol == id_rol).all()
+        return db.query(ModuleAccess).filter(ModuleAccess.role_id == id_rol).all()
     except Exception as e:
-        logging.error(f"Failed to list acceso_modulos: {str(e)}")
+        logging.error(f"Failed to list module access: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
 
 # ── AccesoControles ───────────────────────────────────────────────────────────
 
-def listar_acceso_controles_rol(id_rol: int, db: Session) -> list[AccesoControles]:
+def listar_acceso_controles_rol(id_rol: int, db: Session) -> list[ControlAccess]:
     try:
-        return db.query(AccesoControles).filter(AccesoControles.id_rol == id_rol).all()
+        return db.query(ControlAccess).filter(ControlAccess.role_id == id_rol).all()
     except Exception as e:
-        logging.error(f"Failed to list acceso_controles: {str(e)}")
+        logging.error(f"Failed to list control access: {str(e)}")
         raise PruebaNotFoundError(str(e))

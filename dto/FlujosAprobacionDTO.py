@@ -39,6 +39,8 @@ class FlujosAprobacionBase(BaseModel):
     categoria: Optional[str] = None
     rutas: list[FlujosAprobacionRutaBase] = Field(default_factory=list)
     id_categoria: Optional[int] = None
+    id_programa: Optional[int] = None
+    programa: Optional[str] = None
 
 
 class UsuarioDelegadoBase(BaseModel):

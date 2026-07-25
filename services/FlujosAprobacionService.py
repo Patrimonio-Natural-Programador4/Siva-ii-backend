@@ -14,11 +14,13 @@ from dto.FlujosAprobacionDTO import (
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
-from entity.categorias_aprobacion import CategoriasAprobacion
-from entity.flujos_aprobacion import FlujosAprobacion
-from entity.flujos_aprobacion_ruta import FlujosAprobacionRuta
-from entity.roles_aprobacion import RolesAprobacion
-from entity.roles_aprobacion_usuarios import RolesAprobacionUsuarios
+from entity.programs import Programs
+from entity.approval_categories import ApprovalCategory
+from entity.approval_flows import ApprovalFlow
+from entity.approval_flow_steps import ApprovalFlowStep
+from entity.approval_roles import ApprovalRole
+from entity.approval_role_users import ApprovalRoleUser
+from entity.vw_approval_flows import VWApprovalFlows
 from exceptions import PruebaCreationError, PruebaNotFoundError
 
 
@@ -36,26 +38,26 @@ def _full_name(user) -> str:
 
 def listar_roles_aprobacion(db: Session) -> list[RolesAprobacionBase]:
     try:
-        roles_db = db.query(RolesAprobacion).all()
+        roles_db = db.query(ApprovalRole).all()
         result = []
         for rol in roles_db:
             usuarios = []
-            for u in rol.roles_usuarios:
-                user = u.usuario
+            for u in rol.role_users:
+                user = u.user
                 usuarios.append(RolesAprobacionUsuariosBase(
-                    id_rol_usuario=u.id_rol_usuario,
-                    id_rol_aprobacion=u.id_rol_aprobacion,
-                    id_usuario=u.id_usuario,
-                    activo=u.activo,
+                    id_rol_usuario=u.approval_role_user_id,
+                    id_rol_aprobacion=u.approval_role_id,
+                    id_usuario=u.user_id,
+                    activo=u.active,
                     usuario=_full_name(user) if user else None,
                     correo=user.email if user else None,
                     area=user.position if user else None,
                 ))
             result.append(RolesAprobacionBase(
-                id_rol_aprobacion=rol.id_rol_aprobacion,
-                nombre=rol.nombre,
-                descripcion=rol.descripcion,
-                activo=rol.activo,
+                id_rol_aprobacion=rol.approval_role_id,
+                nombre=rol.name,
+                descripcion=rol.description,
+                activo=rol.active,
                 usuarios=usuarios,
             ))
         return result
@@ -66,26 +68,26 @@ def listar_roles_aprobacion(db: Session) -> list[RolesAprobacionBase]:
 
 def obtener_rol_aprobacion_por_id(role_id: int, db: Session) -> Optional[RolesAprobacionBase]:
     try:
-        rol = db.query(RolesAprobacion).filter(RolesAprobacion.id_rol_aprobacion == role_id).first()
+        rol = db.query(ApprovalRole).filter(ApprovalRole.approval_role_id == role_id).first()
         if not rol:
             return None
         usuarios = []
-        for u in rol.roles_usuarios:
-            user = u.usuario
+        for u in rol.role_users:
+            user = u.user
             usuarios.append(RolesAprobacionUsuariosBase(
-                id_rol_usuario=u.id_rol_usuario,
-                id_rol_aprobacion=u.id_rol_aprobacion,
-                id_usuario=u.id_usuario,
-                activo=u.activo,
+                id_rol_usuario=u.approval_role_user_id,
+                id_rol_aprobacion=u.approval_role_id,
+                id_usuario=u.user_id,
+                activo=u.active,
                 usuario=_full_name(user) if user else None,
                 correo=user.email if user else None,
                 area=user.position if user else None,
             ))
         return RolesAprobacionBase(
-            id_rol_aprobacion=rol.id_rol_aprobacion,
-            nombre=rol.nombre,
-            descripcion=rol.descripcion,
-            activo=rol.activo,
+            id_rol_aprobacion=rol.approval_role_id,
+            nombre=rol.name,
+            descripcion=rol.description,
+            activo=rol.active,
             usuarios=usuarios,
         )
     except Exception as e:
@@ -114,16 +116,16 @@ def listar_roles_aprobacion_listados(db: Session) -> list[Listados]:
 
 def crear_rol_aprobacion(payload: RolesAprobacionBase, db: Session) -> ResponseRequest:
     try:
-        rol = RolesAprobacion(
-            nombre=payload.nombre,
-            descripcion=payload.descripcion,
-            activo=payload.activo if payload.activo is not None else True,
+        rol = ApprovalRole(
+            name=payload.nombre,
+            description=payload.descripcion,
+            active=payload.activo if payload.activo is not None else True,
         )
         db.add(rol)
         db.commit()
         db.refresh(rol)
-        _actualizar_usuarios_rol(rol.id_rol_aprobacion, payload.usuarios, db)
-        return ResponseRequest(solicitud_exitosa=True, mensaje='Rol de aprobación creado correctamente', identity=rol.id_rol_aprobacion)
+        _actualizar_usuarios_rol(rol.approval_role_id, payload.usuarios, db)
+        return ResponseRequest(solicitud_exitosa=True, mensaje='Rol de aprobación creado correctamente', identity=rol.approval_role_id)
     except Exception as e:
         db.rollback()
         logging.error(f"Failed to create rol_aprobacion: {str(e)}")
@@ -132,13 +134,13 @@ def crear_rol_aprobacion(payload: RolesAprobacionBase, db: Session) -> ResponseR
 
 def actualizar_rol_aprobacion(role_id: int, payload: RolesAprobacionBase, db: Session) -> ResponseRequest:
     try:
-        rol = db.query(RolesAprobacion).filter(RolesAprobacion.id_rol_aprobacion == role_id).first()
+        rol = db.query(ApprovalRole).filter(ApprovalRole.approval_role_id == role_id).first()
         if not rol:
             return ResponseRequest(solicitud_exitosa=False, mensaje='Rol de aprobación no encontrado')
-        rol.nombre = payload.nombre
-        rol.descripcion = payload.descripcion
+        rol.name = payload.nombre
+        rol.description = payload.descripcion
         if payload.activo is not None:
-            rol.activo = payload.activo
+            rol.active = payload.activo
         db.commit()
         _actualizar_usuarios_rol(role_id, payload.usuarios, db)
         return ResponseRequest(solicitud_exitosa=True, mensaje='Rol de aprobación actualizado correctamente', identity=role_id)
@@ -149,22 +151,22 @@ def actualizar_rol_aprobacion(role_id: int, payload: RolesAprobacionBase, db: Se
 
 
 def _actualizar_usuarios_rol(id_rol: int, usuarios: list[RolesAprobacionUsuariosBase], db: Session) -> None:
-    usuarios_actuales = db.query(RolesAprobacionUsuarios).filter(
-        RolesAprobacionUsuarios.id_rol_aprobacion == id_rol
+    usuarios_actuales = db.query(ApprovalRoleUser).filter(
+        ApprovalRoleUser.approval_role_id == id_rol
     ).all()
-    ids_actuales = {u.id_usuario for u in usuarios_actuales}
+    ids_actuales = {u.user_id for u in usuarios_actuales}
     ids_nuevos = {u.id_usuario for u in usuarios if u.id_usuario is not None}
 
     for u in usuarios_actuales:
-        if u.id_usuario not in ids_nuevos:
-            u.activo = False
+        if u.user_id not in ids_nuevos:
+            u.active = False
 
     for usuario in usuarios:
         if usuario.id_usuario is not None and usuario.id_usuario not in ids_actuales:
-            db.add(RolesAprobacionUsuarios(
-                id_rol_aprobacion=id_rol,
-                id_usuario=usuario.id_usuario,
-                activo=True,
+            db.add(ApprovalRoleUser(
+                approval_role_id=id_rol,
+                user_id=usuario.id_usuario,
+                active=True,
             ))
     db.commit()
 
@@ -175,29 +177,31 @@ def _actualizar_usuarios_rol(id_rol: int, usuarios: list[RolesAprobacionUsuarios
 
 def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
     try:
-        flujos_db = db.query(FlujosAprobacion).all()
+        flujos_db = db.query(ApprovalFlow).all()
         result = []
         for flujo in flujos_db:
             rutas = [
                 FlujosAprobacionRutaBase(
-                    id_ruta=r.id_ruta,
-                    id_flujo_aprobacion=r.id_flujo_aprobacion,
-                    id_rol_aprobacion=r.id_rol_aprobacion,
-                    orden=r.orden,
-                    activo=r.activo,
-                    rol=r.rol.nombre if r.rol else None,
-                    descripcion=r.rol.descripcion if r.rol else None,
+                    id_ruta=r.step_id,
+                    id_flujo_aprobacion=r.approval_flow_id,
+                    id_rol_aprobacion=r.approval_role_id,
+                    orden=r.step_order,
+                    activo=r.active,
+                    rol=r.approval_role.name if r.approval_role else None,
+                    descripcion=r.approval_role.description if r.approval_role else None,
                 )
-                for r in sorted(flujo.rutas, key=lambda x: x.orden or 0)
+                for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
             ]
             result.append(FlujosAprobacionBase(
-                id_flujo_aprobacion=flujo.id_flujo_aprobacion,
-                nombre=flujo.nombre,
-                descripcion=flujo.descripcion,
-                activo=flujo.activo,
-                categoria=flujo.categoria.nombre if flujo.categoria else None,
-                id_categoria=flujo.id_categoria,
+                id_flujo_aprobacion=flujo.approval_flow_id,
+                nombre=flujo.name,
+                descripcion=flujo.description,
+                activo=flujo.active,
+                categoria=flujo.category.name if flujo.category else None,
+                id_categoria=flujo.category_id if flujo.category else None,
                 rutas=rutas,
+                id_programa=flujo.program_id if flujo.program_id else None,
+                programa=flujo.program.name if flujo.program else None,
             ))
         return result
     except Exception as e:
@@ -207,29 +211,30 @@ def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
 
 def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[FlujosAprobacionBase]:
     try:
-        flujo = db.query(FlujosAprobacion).filter(FlujosAprobacion.id_flujo_aprobacion == flow_id).first()
+        flujo = db.query(ApprovalFlow).filter(ApprovalFlow.approval_flow_id == flow_id).first()
         if not flujo:
             return None
         rutas = [
             FlujosAprobacionRutaBase(
-                id_ruta=r.id_ruta,
-                id_flujo_aprobacion=r.id_flujo_aprobacion,
-                id_rol_aprobacion=r.id_rol_aprobacion,
-                orden=r.orden,
-                activo=r.activo,
-                rol=r.rol.nombre if r.rol else None,
-                descripcion=r.rol.descripcion if r.rol else None,
+                id_ruta=r.step_id,
+                id_flujo_aprobacion=r.approval_flow_id,
+                id_rol_aprobacion=r.approval_role_id,
+                orden=r.step_order,
+                activo=r.active,
+                rol=r.approval_role.name if r.approval_role else None,
+                descripcion=r.approval_role.description if r.approval_role else None,
             )
-            for r in sorted(flujo.rutas, key=lambda x: x.orden or 0)
+            for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
         ]
         return FlujosAprobacionBase(
-            id_flujo_aprobacion=flujo.id_flujo_aprobacion,
-            nombre=flujo.nombre,
-            descripcion=flujo.descripcion,
-            activo=flujo.activo,
-            categoria=flujo.categoria.nombre if flujo.categoria else None,
-            id_categoria=flujo.id_categoria,
+            id_flujo_aprobacion=flujo.approval_flow_id,
+            nombre=flujo.name,
+            descripcion=flujo.description,
+            activo=flujo.active,
+            categoria=flujo.category.name if flujo.category else None,
+            id_categoria=flujo.category_id if flujo.category else None,
             rutas=rutas,
+            id_programa=flujo.program_id if flujo.program_id is not None else None
         )
     except Exception as e:
         logging.error(f"Failed to get flujo_aprobacion: {str(e)}")
@@ -238,27 +243,69 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
 
 def listar_flujos_aprobacion_listados(db: Session) -> list[Listados]:
     try:
-        roles_db = db.query(RolesAprobacion).all()
-        categorias_db = db.query(CategoriasAprobacion).all()
-        lista_roles = [
+        roles_db = db.query(ApprovalRole).all()
+        categorias_db = db.query(ApprovalCategory).all()
+        programas_db = db.query(Programs).all()
+
+        listados = []
+        lista_catalogos = []
+
+        lista_catalogos = [
             ListaGenerica(
-                identity=r.id_rol_aprobacion,
-                valor=r.nombre,
-                valor_referencia=r.descripcion,
+                identity=r.approval_role_id,
+                valor=r.name,
+                valor_referencia=r.description,
             )
             for r in roles_db
         ]
-        lista_categorias = [
+
+        listados.append(
+            Listados(
+                id_listado=0, 
+                tipo_listado="Roles de Aprobación", 
+                lista_generica=lista_catalogos
+            )
+        )
+
+        lista_catalogos = []
+
+        lista_catalogos = [
             ListaGenerica(
-                identity=c.id_categoria,
-                valor=c.nombre,
+                identity=c.category_id,
+                valor=c.name,
+                valor_referencia=c.description,
             )
             for c in categorias_db
         ]
-        return [
-            Listados(id_listado=0, tipo_listado='Roles de Aprobación', lista_generica=lista_roles),
-            Listados(id_listado=1, tipo_listado='Categorías de Aprobación', lista_generica=lista_categorias),
+
+        listados.append(
+            Listados(
+                id_listado=1, 
+                tipo_listado="Categorías de Aprobación", 
+                lista_generica=lista_catalogos
+            )
+        )
+
+
+        lista_catalogos = []
+
+        lista_catalogos = [
+            ListaGenerica(
+                identity=p.id,
+                valor=p.name,
+            )
+            for p in programas_db
         ]
+
+        listados.append(
+            Listados(
+                id_listado=1, 
+                tipo_listado="Programas", 
+                lista_generica=lista_catalogos
+            )
+        )
+        
+        return listados
     except Exception as e:
         logging.error(f"Failed to list flujos_aprobacion_listados: {str(e)}")
         raise PruebaNotFoundError(str(e))
@@ -266,17 +313,18 @@ def listar_flujos_aprobacion_listados(db: Session) -> list[Listados]:
 
 def crear_flujo_aprobacion(payload: FlujosAprobacionBase, db: Session) -> ResponseRequest:
     try:
-        flujo = FlujosAprobacion(
-            nombre=payload.nombre,
-            descripcion=payload.descripcion,
-            id_categoria=payload.id_categoria,
-            activo=payload.activo if payload.activo is not None else True,
+        flujo = ApprovalFlow(
+            name=payload.nombre,
+            description=payload.descripcion,
+            category_id=payload.id_categoria,
+            active=payload.activo if payload.activo is not None else True,
+            program_id=payload.id_programa
         )
         db.add(flujo)
         db.commit()
         db.refresh(flujo)
-        _actualizar_rutas_flujo(flujo.id_flujo_aprobacion, payload.rutas, db)
-        return ResponseRequest(solicitud_exitosa=True, mensaje='Flujo creado correctamente', identity=flujo.id_flujo_aprobacion)
+        _actualizar_rutas_flujo(flujo.approval_flow_id, payload.rutas, db)
+        return ResponseRequest(solicitud_exitosa=True, mensaje='Flujo creado correctamente', identity=flujo.approval_flow_id)
     except Exception as e:
         db.rollback()
         logging.error(f"Failed to create flujo_aprobacion: {str(e)}")
@@ -285,15 +333,17 @@ def crear_flujo_aprobacion(payload: FlujosAprobacionBase, db: Session) -> Respon
 
 def actualizar_flujo_aprobacion(flow_id: int, payload: FlujosAprobacionBase, db: Session) -> ResponseRequest:
     try:
-        flujo = db.query(FlujosAprobacion).filter(FlujosAprobacion.id_flujo_aprobacion == flow_id).first()
+        flujo = db.query(ApprovalFlow).filter(ApprovalFlow.approval_flow_id == flow_id).first()
         if not flujo:
             return ResponseRequest(solicitud_exitosa=False, mensaje='Flujo no encontrado')
-        flujo.nombre = payload.nombre
-        flujo.descripcion = payload.descripcion
+        flujo.name = payload.nombre
+        flujo.description = payload.descripcion
         if payload.id_categoria is not None:
-            flujo.id_categoria = payload.id_categoria
+            flujo.category_id = payload.id_categoria
         if payload.activo is not None:
-            flujo.activo = payload.activo
+            flujo.active = payload.activo
+        if payload.id_programa is not None:
+            flujo.program_id = payload.id_programa
         db.commit()
         _actualizar_rutas_flujo(flow_id, payload.rutas, db)
         return ResponseRequest(solicitud_exitosa=True, mensaje='Flujo actualizado correctamente', identity=flow_id)
@@ -304,23 +354,23 @@ def actualizar_flujo_aprobacion(flow_id: int, payload: FlujosAprobacionBase, db:
 
 
 def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase], db: Session) -> None:
-    rutas_actuales = db.query(FlujosAprobacionRuta).filter(
-        FlujosAprobacionRuta.id_flujo_aprobacion == id_flujo
+    rutas_actuales = db.query(ApprovalFlowStep).filter(
+        ApprovalFlowStep.approval_flow_id == id_flujo
     ).all()
-    ids_actuales = {r.id_ruta for r in rutas_actuales}
+    ids_actuales = {r.step_id for r in rutas_actuales}
     ids_nuevos = {r.id_ruta for r in rutas if r.id_ruta is not None}
 
     for ruta in rutas_actuales:
-        if ruta.id_ruta not in ids_nuevos:
-            ruta.activo = False
+        if ruta.step_id not in ids_nuevos:
+            ruta.active = False
 
     for ruta in rutas:
         if ruta.id_ruta is None or ruta.id_ruta not in ids_actuales:
-            db.add(FlujosAprobacionRuta(
-                id_flujo_aprobacion=id_flujo,
-                id_rol_aprobacion=ruta.id_rol_aprobacion,
-                orden=ruta.orden,
-                activo=True,
+            db.add(ApprovalFlowStep(
+                approval_flow_id=id_flujo,
+                approval_role_id=ruta.id_rol_aprobacion,
+                step_order=ruta.orden,
+                active=True,
             ))
     db.commit()
 
@@ -348,3 +398,52 @@ def crear_delegacion_roles_usuarios(payload: DelegacionRolesUsuariosBase, db: Se
 def actualizar_delegacion_roles_usuarios(payload: DelegacionRolesUsuariosBase, db: Session) -> ResponseRequest:
     return ResponseRequest(solicitud_exitosa=False, mensaje='No implementado')
 
+
+def obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(id_categoria: int, id_usuario: int, db: Session, id_programa: int = None) -> tuple:
+    try:
+        print("id_categoria", id_categoria)
+        print("id_usuario", id_usuario)
+        flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            VWApprovalFlows.user_id == id_usuario,
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.step_order == 1,
+            VWApprovalFlows.program_id == id_programa
+        ).first()
+
+        if not flujos_aprobacionDB:
+            return None, None, None, None
+        else:
+            return flujos_aprobacionDB.approval_flow_id, flujos_aprobacionDB.category, flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id
+            # return flujos_aprobacionDB.id_flujo_aprobacion, flujos_aprobacionDB.categoria, flujos_aprobacionDB.id_rol_aprobacion, flujos_aprobacionDB.id_ruta
+
+    except Exception as e:
+        logging.error(f"Failed to list roles: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+    
+
+
+def obtener_siguiente_paso_ruta(id_categoria: int, paso_actual: int, id_flujo_aprobacion: int, db: Session) -> tuple:
+    try:
+        flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.step_order == paso_actual + 1,
+            VWApprovalFlows.approval_flow_id == id_flujo_aprobacion
+        ).first()
+        if not flujos_aprobacionDB:
+            return None, None, None
+        else:
+            return flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id, flujos_aprobacionDB.is_supervisor
+
+    except Exception as e:
+        logging.error(f"Failed to list roles: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+    
+    

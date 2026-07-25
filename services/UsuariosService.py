@@ -7,7 +7,7 @@ from dto.ListadosDTO import Listados
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase, UsuariosEdicionBase, UsuariosUpdateBase
-from repository import UsuariosRepository
+from repository import UsersProgramsRepository, UsuariosRepository
 from dto.ResponseRequest import ResponseRequest
 from pathlib import Path
 import json
@@ -223,7 +223,7 @@ def obtener_usuario_para_edicion(guid: str, db: Session) -> UsuariosEdicionBase 
         if not usuario:
             return None
 
-        programas = UsuariosRepository.listar_programas_por_usuario(int(usuario.id), db)
+        programas = UsersProgramsRepository.listar_ids_programas_por_usuario(int(usuario.id), db)
         roles = UsuariosRepository.listar_roles_por_usuario(int(usuario.id), db)
 
         return UsuariosEdicionBase(

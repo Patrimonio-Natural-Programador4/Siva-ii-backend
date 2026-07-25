@@ -1,3 +1,4 @@
+from controllers import SolicitudesAprobacionController, ViajesController
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -135,8 +136,8 @@ def require_authenticated_user(request: Request):
 
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token inválido')
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f'Token inválido: {str(e)}')
 
 def register_routes(app: FastAPI):
     # app.include_router(PruebaController.router)
@@ -145,6 +146,8 @@ def register_routes(app: FastAPI):
     app.include_router(RolesController.router, dependencies=auth_dependency)
     app.include_router(ProgramasController.router, dependencies=auth_dependency)
     app.include_router(FlujosAprobacionController.router, dependencies=auth_dependency)
+    app.include_router(SolicitudesAprobacionController.router, dependencies=auth_dependency)
+    app.include_router(ViajesController.router, dependencies=auth_dependency)
 
 def register_middlewares(app: FastAPI):
     # Register CORS middleware

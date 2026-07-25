@@ -40,7 +40,7 @@ class Users(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     person_id: Mapped[Optional[int]] = mapped_column(Integer)
     guid_msft: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-
+    full_name: Mapped[Optional[str]] = mapped_column(CITEXT)
     # document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='users')
     # person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
     # annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='user')
