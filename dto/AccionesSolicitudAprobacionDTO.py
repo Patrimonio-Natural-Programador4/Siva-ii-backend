@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+# acciones solicitud aprobacion
+
 
 class AccionesSolicitudAprobacionBase(BaseModel):
     id_solicitud_aprobacion: Optional[int] = None
