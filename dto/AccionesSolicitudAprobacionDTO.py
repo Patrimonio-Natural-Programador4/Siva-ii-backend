@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-# acciones solicitud aprobacion
+# acciones solicitud aprobacion backend
 
 
 class AccionesSolicitudAprobacionBase(BaseModel):
