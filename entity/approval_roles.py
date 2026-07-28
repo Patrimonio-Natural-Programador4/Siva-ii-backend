@@ -40,11 +40,6 @@ class ApprovalRole(Base):
         server_default=text('false')
     )
 
-    fcds_employees: Mapped[Optional[bool]] = mapped_column(
-        Boolean,
-        server_default=text('false')
-    )
-
     can_reject_payments: Mapped[Optional[bool]] = mapped_column(
         Boolean,
         server_default=text('false')

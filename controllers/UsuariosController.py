@@ -235,7 +235,7 @@ def get_access_token():
 def get_msal_app():
     return msal.ConfidentialClientApplication(
         os.getenv("client_id"),
-        authority=f"https://login.microsoftonline.com/{os.getenv("tenant_id")}",
+        authority=f"https://login.microsoftonline.com/{os.getenv('tenant_id')}",
         client_credential=os.getenv("client_secret")
     )
 

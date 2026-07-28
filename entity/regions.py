@@ -25,5 +25,5 @@ class Regions(Base):
     lat: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(7, 7))
     long: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(7, 7))
 
-    region: Mapped[Optional[Regions]] = relationship('Regions', remote_side=[id])
+    region: Mapped[Optional['Regions']] = relationship('Regions', remote_side=[id])
 
