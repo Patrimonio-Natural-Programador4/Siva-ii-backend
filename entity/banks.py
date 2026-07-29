@@ -8,6 +8,11 @@ class Banks(Base):
     __tablename__ = 'banks'
     __table_args__ = (
         PrimaryKeyConstraint('bank_id', name='banks_pkey'),
+        {
+            "info": {
+                "managed_by_alembic": True
+            }
+        }
     )
 
     bank_id: Mapped[int] = mapped_column(Integer, primary_key=True)
