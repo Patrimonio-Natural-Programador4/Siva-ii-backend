@@ -16,7 +16,12 @@ class Controls(Base):
         PrimaryKeyConstraint(
             'control_id',
             name='controls_pkey'
-        )
+        ),
+        {
+            "info": {
+                "managed_by_alembic": True
+            }
+        }
     )
 
     control_id: Mapped[int] = mapped_column(
