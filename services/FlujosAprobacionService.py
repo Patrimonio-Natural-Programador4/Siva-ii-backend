@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
-
+from sqlalchemy import join, or_
 from dto.FlujosAprobacionDTO import (
     DelegacionRolesUsuariosBase,
     FlujosAprobacionBase,
@@ -446,4 +446,64 @@ def obtener_siguiente_paso_ruta(id_categoria: int, paso_actual: int, id_flujo_ap
         logging.error(f"Failed to list roles: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
-    
+def obtener_flujo_aprobacion_ruta_orden(id_categoria: int, id_usuario: int, orden: int, id_flujo_aprobacion: int, db: Session) -> VWApprovalFlows:
+    try:
+        print("id_usuario -> ", id_usuario)
+        print("orden -> ", orden)
+        print("id_flujo_aprobacion -> ", id_flujo_aprobacion)
+        flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            or_(
+                VWApprovalFlows.user_id == id_usuario
+                # ,
+                # VWApprovalFlows.delegated_user_ids.any(id_usuario)
+            ),
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.step_order == orden,
+            VWApprovalFlows.approval_flow_id == id_flujo_aprobacion
+        ).first()
+        if not flujos_aprobacionDB:
+            return None
+        else:
+            return flujos_aprobacionDB
+
+    except Exception as e:
+        logging.error(f"Failed to list obtener_flujo_aprobacion_ruta_orden: {str(e)}")
+        raise PruebaNotFoundError(str(e))    
+
+def obtener_flujo_aprobacion_pasos(id_flujo_aprobacion: int, db: Session) -> int:
+    flujoRuta = db.query(ApprovalFlowStep).filter(
+        ApprovalFlowStep.approval_flow_id == id_flujo_aprobacion,
+        ApprovalFlowStep.active == True
+    ).order_by(ApprovalFlowStep.step_order.desc()).first()
+
+    if not flujoRuta:
+        return 0
+
+    return flujoRuta.step_order
+
+
+
+def obtener_rol_solicitud_ajuste(id_categoria: int, id_flujo_aprobacion: int, id_rol_aprobacion: int, id_usuario: int, db: Session) -> tuple:
+    try:
+        flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.approval_flow_id == id_flujo_aprobacion,
+            VWApprovalFlows.approval_role_id == id_rol_aprobacion,
+            VWApprovalFlows.user_id == id_usuario
+        ).first()
+        if not flujos_aprobacionDB:
+            return None, None, None, None
+        else:
+            return flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id, flujos_aprobacionDB.is_supervisor, flujos_aprobacionDB.step_order
+
+    except Exception as e:
+        logging.error(f"Failed to list roles: {str(e)}")
+        raise PruebaNotFoundError(str(e))

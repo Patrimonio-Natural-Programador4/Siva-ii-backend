@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi import status
 from database.database import DbSession
 from dependencies.auth_dependency import get_current_user_oid
-from dto.AccionesSolicitudAprobacionDTO import AccionesSolicitudAprobacionBase
+from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ResponseRequest import ResponseRequest
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
 from dto.ViajesDTO import ViajesCreate
@@ -109,20 +109,17 @@ def validar_acciones_solicitud_aprobacion(guid: str, tipo: str, db: DbSession, u
 @router.post("/{guid}/accion_solicitud_aprobacion", response_model=ResponseRequest)
 def accion_solicitud_aprobacion(
     guid: str,
-    accion: AccionesSolicitudAprobacionBase,
+    accion: AccionSolicitudAprobacion,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     user_oid: str = Depends(get_current_user_oid)
 ):
     try:
         viaje = ViajesService.obtener_viaje_por_id(guid, db)
-        tipo_solicitud = accion.tipo_solicitud or ViajesService.CATEGORIA_APROBACION_SOLICITUD_VIAJE
+        tipo_solicitud = accion.tipo_solicitud
         id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(tipo_solicitud, db)
-        response_request = SolicitudesAprobacionService.ejecutar_accion_solicitud_aprobacion(
-            viaje,
-            accion,
-            id_categoria,
-            user_oid,
-            db,
+        response_request = ViajesService.procesar_accion_solicitud_aprobacion(
+            accion, user_oid, id_categoria, db, background_tasks
         )
         return JSONResponse(
             content=response_request.dict(),

@@ -1,9 +1,11 @@
 from fastapi import BackgroundTasks
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
 from dto.ViajesDTO import ViajesCreate, ViajesListSP
+from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
 from entity.travel_accommodations import TravelAccommodations
@@ -490,6 +492,163 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
     #         )
 
     return viajeDTO
+
+
+def procesar_accion_solicitud_aprobacion(accion: AccionSolicitudAprobacion, usuario_guid: str, id_categoria: int, db: Session, background_tasks: BackgroundTasks) -> ResponseRequest:
+    try:
+        usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        if not usuario:
+            raise PruebaNotFoundError("Usuario no encontrado")
+
+        
+        # if accion.tipo_accion == "SOLICITUD_AJUSTADA" and usuario_guid.strip() == str(accion.viaje.guid_msft) and accion.tipo_solicitud == "SV":
+        #     actualizar_viaje(accion.viaje.guid, accion.viaje, db, usuario_guid, background_tasks, False)
+        
+        respuesta = SolicitudesAprobacionService.actualizar_ruta(accion, id_categoria, usuario.id, db, accion.viaje.id_supervisor_aprueba, accion.viaje.id_viaje)
+        if respuesta.solicitud_exitosa:
+            viaje = db.query(TravelRequests).filter(
+                    or_(
+                        and_(
+                            TravelRequests.approval_request_id == accion.id_solicitud_aprobacion,
+                            TravelRequests.guid == accion.viaje.guid
+                        ),
+                        and_(
+                            TravelRequests.expense_approval_request_id == accion.id_solicitud_aprobacion,
+                            TravelRequests.guid == accion.viaje.guid
+                        )
+                    )
+                ).first()
+            
+            itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viaje.travel_request_id, db)
+            hoteles = ViajesHotelRepository.listar_hoteles_por_viaje(viaje.travel_request_id, db)
+            # anticipos = AnticiposDetalleRepository.listar_anticipos_por_viaje(viajeDb.id_viaje, db)
+            
+            notificacion_pagos = False
+            destinatarios = []
+            historialAprobacionSolicitud = []
+            historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.travel_request_id, id_categoria, db)
+            if accion.tipo_solicitud == CATEGORIA_APROBACION_SOLICITUD_VIAJE:
+                viaje.travel_status_id = 4 if respuesta.mensaje == "RUTA_COMPLETA" else 2 if respuesta.mensaje == "EN_PROCESO" else 3 if respuesta.mensaje == "AJUSTES" else viaje.travel_status_id
+
+                
+                
+               
+                
+                destinatarios.append(usuario.email)
+
+               
+                # if viaje.travel_status_id == 3:
+                #     destinatarios.append(viaje.user.email)
+                # else:
+                #     emailUsuariosRuta = SolicitudesAprobacionService.obtener_usuarios_ruta(viaje.approval_request_id, db, viaje.supervisor_user_id)
+                #     for email in emailUsuariosRuta:
+                #         destinatarios.append(email)
+
+                # if accion.id_usuarios_mencion:
+                #     usuariosNotificacion = UsuariosRepository.obtener_por_ids(accion.id_usuarios_mencion, db)
+                #     for usuario in usuariosNotificacion:
+                #         if usuario.email not in destinatarios:
+                #             destinatarios.append(usuario.email)
+                    
+                    # notificacion_pagos = SolicitudesAprobacionService.validar_solicitud_para_pago(viaje.id_solicitud_aprobacion, db, viaje.id_supervisor_aprueba)
+                # mensaje = f"Anticipo disponible para pago asociado a la solicitud de viaje {viaje.code}" if notificacion_pagos and pago_realizado == False else f"El anticipo asociado a la solicitud de viaje {viaje.code} ha sido pagado" if notificacion_pagos and pago_realizado else f"Solicitud de viaje {viaje.code} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.code} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.code} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+                # # mensaje = f"Solicitud de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+               
+                # to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+                # print("Destinatarios:", to_recipients)
+                # print("mensaje", mensaje)
+
+                
+
+                
+
+
+
+            # if id_categoria == 2:
+            #     accion.viaje.enviar_aprobacion = False
+            #     # if(viaje.id_viajero == usuario.id_usuario and (accion.orden_actual == 1 or accion.orden_actual is None)):
+            #     #     guardar_legalizacion(accion.viaje, db)
+            #     viaje.travel_status_id = 7 if respuesta.mensaje == "RUTA_COMPLETA" else 5 if respuesta.mensaje == "EN_PROCESO" else 6 if respuesta.mensaje == "AJUSTES" else viaje.travel_status_id
+            #     # if accion.asigna_presupuesto_viajes:
+            #     #     for anticipo in accion.viaje.reintegro.detalle:
+            #     #         # anticipo_detalle_db = db.query(Anticipos).filter(
+            #     #         #     Anticipos.id_anticipo == anticipo.id_anticipo,
+            #     #         #     Anticipos.id_relacion == viaje.id_viaje
+            #     #         # ).first()
+            #     #         anticipo_detalle_db = AnticiposService.obtener_detalle_anticipo_por_id(anticipo.id_anticipo_detalle, db)
+            #     #         if anticipo_detalle_db:
+            #     #             anticipo_detalle_db.id_proyecto = anticipo.id_proyecto
+            #     #             anticipo_detalle_db.id_rubro = anticipo.id_rubro
+            #     #             db.commit()
+            #     #             db.refresh(anticipo_detalle_db)
+                
+            #     notificacion_pagos = False
+            #     pago_realizado = False
+
+            # #     if accion.agrega_documento_contable:
+            # #         if accion.viaje.reintegro.documento_contable:
+            # #             AnticiposService.actualizaEstadoAnticipo(accion.viaje.reintegro.id_anticipo, 2, db, True, True, usuario_guid)
+            # #             notificacion_pagos = True
+
+            # #     if accion.habilitar_pago and viaje.id_estado_solicitud == 5:
+            # #         AnticiposService.actualizaEstadoAnticipo(accion.viaje.reintegro.id_anticipo, 3, db)
+            # #         pago_realizado = True
+            # #         notificacion_pagos = True
+                
+            # #     historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.id_viaje, 2, db)
+                
+               
+                
+            # #     destinatarios.append(usuario.correo)
+
+               
+            # #     if viaje.id_estado_solicitud == 6:
+            # #         destinatarios.append(viaje.usuario.correo)
+            # #     else:
+            # #         emailUsuariosRuta = SolicitudesAprobacionService.obtener_usuarios_ruta(viaje.id_solicitud_aprobacion_legalizacion, db, viaje.id_supervisor_aprueba)
+            # #         for email in emailUsuariosRuta:
+            # #             destinatarios.append(email)
+                    
+            # #         # notificacion_pagos = SolicitudesAprobacionService.validar_solicitud_para_pago(viaje.id_solicitud_aprobacion, db, viaje.id_supervisor_aprueba)
+            # #     # mensaje = f"Anticipo disponible para pago asociado a la solicitud de viaje {viaje.codigo}" if notificacion_pagos else f"Solicitud de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+            # #     # mensaje = f"Solicitud de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+               
+            # #     to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+            # #     print("Destinatarios:", to_recipients)
+
+            # #     mensaje = f"Reintegro disponible para pago asociado a la solicitud de viaje {viaje.codigo}" if notificacion_pagos and pago_realizado == False else f"El reintegro asociado a la solicitud de viaje {viaje.codigo} ha sido pagado" if notificacion_pagos and pago_realizado else f"Legalización de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 5 else f"Legalización de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 7 else f"Legalización de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 6 else ""
+            # #     # mensaje = f"Reintegro disponible para pago asociado a la solicitud de viaje {viaje.codigo}" if notificacion_pagos else f"Legalización de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 5 else f"Legalización de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 7 else f"Legalización de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 6 else ""
+
+            # # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viaje.id_viaje, False, db)
+            # # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viaje.id_viaje, True, db)
+            # # viajeDTO = viajeCreateDTO(viaje, itinerario, hoteles, anticipo, reintegro, db)
+
+            # # env = Environment(loader=FileSystemLoader(''))
+            # # template = env.get_template('templates/notificacion_sv.html')
+            # # html_out = template.render(**vars(viajeDTO), 
+            # # historialAprobacionSolicitud=historialAprobacionSolicitud)
+            # # print("mensaje: XXX : ", mensaje)
+            # # background_tasks.add_task(
+            # #     NotificacionesService.solicitud_viaje,
+            # #     mensaje,
+            # #     to_recipients,
+            # #     html_out,
+            # #     "",
+            # #     "",
+            # #     db
+            # # )
+            # # NotificacionesService.solicitud_viaje(mensaje, to_recipients, html_out, "", "", db)
+
+            db.commit()
+        return respuesta
+    except Exception as e:
+        logging.error(f"Failed to process accion solicitud aprobacion: {str(e)}")
+        return ResponseRequest(
+            solicitud_exitosa=False,
+            mensaje=str(e)
+        )   
 
 
 
