@@ -62,12 +62,19 @@ def crear(document_approval: DocumentsApproval, db: Session) -> DocumentsApprova
 
 def obtener_por_id(id:int, db:Session)-> DocumentsApproval:
     try:
-        return db.query(DocumentsApproval).filter(DocumentsApproval.id==id).first()
-    
+        print("Buscando ID:", id)
+
+        doc = db.query(DocumentsApproval)\
+                .filter(DocumentsApproval.id == id)\
+                .first()
+
+        print("Resultado:", doc)
+
+        return doc
+
     except Exception as e:
-        logging.error(f"Failed to find DocumentsApproval by id: {str(e)} ")
+        logging.error(f"Failed to find DocumentsApproval by id: {str(e)}")
         return None
-        
        
     
 def actualizar(document_approval:DocumentsApproval, db:Session)-> DocumentsApproval:

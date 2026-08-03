@@ -6,7 +6,7 @@ class DocumentsApprovalBase(BaseModel):
     id: Optional[int] = None
     approval_category_id: Optional[int] = None
     program_id: Optional[int] = None
-    name: Optional[str] = None
+    documento: Optional[str] = None
 
     class Config:
         from_attributes = True

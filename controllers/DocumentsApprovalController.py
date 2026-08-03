@@ -28,6 +28,16 @@ def crear_documento(payload: DocumentsCreateBase, db: DbSession, user_oid: str =
     return JSONResponse(content=response_request.model_dump(), status_code=status.HTTP_400_BAD_REQUEST)
 
 
+
+@router.get('/{id}')
+def obtener_doc_por_id(id: int, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    doc = DocumentsApprovalService.obtener_doc_por_id(
+        id, 
+        db)
+    if not doc:
+        raise HTTPException(status_code=404, detail='Documento no encontrado')
+    return doc
+
 # editar docs
 @router.put("/{id}")
 def editar_documento(

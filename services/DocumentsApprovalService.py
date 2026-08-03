@@ -60,6 +60,19 @@ def crear_documento(payload: DocumentsCreateBase, db: Session) -> ResponseReques
         )
 
 
+def obtener_doc_por_id(id: int, db: Session) -> DocumentsApprovalBase | None:
+    doc = DocumentsApprovalRepository.obtener_por_id(id, db)
+
+    if not doc:
+        return None
+
+    return DocumentsApprovalBase(
+        id= int(doc.id),
+        documento=doc.name,
+        approval_category_id=doc.approval_category_id,
+        program_id=doc.program_id
+    )
+
 def editar_documento(id: int, payload: DocumentsUpdateBase, db: Session) -> ResponseRequest:
     try:
        
