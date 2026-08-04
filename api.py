@@ -7,6 +7,8 @@ from controllers import RolesController
 from controllers import ProgramasController
 from controllers import FlujosAprobacionController
 from controllers import DocumentsApprovalController
+from controllers import PadsController
+from controllers import ImplementerTypesController
 
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -151,7 +153,8 @@ def register_routes(app: FastAPI):
     app.include_router(SolicitudesAprobacionController.router, dependencies=auth_dependency)
     app.include_router(ViajesController.router, dependencies=auth_dependency)
     app.include_router(DocumentsApprovalController.router, dependencies=auth_dependency)
-    
+    app.include_router(PadsController.router, dependencies=auth_dependency)
+    app.include_router(ImplementerTypesController.router, dependencies=auth_dependency)
 
 def register_middlewares(app: FastAPI):
     # Register CORS middleware
