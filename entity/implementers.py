@@ -1,15 +1,15 @@
 import datetime
+import uuid
 from typing import Optional
 from sqlalchemy.orm import declarative_base
 from database.database import Base 
-import uuid
 
 from sqlalchemy import BigInteger, Boolean, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 from entity.document_types import DocumentTypes
-
+from entity.implementer_types import Implementer_types
 
 class Implementers(Base):
     __tablename__ = "implementers"
@@ -42,6 +42,9 @@ class Implementers(Base):
     document_type: Mapped["DocumentTypes"] = relationship(
         "DocumentTypes", back_populates="implementers"
     )
-    implementer_type: Mapped["ImplementerTypes"] = relationship(
-        "ImplementerTypes", back_populates="implementers"
+    implementer_type: Mapped["Implementer_types"] = relationship(
+        "Implementer_types", back_populates="implementers"
     )
+
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))

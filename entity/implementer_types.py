@@ -22,4 +22,7 @@ class Implementer_types(Base):
 
 
  # RELACIONES
-  
+
+    implementers: Mapped[list["Implementers"]] = relationship(
+        "Implementers", back_populates="implementer_type"
+    )

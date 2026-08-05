@@ -21,3 +21,9 @@ class DocumentTypes(Base):
     description:  Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+    
+    
+    # no olvidar , la inversa
+    implementers: Mapped[list["implementers"]] = relationship(
+        "Implementers", back_populates="document_type"
+    )

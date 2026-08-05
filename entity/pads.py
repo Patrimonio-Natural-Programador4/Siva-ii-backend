@@ -4,15 +4,15 @@ from sqlalchemy.orm import declarative_base
 from database.database import Base 
 import uuid
 
-from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, text
+from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, ForeignKeyConstraint, ForeignKey,Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 class Pads(Base):
-    __tablename__ = 'pads'
+    __tablename__ = "pads"
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='pads_pkey'),
-        UniqueConstraint('name', name='pads_name_unique')
+        PrimaryKeyConstraint("id", name="pads_pkey"),
+        UniqueConstraint("name", name="pads_name_unique"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -22,6 +22,8 @@ class Pads(Base):
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
 
-
- # RELACIONES
- 
+    # RELACIONES
+    pids: Mapped[list["Pids"]] = relationship("Pids", back_populates="pad")
+    
+    class Config:
+        from_attributes = True
