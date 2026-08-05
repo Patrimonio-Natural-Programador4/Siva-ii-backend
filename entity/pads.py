@@ -8,11 +8,16 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
+
+
 class Pads(Base):
     __tablename__ = "pads"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="pads_pkey"),
         UniqueConstraint("name", name="pads_name_unique"),
+        PrimaryKeyConstraint('id', name='pads_pkey'),
+        UniqueConstraint('name', name='pads_name_unique'),
+       
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -27,3 +32,7 @@ class Pads(Base):
     
     class Config:
         from_attributes = True
+
+ # RELACIONES
+
+   
