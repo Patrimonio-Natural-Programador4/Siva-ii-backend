@@ -25,6 +25,7 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 from entity.approval_categories import ApprovalCategory
 from entity.programs import Programs
+from entity.documents_types_agreements import DocumentsTypesAgreements
 
 
 class DocumentsApproval(Base):
@@ -54,3 +55,6 @@ class DocumentsApproval(Base):
     categorias_aprobacion: Mapped["ApprovalCategory"] = relationship(
         "ApprovalCategory", back_populates="documents_approval"
     )
+     
+     
+    documents_types_agreements: Mapped[list["DocumentsTypesAgreements"]] = relationship("DocumentsTypesAgreements",back_populates="documents_approval")

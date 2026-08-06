@@ -33,7 +33,7 @@ class Persons(Base):
     other_last_name: Mapped[str] = mapped_column(String(150), nullable=False)
     position: Mapped[str] = mapped_column(String(500), nullable=False)
     identification_type: Mapped[int] = mapped_column(Integer, nullable=False)
-    identification_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identification_number: Mapped[int] = mapped_column(Integer, primary_key=False)
     identification_dv: Mapped[int] = mapped_column(Integer, nullable=False)
     former_number: Mapped[int] = mapped_column(Integer,nullable=False)
     former_organization_number: Mapped[int] = mapped_column(Integer, nullable=False)

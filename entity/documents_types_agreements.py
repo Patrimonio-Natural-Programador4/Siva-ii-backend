@@ -1,58 +1,43 @@
 import datetime
+import uuid
 from typing import Optional
 from sqlalchemy.orm import declarative_base
-from database.database import Base
-import uuid
+from database.database import Base 
 
-from sqlalchemy import (
-    JSON,
-    BigInteger,
-    Boolean,
-    CheckConstraint,
-    Text,
-    ForeignKeyConstraint,
-    Index,
-    Integer,
-    Numeric,
-    PrimaryKeyConstraint,
-    String,
-    UniqueConstraint,
-    ForeignKey,
-    Uuid,
-    text,
-)
+from sqlalchemy import BigInteger, Boolean, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, String,Date,ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 
-from entity.approval_categories import ApprovalCategory
-
-from entity.pads import Pads
+#from entity.implementer_types import Implementer_types
 
 class DocumentsTypesAgreements(Base):
     __tablename__ = "documents_types_agreements"
     __table_args__ = (
-        PrimaryKeyConstraint("id", name="documents_types_agreements_id_pkey"),
-        #UniqueConstraint("name", name="documents_types_agreements_name_unique"),
-        ForeignKeyConstraint(["documents_approval_id"], ["documents_approval.id"], name="documents_types_agreements_documents_approval_fkey"),
+        PrimaryKeyConstraint("id", name="documents_types_agreements_pkey"),
+        #UniqueConstraint("acronym", name="acronym_unique"),
+        Index("description_index", "description"),
+        Index("code_index", "code"),
+       
     )
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    name: Mapped[str] = mapped_column(CITEXT, nullable=False)
-    description: Mapped[str] = mapped_column(CITEXT, nullable=False)
-    color: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    eur_usd_rate: Mapped[float] = mapped_column(Numeric, nullable=True)
-    pad_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("pads.id"), nullable=True)
-    usd_cop_rate: Mapped[float] = mapped_column(Numeric, nullable=True)
-    eur_cop_rate: Mapped[float] = mapped_column(Numeric, nullable=True)
-    sicof_code: Mapped[str] = mapped_column(String(255), nullable=True)
-
-    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-
-    # RELACIONES
-    pad: Mapped["Pads"] = relationship("Pads", back_populates="pids")
     
-    class Config:
-        from_attributes = True
+  
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    is_required: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False)
+    number: Mapped[int] = mapped_column(Integer, nullable=False)
+    code: Mapped[str] = mapped_column(String, nullable=False)
+    template: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    template_path: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+  
+        
+
+   # RELACIONES ORM
+
+    documents_approval_id: Mapped[int] = mapped_column(BigInteger,ForeignKey("documents_approval.id"))
+ 
+    documents_approval: Mapped["DocumentsApproval"] = relationship("DocumentsApproval",back_populates="documents_types_agreements")
+
+
+        
