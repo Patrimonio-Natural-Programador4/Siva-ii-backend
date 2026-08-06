@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.orm import Session
 
-from dto.PidsDto import PidsBase, PidsListDTO
+from dto.PidsDTO import PidsBase
 from dto.ResponseRequest import ResponseRequest
 from entity.Pidss import Pids
 from repository import PidsRepositoryy

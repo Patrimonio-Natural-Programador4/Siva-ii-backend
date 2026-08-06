@@ -14,6 +14,7 @@ from controllers import ImplementerTypesController
 from controllers import DocumentTypes
 from controllers import ImplementersController
 from controllers import PidsControllerss
+from controllers import PersonsController
 
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -165,6 +166,7 @@ def register_routes(app: FastAPI):
     app.include_router( DocumentTypes.router , dependencies=auth_dependency)
     app.include_router( ImplementersController.router , dependencies=auth_dependency)
     app.include_router( PidsControllerss.router , dependencies=auth_dependency)
+    app.include_router( PersonsController.router , dependencies=auth_dependency)#14
     
 
 def register_middlewares(app: FastAPI):

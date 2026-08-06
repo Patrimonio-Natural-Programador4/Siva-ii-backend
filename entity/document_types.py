@@ -27,3 +27,7 @@ class DocumentTypes(Base):
     implementers: Mapped[list["implementers"]] = relationship(
         "Implementers", back_populates="document_type"
     )
+    
+    persons: Mapped[list["Persons"]] = relationship(
+        "Persons", back_populates="document_type"
+    )
