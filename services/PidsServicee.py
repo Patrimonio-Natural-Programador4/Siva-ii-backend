@@ -1,11 +1,8 @@
 import logging
 from sqlalchemy.orm import Session
 
-<<<<<<< HEAD
 from dto.PidsDTO import PidsBase, PidsListDTO
-=======
-from dto.PidsDTO import PidsBase
->>>>>>> FB_new
+
 from dto.ResponseRequest import ResponseRequest
 from entity.Pidss import Pids
 from repository import PidsRepositoryy

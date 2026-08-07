@@ -17,6 +17,7 @@ from controllers import PidsControllerss
 from controllers import PersonsController
 
 from controllers import CapacityAssessmentsStatesController
+from controllers import CapacityAssessmentsController
 
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -167,11 +168,9 @@ def register_routes(app: FastAPI):
     app.include_router( DocumentTypes.router , dependencies=auth_dependency)
     app.include_router( ImplementersController.router , dependencies=auth_dependency)
     app.include_router( PidsControllerss.router , dependencies=auth_dependency)
-<<<<<<< HEAD
-    app.include_router(CapacityAssessmentsStatesController.router, dependencies=auth_dependency)
-=======
-    app.include_router( PersonsController.router , dependencies=auth_dependency)#14
->>>>>>> FB_new
+    app.include_router( CapacityAssessmentsStatesController.router, dependencies=auth_dependency)
+    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#14
+    
     
 
 def register_middlewares(app: FastAPI):

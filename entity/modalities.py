@@ -8,6 +8,8 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
+from entity.capacity_assessments import CapacityAssessments
+
 class Modalities(Base):
     __tablename__ = 'modalities'
     __table_args__ = (
@@ -20,3 +22,6 @@ class Modalities(Base):
 
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+    
+    
+    capacity_assessments_modalitie:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="modalitie") #este nombre debe coincidir con el del otro lado

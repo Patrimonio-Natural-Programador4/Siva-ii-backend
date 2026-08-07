@@ -26,8 +26,8 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 
 from entity.approval_categories import ApprovalCategory
-
 from entity.pads import Pads
+from entity.capacity_assessments import CapacityAssessments
 
 class Pids(Base):
     __tablename__ = "pids"
@@ -56,3 +56,8 @@ class Pids(Base):
     
     class Config:
         from_attributes = True
+
+ #relacion simple
+    capacity_assessments_pid:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="pid") #este nombre debe coincidir con el del otro lado
+
+    

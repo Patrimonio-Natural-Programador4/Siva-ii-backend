@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 from entity.document_types import DocumentTypes
 #from entity.implementer_types import Implementer_types
+from entity.capacity_assessments import CapacityAssessments
 
 class Persons(Base):
     __tablename__ = "persons"
@@ -33,7 +34,7 @@ class Persons(Base):
     other_last_name: Mapped[str] = mapped_column(String(150), nullable=False)
     position: Mapped[str] = mapped_column(String(500), nullable=False)
     identification_type: Mapped[int] = mapped_column(Integer, nullable=False)
-    identification_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identification_number: Mapped[int] = mapped_column(Integer, primary_key=False)
     identification_dv: Mapped[int] = mapped_column(Integer, nullable=False)
     former_number: Mapped[int] = mapped_column(Integer,nullable=False)
     former_organization_number: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -57,5 +58,7 @@ class Persons(Base):
         "DocumentTypes", back_populates="persons"
     )
  
+ #relacion simple
+    capacity_assessments_person:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="person") #este nombre debe coincidir con el del otro lado
 
     
