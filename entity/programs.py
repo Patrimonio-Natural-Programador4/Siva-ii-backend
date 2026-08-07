@@ -8,6 +8,8 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
+from entity.capacity_assessments import CapacityAssessments
+
 class Programs(Base):
     __tablename__ = 'programs'
     __table_args__ = (
@@ -25,3 +27,6 @@ class Programs(Base):
 
  # RELACIONES
     documents_approval = relationship("DocumentsApproval", back_populates="programs")
+    
+# Relaciones simples
+    capacity_assessments_programa:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="programa")

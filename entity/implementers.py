@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 from entity.document_types import DocumentTypes
 from entity.implementer_types import Implementer_types
+from entity.capacity_assessments import CapacityAssessments
 
 class Implementers(Base):
     __tablename__ = "implementers"
@@ -45,6 +46,10 @@ class Implementers(Base):
     implementer_type: Mapped["Implementer_types"] = relationship(
         "Implementer_types", back_populates="implementers"
     )
+    
+    #Relaciones simples
+    capacity_assessments_implementer:   Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="implementer") #este nombre debe coincidir con el del otro lado
+  
 
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
