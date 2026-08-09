@@ -8,25 +8,26 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
-from entity.capacity_assessments import CapacityAssessments
-
-class Programs(Base):
-    __tablename__ = 'programs'
+class DocumentTypes(Base):
+    __tablename__ = 'document_types'
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='programs_pkey'),
-        UniqueConstraint('name', name='programs_name_unique')
+        PrimaryKeyConstraint('id', name='document_types_pkey'),
+   
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(CITEXT, nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(CITEXT)
-    code: Mapped[Optional[str]] = mapped_column(String(100))
+    code: Mapped[Optional[str]] = mapped_column(Text)
+    description:  Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-
-
- # RELACIONES
-    documents_approval = relationship("DocumentsApproval", back_populates="programs")
     
-# Relaciones simples
-    capacity_assessments_programa:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="programa")
+    
+    # no olvidar , la inversa
+    implementers: Mapped[list["implementers"]] = relationship(
+        "Implementers", back_populates="document_type"
+    )
+    
+    persons: Mapped[list["Persons"]] = relationship(
+        "Persons", back_populates="document_type"
+    )

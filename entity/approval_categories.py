@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy import Integer, PrimaryKeyConstraint, Text, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.database import Base
 
 class ApprovalCategory(Base):
@@ -19,3 +19,9 @@ class ApprovalCategory(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     code: Mapped[Optional[str]] = mapped_column(Text)
     active: Mapped[Optional[bool]] = mapped_column(Boolean)
+    
+    
+     # RELACION
+    documents_approval = relationship(
+        "DocumentsApproval", back_populates="categorias_aprobacion"
+    )

@@ -1,3 +1,5 @@
+
+
 .env
 
 # Python
@@ -21,3 +23,8 @@ env/
 # Archivos comprimidos locales
 *.zip
 EOF
+
+
+# venv
+
+.venv/
