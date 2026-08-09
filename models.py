@@ -915,6 +915,7 @@
 #     hws: Mapped[list['Hws']] = relationship('Hws', back_populates='rubro_')
 #     payment_orders: Mapped[list['PaymentOrders']] = relationship('PaymentOrders', back_populates='rubro_')
 #     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='rubro')
+#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='rubro')
 
 
 # class StateAuditMeetingsCommittees(Base):
@@ -1005,6 +1006,26 @@
 #     Column('aud_vgn_ini', DateTime),
 #     Column('aud_vgn_fin', DateTime)
 # )
+
+
+# class TestTable(Base):
+#     __tablename__ = 'test_table'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('id', name='test_table_pkey'),
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+
+# class TestTable2(Base):
+#     __tablename__ = 'test_table2'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('id', name='test_table2_pkey'),
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     name: Mapped[str] = mapped_column(String(255), nullable=False)
+#     observations: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
 # class TravelStatus(Base):
@@ -1153,6 +1174,7 @@
 #     description: Mapped[Optional[str]] = mapped_column(Text)
 #     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
 #     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     is_logistics_expense_associate: Mapped[Optional[bool]] = mapped_column(Boolean)
 
 #     activity: Mapped[Optional['Activities']] = relationship('Activities', remote_side=[id], back_populates='activity_reverse')
 #     activity_reverse: Mapped[list['Activities']] = relationship('Activities', remote_side=[activity_id], back_populates='activity')
@@ -1165,6 +1187,7 @@
 #     lines: Mapped[list['Lines']] = relationship('Lines', back_populates='activity')
 #     payment_orders: Mapped[list['PaymentOrders']] = relationship('PaymentOrders', back_populates='activity')
 #     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='activity')
+#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='activity')
 
 
 # class Agreements(Base):
@@ -1639,13 +1662,13 @@
 
 #     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 #     process_number: Mapped[int] = mapped_column(Integer, nullable=False)
-#     pad_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     activity_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     expense_category_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     purchase_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     type: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("'0'::character varying"))
 #     description: Mapped[Optional[str]] = mapped_column(Text)
 #     numero_contrato_temporal: Mapped[Optional[str]] = mapped_column(Text)
+#     pad_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     status: Mapped[Optional[str]] = mapped_column(String(255))
 #     contracts_qty: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
 #     trm: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(8, 2))
@@ -1685,6 +1708,9 @@
 #     cod_siva_contrato: Mapped[Optional[str]] = mapped_column(String(255))
 #     cod_siva_acuerdo: Mapped[Optional[str]] = mapped_column(String(255))
 #     agreement_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     contractt_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     apropiate_sicof: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     execute_sicof: Mapped[Optional[int]] = mapped_column(BigInteger)
 
 #     activity: Mapped['Activities'] = relationship('Activities', back_populates='acquisitions')
 #     agreement: Mapped[Optional['Agreements']] = relationship('Agreements', back_populates='acquisitions')
@@ -1692,7 +1718,7 @@
 #     expense_category: Mapped['ExpenseCategories'] = relationship('ExpenseCategories', back_populates='acquisitions')
 #     general_cat: Mapped[Optional['GeneralCategories']] = relationship('GeneralCategories', back_populates='acquisitions')
 #     kfw: Mapped[Optional['KfwObservations']] = relationship('KfwObservations', back_populates='acquisitions')
-#     pad: Mapped['Pads'] = relationship('Pads', back_populates='acquisitions')
+#     pad: Mapped[Optional['Pads']] = relationship('Pads', back_populates='acquisitions')
 #     person_executer: Mapped[Optional['Implementers']] = relationship('Implementers', foreign_keys=[person_id_executer], back_populates='acquisitions_person_executer')
 #     person_implementer: Mapped[Optional['Implementers']] = relationship('Implementers', foreign_keys=[person_id_implementer], back_populates='acquisitions_person_implementer')
 #     pid: Mapped[Optional['Pids']] = relationship('Pids', back_populates='acquisitions')
@@ -2258,13 +2284,13 @@
 #     identification_type: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     identification_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     email: Mapped[str] = mapped_column(String(255), nullable=False)
-#     password: Mapped[str] = mapped_column(String(255), nullable=False)
 #     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
 #     guid: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, server_default=text('gen_random_uuid()'))
 #     other_name: Mapped[Optional[str]] = mapped_column(CITEXT)
 #     other_last_name: Mapped[Optional[str]] = mapped_column(CITEXT)
 #     position: Mapped[Optional[str]] = mapped_column(CITEXT)
 #     email_verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     password: Mapped[Optional[str]] = mapped_column(String(255))
 #     mobile_phone: Mapped[Optional[str]] = mapped_column(String(255))
 #     remember_token: Mapped[Optional[str]] = mapped_column(String(100))
 #     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
@@ -2272,6 +2298,7 @@
 #     person_id: Mapped[Optional[int]] = mapped_column(Integer)
 #     guid_msft: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 #     full_name: Mapped[Optional[str]] = mapped_column(Text, Computed("TRIM(BOTH FROM (((((((COALESCE(first_name, ''::citext))::text || ' '::text) || (COALESCE(other_name, ''::citext))::text) || ' '::text) || (COALESCE(last_name, ''::citext))::text) || ' '::text) || (COALESCE(other_last_name, ''::citext))::text))", persisted=True))
+#     is_guest: Mapped[Optional[bool]] = mapped_column(Boolean)
 
 #     document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='users')
 #     person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
@@ -2580,7 +2607,9 @@
 # class TravelRequests(Base):
 #     __tablename__ = 'travel_requests'
 #     __table_args__ = (
+#         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='travel_requests_activities_fkey'),
 #         ForeignKeyConstraint(['program_id'], ['programs.id'], name='travel_requests_program_id_fkey'),
+#         ForeignKeyConstraint(['rubro_id'], ['rubros.id'], name='travel_requests_rubros_fkey'),
 #         ForeignKeyConstraint(['travel_status_id'], ['travel_status.status_id'], name='travel_requests_travel_status_id_fkey'),
 #         ForeignKeyConstraint(['traveler_user_id'], ['users.id'], name='travel_requests_traveler_user_id_fkey'),
 #         PrimaryKeyConstraint('travel_request_id', name='travel_requests_pkey')
@@ -2651,8 +2680,14 @@
 #     invoice_reconciliation_required: Mapped[Optional[bool]] = mapped_column(Boolean)
 #     program_id: Mapped[Optional[int]] = mapped_column(Integer)
 #     advance_amount: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(18, 2))
+#     rubro_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     short_rubro: Mapped[Optional[str]] = mapped_column(Text)
+#     year_rubro: Mapped[Optional[int]] = mapped_column(Integer)
+#     activity_id: Mapped[Optional[int]] = mapped_column(Integer)
 
+#     activity: Mapped[Optional['Activities']] = relationship('Activities', back_populates='travel_requests')
 #     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='travel_requests')
+#     rubro: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='travel_requests')
 #     travel_status: Mapped[Optional['TravelStatus']] = relationship('TravelStatus', back_populates='travel_requests')
 #     traveler_user: Mapped[Optional['Users']] = relationship('Users', back_populates='travel_requests')
 #     travel_accommodations: Mapped[list['TravelAccommodations']] = relationship('TravelAccommodations', back_populates='travel_request')

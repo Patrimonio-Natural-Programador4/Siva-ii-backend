@@ -19,6 +19,8 @@ class TravelRequests(Base):
         ForeignKeyConstraint(['program_id'], ['programs.id'], name='travel_requests_program_id_fkey'),
         ForeignKeyConstraint(['traveler_user_id'], ['users.id'], name='travel_requests_traveler_user_id_fkey'),
         ForeignKeyConstraint(['travel_status_id'], ['travel_status.status_id'], name='travel_requests_travel_status_id_fkey'),
+        ForeignKeyConstraint(['activity_id'], ['activities.id'], name='travel_requests_activities_fkey'),
+        ForeignKeyConstraint(['rubro_id'], ['rubros.id'], name='travel_requests_rubros_fkey')
     )
 
     travel_request_id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -86,6 +88,10 @@ class TravelRequests(Base):
     invoice_reconciliation_required: Mapped[Optional[bool]] = mapped_column(Boolean)
     program_id: Mapped[Optional[int]] = mapped_column(Integer)
     advance_amount: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(18, 2))
+    rubro_id: Mapped[Optional[int]] = mapped_column(Integer)
+    short_rubro: Mapped[Optional[str]] = mapped_column(Text)
+    year_rubro: Mapped[Optional[int]] = mapped_column(Integer)
+    activity_id: Mapped[Optional[int]] = mapped_column(Integer)
 
     user: Mapped[Optional[Users]] = relationship('Users')
     travel_status: Mapped[Optional['TravelStatus']] = relationship('TravelStatus')

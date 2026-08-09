@@ -1,7 +1,23 @@
 .env
-# Ignorar todos los directorios __pycache__
-**/__pycache__/
 
-# Ignorar archivos compilados
-*.pyc
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
 *.pyo
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Herramientas / archivos locales
+.codegraph/
+
+# Archivos comprimidos locales
+*.zip
+EOF

@@ -11,3 +11,4 @@ python-jose[cryptography]
 fastapi-microsoft-identity
 jinja2
 alembic
+bcrypt

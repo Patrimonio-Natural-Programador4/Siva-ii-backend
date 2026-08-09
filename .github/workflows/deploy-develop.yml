@@ -1,0 +1,52 @@
+name: Deploy Backend - Developp
+
+on:
+  push:
+    branches:
+      - developp
+
+jobs:
+  deploy:
+    name: Deploy Backend to Development
+    runs-on: [self-hosted, Linux, X64, siva-ii-backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify runner
+        run: |
+          echo "Runner: $RUNNER_NAME"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          whoami
+          pwd
+
+      - name: Sync backend to development server
+        run: |
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='.env' \
+            ./ /opt/apps/devsiva2/back/
+
+      - name: Verify deployed files
+        run: |
+          cd /opt/apps/devsiva2/back
+          echo "Contenido desplegado:"
+          ls -la
+
+          echo "Dockerfile:"
+          ls -l Dockerfile
+
+      - name: Build backend Docker image
+        run: |
+          cd /opt/apps/devsiva2
+          docker compose build --no-cache back
+
+      - name: Restart backend container
+        run: |
+          cd /opt/apps/devsiva2
+          docker compose up -d back
+
+      - name: Verify backend container
+        run: |
+          docker ps --filter "name=devapi-back"

@@ -117,6 +117,29 @@ def reemplazar_programas_usuario(
         logging.error(f"Failed to replace user programs: {str(e)}")
         raise PruebaNotFoundError(str(e))
  
+def obtener_por_correo(correo: str, db: Session) -> Users:
+    try:
+        usuario = db.query(Users).filter(Users.email == correo).first()
+        if not usuario:
+            print(f"Usuario with email {correo} not found")
+            return None
+            # raise PruebaNotFoundError(f"Usuario with email {correo} not found")
+        return usuario
+    except Exception as e:
+        logging.error(f"Failed to get user by email: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+def obtener_por_identificacion(identification_number: int, db: Session) -> Users:
+    try:
+        usuario = db.query(Users).filter(Users.identification_number == identification_number).first()
+        if not usuario:
+            print(f"Usuario with identification number {identification_number} not found")
+            return None
+            # raise PruebaNotFoundError(f"Usuario with identification number {identification_number} not found")
+        return usuario
+    except Exception as e:
+        logging.error(f"Failed to get user by identification number: {str(e)}")
+        raise PruebaNotFoundError(str(e))
 
 
 def reemplazar_roles_usuario(
