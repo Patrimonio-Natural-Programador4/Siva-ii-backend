@@ -61,11 +61,7 @@ jobs:
           host = 'host.docker.internal'
           port = 5432
           ip = socket.gethostbyname(host)
-          print(f'Database host: {host}')
-          print(f'Database IP: {ip}')
-          print(f'Database port: {port}')
           socket.create_connection((host, port), 5)
-          print('PostgreSQL: conexión TCP OK')
           "
 
       - name: Run database migrations
