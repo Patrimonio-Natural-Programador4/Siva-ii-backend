@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base
 from database.database import Base 
 import uuid
 
-from sqlalchemy import BigInteger, Boolean, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, text
+from sqlalchemy import BigInteger, Boolean, Computed, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
@@ -40,7 +40,11 @@ class Users(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     person_id: Mapped[Optional[int]] = mapped_column(Integer)
     guid_msft: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-    full_name: Mapped[Optional[str]] = mapped_column(CITEXT)
+    full_name: Mapped[Optional[str]] = mapped_column(
+        CITEXT,
+        Computed(None, persisted=True)
+    )
+    is_guest: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     # document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='users')
     # person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
     # annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='user')
