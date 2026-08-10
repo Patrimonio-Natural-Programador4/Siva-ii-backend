@@ -22,3 +22,11 @@ def crear(capacidad: CapacityAssessments, db: Session) -> CapacityAssessments:
         db.rollback()
         logging.error(f"Failed to create CapacityAssessments: {str(e)}")
         raise PruebaCreationError(str(e))
+
+
+def obtener_por_id(id: int, db: Session) -> CapacityAssessments | None:
+    try:
+        return db.query(CapacityAssessments).filter(CapacityAssessments.id == id).first()
+    except Exception as e:
+        logging.error(f"Failed to get CapacityAssessments by id: {str(e)}")
+        raise PruebaNotFoundError(str(e))
