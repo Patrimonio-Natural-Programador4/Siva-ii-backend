@@ -31,22 +31,35 @@ jobs:
       - name: Verify deployed files
         run: |
           cd /opt/apps/devsiva2/back
+
           echo "Contenido desplegado:"
           ls -la
 
           echo "Dockerfile:"
           ls -l Dockerfile
 
+          echo "Alembic:"
+          ls -l alembic.ini
+          test -d migrations
+
       - name: Build backend Docker image
         run: |
           cd /opt/apps/devsiva2
           docker compose build --no-cache back
 
+      - name: Run database migrations
+        run: |
+          cd /opt/apps/devsiva2
+          docker compose run --rm back alembic upgrade head
+
       - name: Restart backend container
         run: |
           cd /opt/apps/devsiva2
-          docker compose up -d back
+          docker compose up -d --force-recreate back
 
       - name: Verify backend container
         run: |
           docker ps --filter "name=devapi-back"
+
+          echo "Últimos logs:"
+          docker logs --tail 50 devapi-back

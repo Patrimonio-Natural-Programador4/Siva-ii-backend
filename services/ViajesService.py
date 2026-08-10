@@ -12,7 +12,7 @@ from entity.travel_accommodations import TravelAccommodations
 from entity.travel_itineraries import TravelItineraries
 from entity.travel_requests import TravelRequests
 from entity.travel_status import TravelStatus
-from repository import ConceptoAnticiposRepository, EntidadBancariaRepository, RegionsRepository, RoleApprovalSupervisorUsersRepository, TipoCuentaRepository, UsersProgramsRepository, UsersProgramsRepository, UsuariosRepository, ViajesHotelRepository, ViajesItinerarioRepository, ViajesRepository, ProgramsRepository
+from repository import ConceptoAnticiposRepository, EntidadBancariaRepository, RegionsRepository, RoleApprovalSupervisorUsersRepository, RubrosRepository, TipoCuentaRepository, UsersProgramsRepository, UsersProgramsRepository, UsuariosRepository, ViajesHotelRepository, ViajesItinerarioRepository, ViajesRepository, ProgramsRepository
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from datetime import date, datetime, time
@@ -26,6 +26,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
     try:
        
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        anio_actual = date.today().year
         # usuario.habilitar_solicitud_viaje = False
         db.commit()
         fecha_actual = date.today()
@@ -60,6 +61,10 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.mentioned_user_ids = viaje.id_usuarios_mencion
         nuevo_viaje.program_id = viaje.id_programa
         nuevo_viaje.advance_amount = viaje.valor_anticipo
+        nuevo_viaje.rubro_id = viaje.id_rubro
+        nuevo_viaje.activity_id = viaje.id_actividad
+        nuevo_viaje.year_rubro = anio_actual
+        nuevo_viaje.short_rubro = viaje.rubro_corto
         # if(viaje.es_invitado):
         #     nuevo_viaje.traveler_birth_date = viaje.fecha_nacimiento_viajero
         # else:
@@ -770,6 +775,7 @@ def lista_generica_lista_viajes(db: Session) -> list[Listados]:
 def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid, db)
+        anio = datetime.now().year
         if not usuario:
             return None
         departamentos = RegionsRepository.listar_departamentos(db)
@@ -777,18 +783,11 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
         tipo_cuenta = TipoCuentaRepository.listar(db)
         entidades_bancarias = EntidadBancariaRepository.listar(db)
         conceptos_anticipos = ConceptoAnticiposRepository.listar(db)
-        # talleres = TalleresRepository.listar(db)
-        # proyectos =  db.query(Proyectos).all()
-        # rubros = db.query(ProyectosRubros).filter(or_(ProyectosRubros.activo == True, ProyectosRubros.activo == None)).all()
-        # salarios_minimos = db.query(SalarioMinimo).filter(SalarioMinimo.anio == date.today().year).all()
         supervisor = RoleApprovalSupervisorUsersRepository.listar(db)
         programas = UsersProgramsRepository.listar_programas_por_usuario(int(usuario.id), db)
         usuarios = UsuariosRepository.listar(db)
+        rubros = RubrosRepository.listar_rubros_sp(str(anio), db)
         # usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
-        # regionales = db.query(Regionales).all()
-        # cuentas_fcds = TipoCuentaRepository.listar_cuentas_fcds(db)
-        # tipo_documento_administrativo = db.query(TipoDocumentoAdministrativo).all()
-        # otro_tipo_documento_administrativo = db.query(OtroTipoDocumentoAdministrativo).all()
         listados = []
         lista_catalogos = []
 
@@ -893,7 +892,7 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
             )
         )
 
-        # #Supervisores
+        #Supervisores
         lista_catalogos = []
         for p in supervisor:
             lista_catalogos.append(
@@ -913,6 +912,8 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
                 lista_generica=lista_catalogos
             )
         )
+
+        #Programas usuario
 
         lista_catalogos = []
         for programa in programas:
@@ -934,6 +935,7 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
             )
         )
 
+        #Usuarios
         lista_catalogos = []
         for usuario in usuarios:
             lista_catalogos.append(
@@ -954,7 +956,27 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
             )
         )
 
-        
+        #Rubros
+        lista_catalogos = []
+        for p in rubros:
+            lista_catalogos.append(
+                ListaGenerica(
+                    identity=p.rubro_id,
+                    valor=f"{p.short_rubro} ({p.rubro})",
+                    idrelacion=p.activity_id,
+                    valorNumerico=anio,
+                    valor_referencia=f"{p.activity_code} - {p.activity_description}",
+                    valor_referencia2=p.short_rubro
+                )
+            )
+
+        listados.append(
+            Listados(
+                id_listado=8,
+                tipo_listado="Rubros",
+                lista_generica=lista_catalogos
+            )
+        )
 
 
 

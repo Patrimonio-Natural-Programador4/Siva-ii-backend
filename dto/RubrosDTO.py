@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class RubrosListSP(BaseModel):
     rubro_id:  Optional[int] = None
-    rubros: Optional[str] = None
+    rubro: Optional[str] = None
     short_rubro: Optional[str] = None
     activity_id:  Optional[int] = None
     activity_code: Optional[str] = None

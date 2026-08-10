@@ -138,9 +138,10 @@ class ViajesCreate(BaseModel):
     soporte_informe: Optional[str] = None
     ruta_soporte_informe: Optional[str] = None
     relacion_facturas: Optional[bool] = None
-    id_regional: Optional[int] = None
+    id_actividad: Optional[int] = None
     id_programa: Optional[int] = None
     valor_anticipo: Optional[decimal.Decimal] = None
+    rubro_corto: Optional[str] = None
     class Config:
         from_attributes = True
 
