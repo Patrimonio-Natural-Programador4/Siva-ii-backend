@@ -9,7 +9,7 @@ from database.database import Base
 from sqlalchemy import Sequence, text
 from sqlalchemy.orm import mapped_column, Mapped
 from entity.approval_status import ApprovalStatus
-#from entity.capacity_assessments import CapacityAssessments
+from entity.previous_studies import PreviousStudies
 
 
 class ApprovalRequests(Base):
@@ -41,12 +41,9 @@ class ApprovalRequests(Base):
     capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship(
             "CapacityAssessments", back_populates="approval_request"
     )
-
-"""
-    capacity_assements: Mapped[list["CapacityAssessments"]] = relationship(
-        "CapacityAssessments", back_populates="approval_request"
-    )
     
-"""
+    previous_studies: Mapped[list["PreviousStudies"]] = relationship("PreviousStudies", back_populates="app_request")
+
+
 
    

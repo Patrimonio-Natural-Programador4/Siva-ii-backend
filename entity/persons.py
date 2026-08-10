@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 from entity.document_types import DocumentTypes
 #from entity.implementer_types import Implementer_types
 from entity.capacity_assessments import CapacityAssessments
+from entity.previous_studies import PreviousStudies
 
 class Persons(Base):
     __tablename__ = "persons"
@@ -60,5 +61,6 @@ class Persons(Base):
  
  #relacion simple
     capacity_assessments_person:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="person") #este nombre debe coincidir con el del otro lado
+    previous_studies_person:  Mapped[list["PreviousStudies"]] = relationship("PreviousStudies", back_populates="persons") #este nombre debe coincidir con el del otro lado
 
     
