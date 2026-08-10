@@ -311,7 +311,7 @@ def reenviar_invitacion_usuario_AD(usuario: UsuariosCreateBase) -> InvitacionRes
         }
         payload = {
             "invitedUserEmailAddress": email,
-            "inviteRedirectUrl": f"{url_sistema}/login",
+            "inviteRedirectUrl": f"{url_sistema}login",
             "sendInvitationMessage": True,
             "invitedUserDisplayName": f"{usuario.first_name} {usuario.other_name} {usuario.last_name} {usuario.other_last_name}".strip(),
             "invitedUserMessageInfo": {
@@ -536,6 +536,28 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> R
         UsuariosRepository.reemplazar_roles_usuario(int(usuario.id), payload.role_ids or [], model_type, db)
         UsuariosRepository.guardar(db)
 
+
+        correo_usuario = usuario.email
+        es_corporativo = correo_usuario.lower().endswith("@fpatrimonionatural.org.co") if correo_usuario else False
+        es_invitado_por_dominio = not es_corporativo
+
+        if (usuario.is_guest or es_invitado_por_dominio) and payload.reenviar_invitacion:
+            usuario_entra = obtener_usuario_entra_por_correo(correo_usuario)
+            if not usuario_entra:
+                respuestaUsuarioInvitado = crear_usuario_invitado_AD(usuario)
+            else:
+                respuestaUsuarioInvitado = reenviar_invitacion_usuario_AD(usuario)
+                usuario.guid_msft = usuario_entra.get("id")
+
+            if not respuestaUsuarioInvitado["registro_exitoso"]:
+                respuesta.solicitud_exitosa = False
+                respuesta.mensaje = respuestaUsuarioInvitado["mensaje"]
+                return respuesta
+            else:
+                if not usuario.guid_msft:
+                    usuario.guid_msft = respuestaUsuarioInvitado["user_id"]
+                logging.info(f"Usuario invitado gestionado en AD con ID: {usuario.guid_msft}")
+                
         respuesta.solicitud_exitosa = True
         respuesta.mensaje = 'Usuario actualizado correctamente'
         return respuesta

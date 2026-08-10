@@ -11,6 +11,8 @@ from sqlalchemy.orm import mapped_column, Mapped
 
 from entity.travel_status import TravelStatus
 from entity.users import Users
+from entity.activities import Activities
+from entity.rubros import Rubros
 
 class TravelRequests(Base):
     __tablename__ = 'travel_requests'
@@ -95,5 +97,7 @@ class TravelRequests(Base):
 
     user: Mapped[Optional[Users]] = relationship('Users')
     travel_status: Mapped[Optional['TravelStatus']] = relationship('TravelStatus')
+    activity: Mapped[Optional['Activities']] = relationship('Activities')
+    rubro: Mapped[Optional['Rubros']] = relationship('Rubros')
     # travel_accommodations: Mapped[list['TravelAccommodations']] = relationship('TravelAccommodations', back_populates='travel_request')
     # travel_itineraries: Mapped[list['TravelItineraries']] = relationship('TravelItineraries', back_populates='travel_request')
