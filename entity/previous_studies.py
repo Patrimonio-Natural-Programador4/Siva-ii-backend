@@ -21,7 +21,7 @@ class PreviousStudies(Base):
         ForeignKeyConstraint(["approval_request_id"], ["approval_requests.approval_request_id"],name="fk_previous_studies_approval_request_fkey",),
         ForeignKeyConstraint(["implementer_id"], ["implementers.id"],name="fk_previous_studies_capacity_implementers"),
         ForeignKeyConstraint(["persons_id"], ["persons.id"],name="fk_previous_studies_assessment_persons"),
-        ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"],name="fk_previous_studies_capacity_assessment"),
+        ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),
         
         
     )

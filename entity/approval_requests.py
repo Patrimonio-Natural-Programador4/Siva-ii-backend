@@ -10,7 +10,7 @@ from sqlalchemy import Sequence, text
 from sqlalchemy.orm import mapped_column, Mapped
 from entity.approval_status import ApprovalStatus
 from entity.previous_studies import PreviousStudies
-# from entity.capacity_assessments import CapacityAssessments
+
 
 
 class ApprovalRequests(Base):
