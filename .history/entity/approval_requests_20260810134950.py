@@ -35,6 +35,19 @@ class ApprovalRequests(Base):
     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
 
     approval_status: Mapped[Optional['ApprovalStatus']] = relationship('ApprovalStatus')
+#     approval_workflow: Mapped[Optional['ApprovalFlows']] = relationship('ApprovalFlows', back_populates='approval_requests')
+#     approval_request_history: Mapped[list['ApprovalRequestHistory']] = relationship('ApprovalRequestHistory', back_populates='approval_request')
 
-    #capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="approval_request")
+    # capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship(
+    #         "CapacityAssessments", back_populates="approval_request"
+    # )
+
+"""
+    capacity_assements: Mapped[list["CapacityAssessments"]] = relationship(
+        "CapacityAssessments", back_populates="approval_request"
+    )
+    
+"""
+    capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship(
+        "CapacityAssessments", back_populates="approval_request")
    
