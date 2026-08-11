@@ -1,3 +1,5 @@
+#ENTITY ESTUDIOS PREVIOS
+
 import datetime
 from typing import Optional
 from sqlalchemy.orm import declarative_base
