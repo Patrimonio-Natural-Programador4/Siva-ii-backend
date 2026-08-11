@@ -142,6 +142,9 @@ class ViajesCreate(BaseModel):
     id_programa: Optional[int] = None
     valor_anticipo: Optional[decimal.Decimal] = None
     rubro_corto: Optional[str] = None
+    rubro: Optional[str] = None
+    actividad: Optional[str] = None
+    anio_rubro: Optional[int] = None
     class Config:
         from_attributes = True
 

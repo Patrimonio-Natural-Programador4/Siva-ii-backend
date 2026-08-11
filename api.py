@@ -178,6 +178,9 @@ def register_routes(app: FastAPI):
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#18
     app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
     
+    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
+    
+    
 
 def register_middlewares(app: FastAPI):
     # Register CORS middleware

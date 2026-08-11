@@ -51,4 +51,5 @@ class ApprovalRequests(Base):
 
 
 
+    #capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="approval_request")
    
