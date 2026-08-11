@@ -54,7 +54,7 @@ class CapacityAssessments(Base):
     
     #Relaciones
     approval_request: Mapped["ApprovalRequests"] = relationship(
-         "ApprovalRequests"
+         "ApprovalRequests",
     )
     
     #Relacion simples

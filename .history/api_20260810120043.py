@@ -174,7 +174,7 @@ def register_routes(app: FastAPI):
     
     app.include_router( DocumentsTypesAgreementsController.router , dependencies=auth_dependency)#16
     
-    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
+    app.include_router( DocumentsTypesAgreementsController.router , dependencies=auth_dependency)#16
     
     
 

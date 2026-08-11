@@ -25,12 +25,12 @@ def listar(db: Session) -> list[CapacityAssessmentsBase]:
             user_session=c.user_session,
             create_date=c.create_date,
             capacity_assessments_state=c.capacity_assessments_state.state if c.capacity_assessments_state else None,
-            implementer=c.implementer.acronym if c.implementer else None,
-            modalitie=c.modalitie.name if c.modalitie else None,
-            person=c.person.email if c.person else None,
-            pid=c.pid.name if c.pid else None,
-            programa=c.programa.name if c.programa else None,
-            aproval_request=c.approval_request.name if c.approval_request else None
+            implementer=c.implementer.acronym if c.implementer.acronym else None,
+            modalitie=c.modalitie.name if c.modalitie.name else None,
+            person=c.person.email if c.person.email else None,
+            pid=c.pid.name if c.pid.name else None,
+            programa=c.programa.name if c.programa.name else None,
+            aproval_request=c.aproval_request
         )
         for c in capacidades
     ]
@@ -64,7 +64,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
 
         fecha_actual = date.today()
 
-        nueva_capacidad = CapacityAssessmentsEntity()  
+        nueva_capacidad = CapacityAssessmentsEntity()   # 👈 ahora sí instancia la entidad
         nueva_capacidad.name = capacity_assessment.name
         nueva_capacidad.observation = capacity_assessment.observation
         nueva_capacidad.approximate_value = capacity_assessment.approximate_value

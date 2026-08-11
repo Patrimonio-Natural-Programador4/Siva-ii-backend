@@ -18,7 +18,6 @@ from controllers import PersonsController
 
 from controllers import CapacityAssessmentsStatesController
 from controllers import DocumentsTypesAgreementsController
-from controllers import CapacityAssessmentsController
 
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -173,9 +172,6 @@ def register_routes(app: FastAPI):
     app.include_router( PersonsController.router , dependencies=auth_dependency)#15
     
     app.include_router( DocumentsTypesAgreementsController.router , dependencies=auth_dependency)#16
-    
-    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
-    
     
 
 def register_middlewares(app: FastAPI):

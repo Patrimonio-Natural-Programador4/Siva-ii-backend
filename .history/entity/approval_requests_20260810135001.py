@@ -36,5 +36,5 @@ class ApprovalRequests(Base):
 
     approval_status: Mapped[Optional['ApprovalStatus']] = relationship('ApprovalStatus')
 
-    #capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="approval_request")
+    
    

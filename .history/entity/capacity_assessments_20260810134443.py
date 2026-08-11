@@ -54,7 +54,7 @@ class CapacityAssessments(Base):
     
     #Relaciones
     approval_request: Mapped["ApprovalRequests"] = relationship(
-         "ApprovalRequests"
+    #     "ApprovalRequests", back_populates="capacity_assessments" #contrario
     )
     
     #Relacion simples

@@ -53,8 +53,8 @@ class CapacityAssessments(Base):
     #updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     
     #Relaciones
-    approval_request: Mapped["ApprovalRequests"] = relationship(
-         "ApprovalRequests"
+    #approval_request: Mapped["ApprovalRequests"] = relationship(
+         "ApprovalRequests", back_populates="capacity_assessments" #contrario
     )
     
     #Relacion simples

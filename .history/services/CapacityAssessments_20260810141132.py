@@ -64,7 +64,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
 
         fecha_actual = date.today()
 
-        nueva_capacidad = CapacityAssessmentsEntity()  
+        nueva_capacidad = CapacityAssessmentsEntity()   # 👈 ahora sí instancia la entidad
         nueva_capacidad.name = capacity_assessment.name
         nueva_capacidad.observation = capacity_assessment.observation
         nueva_capacidad.approximate_value = capacity_assessment.approximate_value
