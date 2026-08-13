@@ -12,12 +12,15 @@ from entity.travel_accommodations import TravelAccommodations
 from entity.travel_itineraries import TravelItineraries
 from entity.travel_requests import TravelRequests
 from entity.travel_status import TravelStatus
+from entity.banks import Banks
+from entity.account_types import AccountTypes
 from repository import ConceptoAnticiposRepository, EntidadBancariaRepository, RegionsRepository, RoleApprovalSupervisorUsersRepository, RubrosRepository, TipoCuentaRepository, UsersProgramsRepository, UsersProgramsRepository, UsuariosRepository, ViajesHotelRepository, ViajesItinerarioRepository, ViajesRepository, ProgramsRepository
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from datetime import date, datetime, time
 from jinja2 import Environment, FileSystemLoader
-from services import SolicitudesAprobacionService
+from services import SolicitudesAprobacionService, NotificacionesService
+from entity.users import Users
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
 
@@ -120,41 +123,100 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, False, db)
             # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, True, db)
             # viajeDTO = viajeCreateDTO(nuevo_viaje, itinerario, hoteles, anticipo, reintegro, db)
+            # Resolviendo nombre y apellidos del solicitante
+            nombre_usuario = ' '.join(
+                part.strip()
+                for part in [usuario.first_name, usuario.other_name or '', usuario.last_name, usuario.other_last_name or '']
+                if part and part.strip()
+            )
+            
+            # Resolviendo nombre del banco
+            entidad_bancaria = ""
+            if nuevo_viaje.bank_id:
+                bank_row = db.query(Banks).filter(Banks.bank_id == nuevo_viaje.bank_id).first()
+                if bank_row:
+                    entidad_bancaria = bank_row.name
+            
+            # Resolviendo tipo de cuenta
+            tipo_cuenta = ""
+            if nuevo_viaje.account_type_id:
+                acc_type_row = db.query(AccountTypes).filter(AccountTypes.account_type_id == nuevo_viaje.account_type_id).first()
+                if acc_type_row:
+                    tipo_cuenta = acc_type_row.name
 
+            # Calcular número de días e itinerario horas
+            nro_dias = 0
+            nro_horas = 0
+            if nuevo_viaje.travel_start_date and nuevo_viaje.travel_end_date:
+                delta = nuevo_viaje.travel_end_date - nuevo_viaje.travel_start_date
+                nro_dias = delta.days
+                nro_horas = nro_dias * 24
+
+            template_data = {
+                "codigo": nuevo_viaje.code,
+                "usuario": nombre_usuario,
+                "identificacion": usuario.identification_number if usuario.identification_number else "",
+                "fecha_solicitud": nuevo_viaje.created_at.strftime("%Y-%m-%d") if nuevo_viaje.created_at else date.today().strftime("%Y-%m-%d"),
+                "categoria": "Solicitud de viaje y anticipo",
+                "fecha_inicio_viaje": nuevo_viaje.travel_start_date,
+                "fecha_fin_viaje": nuevo_viaje.travel_end_date,
+                "hora_inicio": nuevo_viaje.start_time.strftime("%H:%M") if nuevo_viaje.start_time else "",
+                "hora_fin": nuevo_viaje.end_time.strftime("%H:%M") if nuevo_viaje.end_time else "",
+                "nro_dias": nro_dias,
+                "nro_horas": nro_horas,
+                "es_invitado": nuevo_viaje.is_guest,
+                "persona_invitada": nuevo_viaje.guest_name,
+                "documento_persona_invitada": nuevo_viaje.guest_document,
+                "telefono_persona_invitada": nuevo_viaje.guest_phone,
+                "correo_persona_invitada": nuevo_viaje.guest_email,
+                "fecha_nacimiento_viajero": nuevo_viaje.traveler_birth_date,
+                "viaje_internacional": nuevo_viaje.is_international,
+                "pais": nuevo_viaje.country,
+                "asociado_taller": False,
+                "requiere_anticipo": nuevo_viaje.requires_advance_payment,
+                "tipo_cuenta": tipo_cuenta,
+                "entidad_bancaria": entidad_bancaria,
+                "numero_cuenta": nuevo_viaje.account_number,
+                "objetivo_actividad": nuevo_viaje.activity_purpose,
+                "observaciones_adicionales": nuevo_viaje.additional_comments,
+                "itinerario": viaje.itinerario,
+                "hotel": viaje.hotel,
+                "anticipo": viaje.anticipo,
+                "historialAprobacionSolicitud": historialAprobacionSolicitud
+            }
 
             env = Environment(loader=FileSystemLoader(''))
-            # template = env.get_template('templates/notificacion_sv.html')
-            # html_out = template.render(**vars(viajeDTO), 
-            # historialAprobacionSolicitud=historialAprobacionSolicitud)
-            # destinatarios = []
-            # # destinatarios.append(usuario.correo)
+            template = env.get_template('templates/notificacion_sv.html')
+            html_out = template.render(**template_data)
 
-            # ids_usuarios_notificacion = [nuevo_viaje.id_supervisor_aprueba]
-            # ids_usuarios_notificacion.append(usuario.id_usuario)
-
-
-
-            # usuariosDelegado = FlujosAprobacionService.buscar_delegacion_por_usuario(nuevo_viaje.id_supervisor_aprueba, nuevo_viaje.id_rol_aprobacion_supervisor, db)
-            # usuariosNotificacion = UsuariosRepository.obtener_por_ids(usuariosDelegado + ids_usuarios_notificacion + nuevo_viaje.id_usuarios_mencion, db)
-            # for usuario in usuariosNotificacion:
-            #     if usuario.correo not in destinatarios:
-            #         destinatarios.append(usuario.correo)
+            # Obtener destinatarios de correo
+            destinatarios = []
+            if nuevo_viaje.supervisor_user_id:
+                supervisor = db.query(Users).filter(Users.id == nuevo_viaje.supervisor_user_id).first()
+                if supervisor and supervisor.email:
+                    destinatarios.append(supervisor.email)
             
+            if usuario and usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
 
-            # to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
-            # print("to_recipients", to_recipients)
+            if nuevo_viaje.mentioned_user_ids:
+                for m_id in nuevo_viaje.mentioned_user_ids:
+                    m_user = db.query(Users).filter(Users.id == m_id).first()
+                    if m_user and m_user.email and m_user.email not in destinatarios:
+                        destinatarios.append(m_user.email)
 
-            # background_tasks.add_task(
-            #     NotificacionesService.solicitud_viaje,
-            #     f"Solicitud de viaje {nuevo_viaje.codigo} enviada por aprobación",
-            #     to_recipients,
-            #     html_out,
-            #     "",
-            #     "",
-            #     db
-            # )
-                
-            # NotificacionesService.solicitud_viaje(f"Solicitud de viaje {nuevo_viaje.codigo} enviada por aprobación", to_recipients, html_out, "", "", db)
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Solicitud de viaje {nuevo_viaje.code} enviada por aprobación",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
 
 
         respuesta.identity = nuevo_viaje.travel_request_id

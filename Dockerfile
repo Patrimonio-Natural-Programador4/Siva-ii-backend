@@ -4,6 +4,17 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+# Dependencias del sistema para WeasyPrint
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    shared-mime-info \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
