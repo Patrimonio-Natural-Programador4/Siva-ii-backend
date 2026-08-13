@@ -15,11 +15,11 @@ from controllers import DocumentTypes
 from controllers import ImplementersController
 from controllers import PidsControllerss
 from controllers import PersonsController
+
 from controllers import CapacityAssessmentsStatesController
 from controllers import DocumentsTypesAgreementsController
 from controllers import CapacityAssessmentsController
 from controllers import PreviousStudiesController
-
 
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -166,7 +166,7 @@ def register_routes(app: FastAPI):
     app.include_router(DocumentsApprovalController.router, dependencies=auth_dependency)
     app.include_router(PadsController.router, dependencies=auth_dependency)
     app.include_router(ImplementerTypesController.router, dependencies=auth_dependency)
-    app.include_router( ModalitiesController.router  , dependencies=auth_dependency)
+    app.include_router( ModalitiesController.router , dependencies=auth_dependency)
     app.include_router( DocumentTypes.router , dependencies=auth_dependency)
     app.include_router( ImplementersController.router , dependencies=auth_dependency)
     app.include_router( PidsControllerss.router , dependencies=auth_dependency)
@@ -174,11 +174,10 @@ def register_routes(app: FastAPI):
     app.include_router( PersonsController.router , dependencies=auth_dependency)#15
     
     app.include_router( DocumentsTypesAgreementsController.router , dependencies=auth_dependency)#16
-    app.include_router( CapacityAssessmentsStatesController.router, dependencies=auth_dependency)#17
-    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#18
-    app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
     
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
+    
+    app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
     
     
 

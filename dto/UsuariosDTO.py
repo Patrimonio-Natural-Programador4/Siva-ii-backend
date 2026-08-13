@@ -65,3 +65,4 @@ class UsuariosUpdateBase(BaseModel):
     position: Optional[str] = None
     program_ids: list[int] = Field(default_factory=list)
     role_ids: list[int] = Field(default_factory=list)
+    reenviar_invitacion: Optional[bool] = None

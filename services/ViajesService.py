@@ -346,6 +346,10 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         motivo_anulo=None,
         fecha_anulo=None,
         objetivo=viajeDb.activity_purpose,
+        rubro_corto=viajeDb.short_rubro,
+        actividad=viajeDb.activity.code if viajeDb.activity else None,
+        rubro=viajeDb.rubro.rubros if viajeDb.rubro else None,
+        anio_rubro=viajeDb.year_rubro,
         # Mapea los demás campos necesarios
     )
     for it in itinerario:

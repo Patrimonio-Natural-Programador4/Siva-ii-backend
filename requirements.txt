@@ -12,3 +12,4 @@ fastapi-microsoft-identity
 jinja2
 alembic
 bcrypt
+weasyprint

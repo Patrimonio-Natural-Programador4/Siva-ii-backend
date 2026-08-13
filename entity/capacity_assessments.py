@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 from entity.approval_requests import ApprovalRequests 
-
+#from entity.previous_studies import PreviousStudies 
 
 class CapacityAssessments(Base):
     __tablename__ = 'capacity_assessments'
@@ -53,6 +53,7 @@ class CapacityAssessments(Base):
     #updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     
     #Relaciones
+    approval_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests", back_populates="capacity_assessments")
     approval_request: Mapped["ApprovalRequests"] = relationship(
          "ApprovalRequests"
     )
@@ -64,4 +65,7 @@ class CapacityAssessments(Base):
     person: Mapped["Persons"] = relationship("Persons", back_populates="capacity_assessments_person") 
     pid: Mapped["Pids"] = relationship("Pids", back_populates="capacity_assessments_pid") 
     programa: Mapped["Programs"] = relationship("Programs", back_populates="capacity_assessments_programa") 
+    
+    previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
+    
     
