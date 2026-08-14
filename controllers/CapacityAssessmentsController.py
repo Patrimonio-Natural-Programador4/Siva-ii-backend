@@ -33,12 +33,12 @@ def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession, user_oid: 
 
         if response_request.solicitud_exitosa:
             return JSONResponse(
-                content=response_request.dict(),
+                content=response_request.model_dump(),
                 status_code=status.HTTP_201_CREATED
             )
         else:
             return JSONResponse(
-                content=response_request.dict(),
+                content=response_request.model_dump(),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     except HTTPException as e:

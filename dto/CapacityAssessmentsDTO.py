@@ -1,6 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from uuid import UUID
 
@@ -12,10 +12,10 @@ class CapacityAssessmentsBase(BaseModel):
     guid:Optional[UUID] = None  
     user_session:Optional[int] = None
     create_date:Optional[datetime] = None
-    policy_approval_date:Optional[datetime] = None
-    document_signature_date:Optional[datetime] = None
-    start_date:Optional[datetime] = None
-    end_date:Optional[datetime] = None
+    policy_approval_date:Optional[date] = None
+    document_signature_date:Optional[date] = None
+    start_date:Optional[date] = None
+    end_date:Optional[date] = None
     code:Optional[UUID] = None 
     programa: Optional[str] = None
     pid: Optional[str] = None
@@ -23,6 +23,7 @@ class CapacityAssessmentsBase(BaseModel):
     aproval_request :   Optional[str] = None
     person :  Optional[str] = None
     capacity_assessments_state: Optional[str] = None
+    modalitie: Optional[str] = None
     
         
     class Config:
@@ -36,7 +37,7 @@ class CapacityAssessmentsCreate(BaseModel):
     approximate_value: Optional[int] = None
     guid: Optional[UUID] = None
     user_session: Optional[int] = None
-    policy_approval_date: Optional[datetime] = None
+    policy_approval_date: Optional[date] = None
     document_signature_date: Optional[datetime] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
