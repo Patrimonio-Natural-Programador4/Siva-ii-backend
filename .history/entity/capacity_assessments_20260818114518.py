@@ -49,13 +49,13 @@ class CapacityAssessments(Base):
     
     
     # Fechas
-    policy_approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-    document_signature_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-    start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-    end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+        policy_approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+        document_signature_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+        start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+        end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 
-    # Campo adicional
-    code: Mapped[Optional[str]] 
+        # Campo adicional
+        code: Mapped[Optional[str]] 
     
     
     #created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))

@@ -30,7 +30,7 @@ def obtener_por_id(id: int, db: DbSession, user_oid: str = Depends(get_current_u
 def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     try:
         
-        #print("  payload " , payload)
+        print("   ")
         response_request = CapacityAssessments.crear(payload, db, user_oid)
 
         if response_request.solicitud_exitosa:

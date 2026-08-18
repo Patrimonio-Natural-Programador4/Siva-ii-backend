@@ -40,7 +40,6 @@ class CapacityAssessmentsCreate(BaseModel):
     approximate_value: Optional[int] = None
     policy_approval_date: Optional[date] = None
     document_signature_date: Optional[date] = None
-    user_session:Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     create_date: Optional[datetime] = None
@@ -51,7 +50,6 @@ class CapacityAssessmentsCreate(BaseModel):
     persons_id: Optional[int] = None
     capacity_assessments_states_id: Optional[int] = None
     modality_id: Optional[int] = None
-    approval_request_id:  Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -68,7 +66,7 @@ class CapacityAssessmentsListDTO(BaseModel):
     policy_approval_date:Optional[datetime] = None
     document_signature_date:Optional[datetime] = None
     start_date:Optional[date] = None
-    end_date:Optional[date] = None
+    end_date:Optional[datetime] = None
     code:Optional[UUID] = None 
     programa: Optional[str] = None
     pid: Optional[str] = None

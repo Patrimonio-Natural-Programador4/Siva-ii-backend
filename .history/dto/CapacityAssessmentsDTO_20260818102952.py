@@ -31,27 +31,42 @@ class CapacityAssessmentsBase(BaseModel):
 
 
 
- #guid, 
- #user_session, 
+
+
+
+ 
+ 
+ create_date, 
+ policy_approval_date, 
+ document_signature_date, 
+ start_date, 
+ end_date, 
+ code, 
+ program_id,
+ pid_id, 
+ implementer_id, 
+ approval_request_id,
+ persons_id, 
+ capacity_assessments_states_id,
+ modality_id
+
 
 class CapacityAssessmentsCreate(BaseModel):
     name: Optional[str] = None
     observation: Optional[str] = None
     approximate_value: Optional[int] = None
+    #guid: Optional[UUID] = None
+    #user_session: Optional[int] = None
     policy_approval_date: Optional[date] = None
-    document_signature_date: Optional[date] = None
-    user_session:Optional[int] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    create_date: Optional[datetime] = None
+    document_signature_date: Optional[datetime] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     program_id: Optional[int] = None
-    code: Optional[str] = None
     pid_id: Optional[int] = None
     implementer_id: Optional[int] = None
     persons_id: Optional[int] = None
     capacity_assessments_states_id: Optional[int] = None
     modality_id: Optional[int] = None
-    approval_request_id:  Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -67,8 +82,8 @@ class CapacityAssessmentsListDTO(BaseModel):
     create_date:Optional[datetime] = None
     policy_approval_date:Optional[datetime] = None
     document_signature_date:Optional[datetime] = None
-    start_date:Optional[date] = None
-    end_date:Optional[date] = None
+    start_date:Optional[datetime] = None
+    end_date:Optional[datetime] = None
     code:Optional[UUID] = None 
     programa: Optional[str] = None
     pid: Optional[str] = None

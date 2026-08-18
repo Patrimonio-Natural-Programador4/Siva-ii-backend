@@ -31,9 +31,9 @@ def obtener_por_id(id: int, db: Session) -> CapacityAssessments | None:
         logging.error(f"Failed to get CapacityAssessments by id: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
-def obtener_por_nombre(nombre: str, db: Session) -> CapacityAssessments | None:
+def obtener_por_nombre(nombre: str, db: Session) -> Modalities | None:
     try:
-        return db.query(CapacityAssessments).filter(CapacityAssessments.name.ilike(nombre.strip())).first()
+        return db.query(Modalities).filter(Modalities.name.ilike(nombre.strip())).first()
     except Exception as e:
         logging.error(f"Failed to get program by name: {str(e)}")
         raise PruebaNotFoundError(str(e))

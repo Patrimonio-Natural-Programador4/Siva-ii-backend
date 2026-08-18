@@ -62,10 +62,10 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         if not usuario:
             raise Exception("Usuario no encontrado")
         
-        existe_capacidad = CapacityAssessments.obtener_por_nombre(capacity_assessment.name or '', db)
-        print("Que ve " , capacity_assessment.name ,  "existe_capacidad " , existe_capacidad)
-        if existe_capacidad:
-            return ResponseRequest(mensaje='Ya existe una modalidad con ese nombre', solicitud_exitosa=False)
+        
+        
+        
+    
 
         nueva_capacidad = CapacityAssessmentsEntity()  
         nueva_capacidad.name = capacity_assessment.name

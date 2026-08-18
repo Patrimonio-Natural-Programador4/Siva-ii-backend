@@ -69,7 +69,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
 
         nueva_capacidad = CapacityAssessmentsEntity()  
         nueva_capacidad.name = capacity_assessment.name
-        nueva_capacidad.c = capacity_assessment.name
+        nueva_capacidad.c = capacity_assessment.name.strip
         nueva_capacidad.observation = capacity_assessment.observation
         nueva_capacidad.approximate_value = capacity_assessment.approximate_value
         nueva_capacidad.user_session = capacity_assessment.user_session

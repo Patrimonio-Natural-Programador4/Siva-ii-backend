@@ -51,7 +51,7 @@ class CapacityAssessmentsCreate(BaseModel):
     persons_id: Optional[int] = None
     capacity_assessments_states_id: Optional[int] = None
     modality_id: Optional[int] = None
-    approval_request_id:  Optional[int] = None
+     approval_request_id,
 
     class Config:
         from_attributes = True

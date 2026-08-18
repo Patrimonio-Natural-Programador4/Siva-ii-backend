@@ -61,17 +61,14 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
             raise Exception("Usuario no encontrado")
-        
-        existe_capacidad = CapacityAssessments.obtener_por_nombre(capacity_assessment.name or '', db)
-        print("Que ve " , capacity_assessment.name ,  "existe_capacidad " , existe_capacidad)
-        if existe_capacidad:
-            return ResponseRequest(mensaje='Ya existe una modalidad con ese nombre', solicitud_exitosa=False)
+
+        fecha_actual = date.today()
 
         nueva_capacidad = CapacityAssessmentsEntity()  
         nueva_capacidad.name = capacity_assessment.name
-        nueva_capacidad.c = capacity_assessment.name
         nueva_capacidad.observation = capacity_assessment.observation
         nueva_capacidad.approximate_value = capacity_assessment.approximate_value
+        #nueva_capacidad.guid = capacity_assessment.guid
         nueva_capacidad.user_session = capacity_assessment.user_session
         nueva_capacidad.create_date = datetime.now()
         nueva_capacidad.policy_approval_date = capacity_assessment.policy_approval_date
@@ -85,7 +82,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         nueva_capacidad.capacity_assessments_states_id = capacity_assessment.capacity_assessments_states_id
         nueva_capacidad.modality_id = capacity_assessment.modality_id
         nueva_capacidad.approval_request_id = capacity_assessment.approval_request_id
-
+approval_request_id
         db.add(nueva_capacidad)
         db.commit()
         db.refresh(nueva_capacidad)
