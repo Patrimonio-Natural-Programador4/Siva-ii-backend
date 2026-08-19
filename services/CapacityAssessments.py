@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from dto.CapacityAssessmentsDTO import CapacityAssessmentsBase,CapacityAssessmentsCreate
 from dto.ResponseRequest import ResponseRequest
 from entity.implementers import Implementers
-from entity.capacity_assessments import CapacityAssessments as CapacityAssessmentsEntity  # 👈 la entidad
+from entity.capacity_assessments import CapacityAssessments as CapacityAssessmentsEntity  
 from repository import CapacityAssessments  
 from repository import UsuariosRepository
 from services import SolicitudesAprobacionService
@@ -65,11 +65,11 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         existe_capacidad = CapacityAssessments.obtener_por_nombre(capacity_assessment.name or '', db)
         print("Que ve " , capacity_assessment.name ,  "existe_capacidad " , existe_capacidad)
         if existe_capacidad:
-            return ResponseRequest(mensaje='Ya existe una modalidad con ese nombre', solicitud_exitosa=False)
+            return ResponseRequest(mensaje='Ya existe una evaluación de capacidad con ese nombre', solicitud_exitosa=False)
 
         nueva_capacidad = CapacityAssessmentsEntity()  
         nueva_capacidad.name = capacity_assessment.name
-        nueva_capacidad.c = capacity_assessment.name
+        nueva_capacidad.code = capacity_assessment.code
         nueva_capacidad.observation = capacity_assessment.observation
         nueva_capacidad.approximate_value = capacity_assessment.approximate_value
         nueva_capacidad.user_session = capacity_assessment.user_session
@@ -117,6 +117,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
 
     except Exception as e:
         logging.error(f"Error al crear capacity assessment: {e}")
+        print('el error es:', e)
         db.rollback()
         return ResponseRequest(
             solicitud_exitosa=False,

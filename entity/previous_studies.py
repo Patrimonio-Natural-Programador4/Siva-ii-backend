@@ -10,9 +10,6 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
-#from entity.approval_requests import ApprovalRequests 
-
-
 class PreviousStudies(Base):
     __tablename__ = 'previous_studies'
     __table_args__ = (
@@ -23,12 +20,10 @@ class PreviousStudies(Base):
         ForeignKeyConstraint(["approval_request_id"], ["approval_requests.approval_request_id"],name="fk_previous_studies_approval_request_fkey",),
         ForeignKeyConstraint(["implementer_id"], ["implementers.id"],name="fk_previous_studies_capacity_implementers"),
         ForeignKeyConstraint(["persons_id"], ["persons.id"],name="fk_previous_studies_assessment_persons"),
-        ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),
-        
-        
+        ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),        
     )
 
-    id: Mapped[int] =       mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     precedents: Mapped[str] =     mapped_column(CITEXT, nullable=False)
     justification : Mapped[str] = mapped_column(CITEXT, nullable=False)
     scope : Mapped[str] = mapped_column(CITEXT, nullable=False)
@@ -37,21 +32,19 @@ class PreviousStudies(Base):
     obligations : Mapped[str] = mapped_column(CITEXT, nullable=False)
     supervisor : Mapped[str] = mapped_column(CITEXT, nullable=False)
     user_session: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    create_date :  Mapped[Optional[datetime.date]] = mapped_column(Date)
+    create_date: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(timezone=False), nullable=True)
     total_value : Mapped[int] = mapped_column(BigInteger, nullable=False)
     contributions_ei:Mapped[int] = mapped_column(BigInteger, nullable=False)
     total_value_executes_fpn: Mapped[int] = mapped_column(BigInteger, nullable=False)
     total_value_executes_ei: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    
     capacity_assessments_states_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     approval_request_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     implementer_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     persons_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     capacity_assessment_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-   
-    
     contributions_fpn: Mapped[int] = mapped_column(BigInteger, nullable=False)
     estimated_term:Mapped[str] = mapped_column(CITEXT, nullable=False)
+    guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
    
    #Relacion simples
     cap_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="previous_studies")

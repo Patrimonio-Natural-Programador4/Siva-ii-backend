@@ -76,6 +76,7 @@ class CapacityAssessmentsListDTO(BaseModel):
     aproval_request :   Optional[str] = None
     person :  Optional[str] = None
     capacity_assessments_state: Optional[str] = None
+    capacity_assessment: Optional[str] = None
     
     class Config:
         from_attributes = True
