@@ -30,14 +30,12 @@ class DocumentsTypesAgreements(Base):
     template: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     template_path: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
-  
+    documents_approval_id: Mapped[int] = mapped_column(BigInteger,ForeignKey("documents_approval.id"))
         
 
    # RELACIONES ORM
-
-    documents_approval_id: Mapped[int] = mapped_column(BigInteger,ForeignKey("documents_approval.id"))
- 
-    documents_approval: Mapped["DocumentsApproval"] = relationship("DocumentsApproval",back_populates="documents_types_agreements")
-
+  
+    #documents_approval: Mapped["DocumentsApproval"] = relationship("DocumentsApproval",back_populates="documents_types_agreements")
+    documents_approval: Mapped["DocumentsApproval"] = relationship("DocumentsApproval", back_populates="documents_types_agreements")
 
         

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 
 class ModalitiesBase(BaseModel):
-    id_programa: Optional[int] = None
+    id: Optional[int] = None
     name: Optional[str] = None
 
     class Config:

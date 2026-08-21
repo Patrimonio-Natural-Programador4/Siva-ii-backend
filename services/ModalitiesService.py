@@ -12,7 +12,7 @@ def listar_modalidades(db: Session) -> list[ModalitiesBase]:
     modalidades = modalitiesRepository.listar(db)
     return [
         ModalitiesBase(
-            id_programa=int(m.id),
+            id=int(m.id),
             name=m.name,
         )
         for m in modalidades

@@ -58,3 +58,4 @@ class DocumentsApproval(Base):
      
      
     documents_types_agreements: Mapped[list["DocumentsTypesAgreements"]] = relationship("DocumentsTypesAgreements",back_populates="documents_approval")
+    #documents_types_agreements: Mapped["DocumentsTypesAgreements"] = relationship("DocumentsTypesAgreements", back_populates="documents_approval")
