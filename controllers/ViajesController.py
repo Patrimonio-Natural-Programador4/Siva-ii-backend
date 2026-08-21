@@ -59,6 +59,31 @@ def crear_viaje(viaje: ViajesCreate, db: DbSession, background_tasks: Background
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.put("/{guid}", response_model=ResponseRequest)
+def actualizar_viaje(guid: str, viaje: ViajesCreate, db: DbSession, background_tasks: BackgroundTasks, user_oid: str = Depends(get_current_user_oid)):
+    try:
+
+        response_request = ViajesService.actualizar_viaje(guid, viaje, db, user_oid, background_tasks)
+        
+        if response_request.solicitud_exitosa:
+            return JSONResponse(
+                content=response_request.dict(),
+                status_code=status.HTTP_201_CREATED
+            )
+        else:
+            return JSONResponse(
+                content=response_request.dict(),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        # return RolesService.crear_rol(rol, db)
+    except HTTPException as e:
+        print(f"HTTPException: {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("")
 def listar_viajes_filtro(
     db: DbSession,

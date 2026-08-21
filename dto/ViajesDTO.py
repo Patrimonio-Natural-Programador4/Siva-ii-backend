@@ -139,12 +139,16 @@ class ViajesCreate(BaseModel):
     ruta_soporte_informe: Optional[str] = None
     relacion_facturas: Optional[bool] = None
     id_actividad: Optional[int] = None
+    contacto_emergencia: Optional[str] = None
+    telefono_emergencia: Optional[str] = None
+    parentesco_emergencia: Optional[str] = None
     id_programa: Optional[int] = None
     valor_anticipo: Optional[decimal.Decimal] = None
     rubro_corto: Optional[str] = None
     rubro: Optional[str] = None
     actividad: Optional[str] = None
     anio_rubro: Optional[int] = None
+    id_rubro: Optional[int] = None
     class Config:
         from_attributes = True
 

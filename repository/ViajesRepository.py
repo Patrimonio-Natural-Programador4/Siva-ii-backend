@@ -12,7 +12,7 @@ def numero_viajes(db: Session) -> int:
         logging.error(f"Failed to fetch viajes: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
-def obtener_viaje_por_id(guid: str, db: Session) -> TravelRequests:
+def obtener_por_guid(guid: str, db: Session) -> TravelRequests:
     try:
         viaje = db.query(TravelRequests).filter(TravelRequests.guid == guid).first()
         if not viaje:
@@ -21,6 +21,27 @@ def obtener_viaje_por_id(guid: str, db: Session) -> TravelRequests:
     except Exception as e:
         logging.error(f"Failed to fetch viaje with guid {guid}: {str(e)}")
         raise PruebaNotFoundError(str(e))
+
+def obtener_por_guid_id_solicitud_aprobacion(guid: str, id_solicitud_aprobacion, db: Session) -> TravelRequests:
+    try:
+        viaje = db.query(TravelRequests).filter(
+                    or_(
+                        and_(
+                            TravelRequests.approval_request_id == id_solicitud_aprobacion,
+                            TravelRequests.guid == guid
+                        ),
+                        and_(
+                            TravelRequests.expense_approval_request_id == id_solicitud_aprobacion,
+                            TravelRequests.guid == guid
+                        )
+                    )
+                ).first()
+        if not viaje:
+            raise PruebaNotFoundError(f"Viaje with guid {guid} not found")
+        return viaje
+    except Exception as e:
+        logging.error(f"Failed to fetch viaje with guid {guid}: {str(e)}")
+        raise PruebaNotFoundError(str(e))    
     
 
 def listar_viajes_por_usuario_sp(guidmsf: str, db: Session, page: int = 1, estado: list[int] = [-1],
