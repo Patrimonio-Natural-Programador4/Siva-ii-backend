@@ -16,7 +16,7 @@ class CapacityAssessmentsBase(BaseModel):
     document_signature_date:Optional[date] = None
     start_date:Optional[date] = None
     end_date:Optional[date] = None
-    code:Optional[UUID] = None 
+    code:Optional[str] = None 
     programa: Optional[str] = None
     pid: Optional[str] = None
     implementer: Optional[str] = None
@@ -69,7 +69,7 @@ class CapacityAssessmentsListDTO(BaseModel):
     document_signature_date:Optional[datetime] = None
     start_date:Optional[date] = None
     end_date:Optional[date] = None
-    code:Optional[UUID] = None 
+    code:Optional[str] = None 
     programa: Optional[str] = None
     pid: Optional[str] = None
     implementer: Optional[str] = None

@@ -4,6 +4,7 @@ import logging
 from sqlalchemy.orm import Session
 from entity.previous_studies import PreviousStudies
 from exceptions import PruebaCreationError, PruebaNotFoundError
+from sqlalchemy import func, select
 
 
 def listar(db: Session) -> list[PreviousStudies]:
@@ -39,3 +40,11 @@ def obtener_por_nombre(nombre: str, db: Session) -> PreviousStudies | None:
     except Exception as e:
         logging.error(f"Failed to get program by name: {str(e)}")
         raise PruebaNotFoundError(str(e))
+    
+    
+def numero_estudios_previos(db: Session) -> int:
+    try:
+        return db.scalar(select(func.count(PreviousStudies.id))) or 0
+    except Exception as e:
+        logging.error(f"Error al contar estudios previos: {str(e)}")
+        raise Exception(f"Error de base de datos al contar estudios previos: {str(e)}") from e

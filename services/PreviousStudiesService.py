@@ -13,7 +13,8 @@ from repository import PreviousStudiesRepository, UsuariosRepository
 from services import PreviousStudiesService
 from services import SolicitudesAprobacionService
 
-CATEGORIA_APROBACION_previous_studies = "APP_TDR"
+
+CATEGORIA_APROBACION_previous_studies = "APP_EP"  #APP_EP
 def listar(db: Session) -> list[PreviousStudiesBase]:
     estudios = PreviousStudiesRepository.listar(db)
     return [
@@ -39,7 +40,8 @@ def listar(db: Session) -> list[PreviousStudiesBase]:
             implementers=e.implementers.acronym if (e.implementers and hasattr(e.implementers, 'acronym')) else None,
             persons=e.persons.email if e.persons else None,
             capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
-           
+            programs =e.programs.description if e.programs else None,
+            code =e.code 
             
         )
         for e in estudios
@@ -71,7 +73,9 @@ def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | Non
                 implementers=c.implementers.acronym if (c.implementers and hasattr(c.implementers, 'acronym')) else None,
                 persons=c.persons.email if c.persons else None,
                 capacity_assessment=c.capacity_assessment.name if c.capacity_assessment else None,
-            )    
+                programs =c.programs.description if c.programs else None,
+                code= c.code
+            )   
     
 
 
@@ -81,6 +85,8 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
             raise Exception("Usuario no encontrado")
+        fecha_actual = date.today()
+        estudios_previos=PreviousStudiesRepository.numero_estudios_previos(db)
         
         nuevo_estudio_previo = PreviousStudiesEntity()  
         nuevo_estudio_previo.precedents = previous_studies.precedents
@@ -103,6 +109,8 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.capacity_assessment_id = previous_studies.capacity_assessment_id
         nuevo_estudio_previo.contributions_fpn = previous_studies.contributions_fpn
         nuevo_estudio_previo.estimated_term = previous_studies.estimated_term
+        nuevo_estudio_previo.program_id = previous_studies.program_id
+        nuevo_estudio_previo.code = f"EP-{fecha_actual.year}-{estudios_previos+1:02d}"
 
         db.add(nuevo_estudio_previo)
         db.commit()
@@ -120,9 +128,9 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
             id_categoria_aprobacion,
             nuevo_estudio_previo.id,
             usuario.id,
-            nuevo_estudio_previo.guid,
+            nuevo_estudio_previo.code, #code 
             db,
-            id_programa=1 #preguntar a yhonn , esta quemado
+            nuevo_estudio_previo.program_id 
         )
 
         nuevo_estudio_previo.approval_request_id = id_solicitud_aprobacion
@@ -142,4 +150,3 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
             mensaje=str(e)
         )
         
-      

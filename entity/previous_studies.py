@@ -20,7 +20,8 @@ class PreviousStudies(Base):
         ForeignKeyConstraint(["approval_request_id"], ["approval_requests.approval_request_id"],name="fk_previous_studies_approval_request_fkey",),
         ForeignKeyConstraint(["implementer_id"], ["implementers.id"],name="fk_previous_studies_capacity_implementers"),
         ForeignKeyConstraint(["persons_id"], ["persons.id"],name="fk_previous_studies_assessment_persons"),
-        ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),        
+        ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),  
+        ForeignKeyConstraint(["program_id"], ["programs.id"], name="fk_previous_studies_programs"),           
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -45,6 +46,8 @@ class PreviousStudies(Base):
     contributions_fpn: Mapped[int] = mapped_column(BigInteger, nullable=False)
     estimated_term:Mapped[str] = mapped_column(CITEXT, nullable=False)
     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+    program_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    code: Mapped[str] = mapped_column(CITEXT, nullable=False)
    
    #Relacion simples
     cap_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="previous_studies")
@@ -52,5 +55,5 @@ class PreviousStudies(Base):
     implementers: Mapped["Implementers"] = relationship("Implementers", back_populates="previous_studies_implementer") #back populates debe coincidir con el nombre de la contraparte
     persons: Mapped["Persons"] = relationship("Persons", back_populates="previous_studies_person") 
     capacity_assessment: Mapped["CapacityAssessments"] = relationship("CapacityAssessments", back_populates="previous_studies_capacity_assessment") 
-    
+    programs:  Mapped["Programs"] = relationship("Programs", back_populates="previous_studies_programs")
    

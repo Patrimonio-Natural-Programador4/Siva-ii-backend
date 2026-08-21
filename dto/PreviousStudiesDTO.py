@@ -30,6 +30,8 @@ class PreviousStudiesBase(BaseModel):
     capacity_assessment: Optional[str] = None
     contributions_fpn: Optional[int] = None
     estimated_term: Optional[str] = None
+    programs:Optional[str] = None
+    code:Optional[str]=None
 
 
     class Config:
@@ -56,6 +58,9 @@ class PreviousStudiesCreate(BaseModel):
      approval_request_id: Optional[int] = None
      contributions_fpn: Optional[int] = None
      estimated_term: Optional[str] = None
+     program_id: Optional[int]=None
+    # code:Optional[str]=None
+     
     
 
 class PreviousStudiesListDTO(BaseModel):
@@ -80,9 +85,15 @@ class PreviousStudiesListDTO(BaseModel):
     approval_request_id: Optional[int] = None
     contributions_fpn: Optional[int] = None
     estimated_term: Optional[str] = None
+    program_id: Optional[int]=None
+    code:Optional[str]=None
+    
     
    
     
     class Config:
         from_attributes = True
    
+
+
+
