@@ -94,6 +94,10 @@ class TravelRequests(Base):
     short_rubro: Mapped[Optional[str]] = mapped_column(Text)
     year_rubro: Mapped[Optional[int]] = mapped_column(Integer)
     activity_id: Mapped[Optional[int]] = mapped_column(Integer)
+    emergency_contact: Mapped[Optional[str]] = mapped_column(Text)
+    emergency_phone: Mapped[Optional[str]] = mapped_column(Text)
+    emergency_relationship: Mapped[Optional[str]] = mapped_column(Text)
+    
 
     user: Mapped[Optional[Users]] = relationship('Users')
     travel_status: Mapped[Optional['TravelStatus']] = relationship('TravelStatus')
