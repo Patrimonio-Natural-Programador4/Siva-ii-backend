@@ -10,7 +10,7 @@ from repository import CapacityAssessments
 from repository import UsuariosRepository
 from services import SolicitudesAprobacionService
 
-CATEGORIA_APROBACION_CAPACITY_ASSESSMENT = "APP_TDR"
+CATEGORIA_APROBACION_CAPACITY_ASSESSMENT = "APP_EC"
 
 
 def listar(db: Session) -> list[CapacityAssessmentsBase]:
