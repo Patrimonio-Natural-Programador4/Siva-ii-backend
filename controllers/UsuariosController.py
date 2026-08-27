@@ -11,7 +11,7 @@ from pathlib import Path
 # from repository import UsuariosRepository
 from services import UsuariosService
 from database.database import DbSession
-# from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase
+from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase
 import msal
 from fastapi.responses import JSONResponse
 from fastapi import status
@@ -98,6 +98,31 @@ SCOPE = ["https://graph.microsoft.com/.default"]
 
 
 
+
+@router.post("")
+def crear_usuario(usuario: UsuariosCreateBase, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    try:
+        response_request = UsuariosService.crear_usuario(usuario, db)
+        
+        if response_request.solicitud_exitosa:
+            return JSONResponse(
+                content=response_request.dict(),
+                status_code=status.HTTP_201_CREATED
+            )
+        else:
+            return JSONResponse(
+                content=response_request.dict(),
+                status_code=status.HTTP_409_CONFLICT
+            )
+        # return RolesService.crear_rol(rol, db)
+    except HTTPException as e:
+        print(f"HTTPException: {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
 @router.get("")
 def listar_usuarios(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return UsuariosService.listar_usuarios(db)
@@ -144,12 +169,6 @@ def random_password(length=12):
 @router.get("/msf")
 def listar_usuarios(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     # configure_scopes()
-
-
-
-    """
-    Lista hasta los primeros 'max_users' usuarios activos de un grupo de Azure AD, excluyendo ciertos IDs.
-    """
     try:
         group_id = os.getenv("grupo_usuarios")
         access_token = get_access_token()  # Debes tener esta función implementada

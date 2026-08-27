@@ -142,9 +142,17 @@ class ViajesCreate(BaseModel):
     soporte_informe: Optional[str] = None
     ruta_soporte_informe: Optional[str] = None
     relacion_facturas: Optional[bool] = None
-    id_regional: Optional[int] = None
+    id_actividad: Optional[int] = None
+    contacto_emergencia: Optional[str] = None
+    telefono_emergencia: Optional[str] = None
+    parentesco_emergencia: Optional[str] = None
     id_programa: Optional[int] = None
     valor_anticipo: Optional[decimal.Decimal] = None
+    rubro_corto: Optional[str] = None
+    rubro: Optional[str] = None
+    actividad: Optional[str] = None
+    anio_rubro: Optional[int] = None
+    id_rubro: Optional[int] = None
     class Config:
         from_attributes = True
 
@@ -161,12 +169,12 @@ class ViajesListSP(BaseModel):
     dos_o_mas_personas: Optional[bool] = None
     valor_anticipo: Optional[decimal.Decimal] = None
     estado: Optional[str] = None
-    id_estado: Optional[int] = None,
-    pendiente_mi_aprobacion: Optional[bool] = None,
-    id_viaje: Optional[int] = None,
-    id_usuario: Optional[int] = None,
-    id_solicitud_aprobacion_legalizacion: Optional[int] = None,
-    id_solicitud_aprobacion: Optional[int] = None,
+    id_estado: Optional[int] = None
+    pendiente_mi_aprobacion: Optional[bool] = None
+    id_viaje: Optional[int] = None
+    id_usuario: Optional[int] = None
+    id_solicitud_aprobacion_legalizacion: Optional[int] = None
+    id_solicitud_aprobacion: Optional[int] = None
     tipo_solicitud_aprobacion: Optional[str] = None
     guid_usr: Optional[uuid.UUID] = None
     orden_actual_solicitud: Optional[int] = None

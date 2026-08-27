@@ -1,21 +1,26 @@
 from fastapi import BackgroundTasks
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
 from dto.ViajesDTO import ViajesCreate, ViajesListSP
+from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
 from entity.travel_accommodations import TravelAccommodations
 from entity.travel_itineraries import TravelItineraries
 from entity.travel_requests import TravelRequests
 from entity.travel_status import TravelStatus
-from repository import ConceptoAnticiposRepository, EntidadBancariaRepository, RegionsRepository, RoleApprovalSupervisorUsersRepository, TipoCuentaRepository, UsersProgramsRepository, UsersProgramsRepository, UsuariosRepository, ViajesHotelRepository, ViajesItinerarioRepository, ViajesRepository, ProgramsRepository
+from entity.banks import Banks
+from entity.account_types import AccountTypes
+from repository import ConceptoAnticiposRepository, EntidadBancariaRepository, RegionsRepository, RoleApprovalSupervisorUsersRepository, RubrosRepository, TipoCuentaRepository, UsersProgramsRepository, UsersProgramsRepository, UsuariosRepository, ViajesHotelRepository, ViajesItinerarioRepository, ViajesRepository, ProgramsRepository
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from datetime import date, datetime, time
 from jinja2 import Environment, FileSystemLoader
-from services import SolicitudesAprobacionService
+from services import SolicitudesAprobacionService, NotificacionesService
+from entity.users import Users
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
 
@@ -24,14 +29,13 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
     try:
        
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        anio_actual = date.today().year
         # usuario.habilitar_solicitud_viaje = False
-        db.commit()
         fecha_actual = date.today()
         viajes = ViajesRepository.numero_viajes(db)
         nuevo_viaje = TravelRequests()
 
         nuevo_viaje.code = f"V-{fecha_actual.year}-{viajes + 1:02d}"
-        nuevo_viaje.travel_start_date = fecha_actual
         nuevo_viaje.created_at = datetime.now()
         nuevo_viaje.created_by_user_id = usuario.id
         nuevo_viaje.traveler_user_id = usuario.id
@@ -49,9 +53,9 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.country = viaje.pais
         nuevo_viaje.is_guest = viaje.es_invitado
         nuevo_viaje.guest_name = viaje.persona_invitada
-        nuevo_viaje.guest_document = viaje.documento_persona_invitada
+        nuevo_viaje.guest_document = viaje.documento_persona_invitada if viaje.es_invitado else usuario.identification_number
         nuevo_viaje.guest_phone = viaje.telefono_persona_invitada
-        nuevo_viaje.guest_email = viaje.correo_persona_invitada
+        nuevo_viaje.guest_email = viaje.correo_persona_invitada if viaje.es_invitado else usuario.email
         nuevo_viaje.supervisor_approval_role_id = viaje.id_rol_aprobacion_supervisor
         nuevo_viaje.supervisor_user_id = viaje.id_supervisor_aprueba
         nuevo_viaje.additional_comments = viaje.observaciones_adicionales
@@ -59,6 +63,15 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.mentioned_user_ids = viaje.id_usuarios_mencion
         nuevo_viaje.program_id = viaje.id_programa
         nuevo_viaje.advance_amount = viaje.valor_anticipo
+        nuevo_viaje.rubro_id = viaje.id_rubro
+        nuevo_viaje.activity_id = viaje.id_actividad
+        nuevo_viaje.year_rubro = anio_actual
+        nuevo_viaje.short_rubro = viaje.rubro_corto
+        nuevo_viaje.emergency_contact = viaje.contacto_emergencia
+        nuevo_viaje.emergency_phone = viaje.telefono_emergencia
+        nuevo_viaje.emergency_relationship = viaje.parentesco_emergencia
+        nuevo_viaje.traveler_birth_date = viaje.fecha_nacimiento_viajero
+
         # if(viaje.es_invitado):
         #     nuevo_viaje.traveler_birth_date = viaje.fecha_nacimiento_viajero
         # else:
@@ -84,12 +97,12 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             actualizar_hotel_viaje(nuevo_viaje.travel_request_id, viaje.hotel, db)
         if viaje.itinerario:
             actualizar_itinerario_viaje(nuevo_viaje.travel_request_id, viaje.itinerario, db)
-        if viaje.anticipo.detalle:
-            tiene_anticipo = True
-            viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
-            viaje.anticipo.nombre_tercero = f"{usuario.first_name} {usuario.other_name} {usuario.last_name} {usuario.other_last_name}"
-            # AnticiposService.actualizar_anticipo(1, nuevo_viaje.travel_request_id, viaje.anticipo, db, usuario.id_usuario)
-            # actualizar_anticipo(nuevo_viaje.id_viaje, viaje.anticipo, db)
+        # if viaje.anticipo.detalle:
+        #     tiene_anticipo = True
+        #     viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
+        #     viaje.anticipo.nombre_tercero = f"{usuario.first_name} {usuario.other_name} {usuario.last_name} {usuario.other_last_name}"
+        #     # AnticiposService.actualizar_anticipo(1, nuevo_viaje.travel_request_id, viaje.anticipo, db, usuario.id_usuario)
+        #     # actualizar_anticipo(nuevo_viaje.id_viaje, viaje.anticipo, db)
 
 
         if viaje.enviar_aprobacion:
@@ -114,9 +127,27 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, False, db)
             # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, True, db)
             # viajeDTO = viajeCreateDTO(nuevo_viaje, itinerario, hoteles, anticipo, reintegro, db)
+            # Resolviendo nombre y apellidos del solicitante
+            nombre_usuario = ' '.join(
+                part.strip()
+                for part in [usuario.first_name, usuario.other_name or '', usuario.last_name, usuario.other_last_name or '']
+                if part and part.strip()
+            )
+            
+            # Resolviendo nombre del banco
+            entidad_bancaria = ""
+            if nuevo_viaje.bank_id:
+                bank_row = db.query(Banks).filter(Banks.bank_id == nuevo_viaje.bank_id).first()
+                if bank_row:
+                    entidad_bancaria = bank_row.bank
+            
+            # Resolviendo tipo de cuenta
+            tipo_cuenta = ""
+            if nuevo_viaje.account_type_id:
+                acc_type_row = db.query(AccountTypes).filter(AccountTypes.account_type_id == nuevo_viaje.account_type_id).first()
+                if acc_type_row:
+                    tipo_cuenta = acc_type_row.account_type
 
-<<<<<<< Updated upstream
-=======
             # Calcular número de días e itinerario horas
             nro_dias = 0
             nro_horas = 0
@@ -158,41 +189,39 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "anticipo": viaje.anticipo,
                 "historialAprobacionSolicitud": historialAprobacionSolicitud
             }
->>>>>>> Stashed changes
 
             env = Environment(loader=FileSystemLoader(''))
-            # template = env.get_template('templates/notificacion_sv.html')
-            # html_out = template.render(**vars(viajeDTO), 
-            # historialAprobacionSolicitud=historialAprobacionSolicitud)
-            # destinatarios = []
-            # # destinatarios.append(usuario.correo)
+            template = env.get_template('templates/notificacion_sv.html')
+            html_out = template.render(**template_data)
 
-            # ids_usuarios_notificacion = [nuevo_viaje.id_supervisor_aprueba]
-            # ids_usuarios_notificacion.append(usuario.id_usuario)
-
-
-
-            # usuariosDelegado = FlujosAprobacionService.buscar_delegacion_por_usuario(nuevo_viaje.id_supervisor_aprueba, nuevo_viaje.id_rol_aprobacion_supervisor, db)
-            # usuariosNotificacion = UsuariosRepository.obtener_por_ids(usuariosDelegado + ids_usuarios_notificacion + nuevo_viaje.id_usuarios_mencion, db)
-            # for usuario in usuariosNotificacion:
-            #     if usuario.correo not in destinatarios:
-            #         destinatarios.append(usuario.correo)
+            # Obtener destinatarios de correo
+            destinatarios = []
+            if nuevo_viaje.supervisor_user_id:
+                supervisor = db.query(Users).filter(Users.id == nuevo_viaje.supervisor_user_id).first()
+                if supervisor and supervisor.email:
+                    destinatarios.append(supervisor.email)
             
+            if usuario and usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
 
-            # to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
-            # print("to_recipients", to_recipients)
+            if nuevo_viaje.mentioned_user_ids:
+                for m_id in nuevo_viaje.mentioned_user_ids:
+                    m_user = db.query(Users).filter(Users.id == m_id).first()
+                    if m_user and m_user.email and m_user.email not in destinatarios:
+                        destinatarios.append(m_user.email)
 
-            # background_tasks.add_task(
-            #     NotificacionesService.solicitud_viaje,
-            #     f"Solicitud de viaje {nuevo_viaje.codigo} enviada por aprobación",
-            #     to_recipients,
-            #     html_out,
-            #     "",
-            #     "",
-            #     db
-            # )
-                
-            # NotificacionesService.solicitud_viaje(f"Solicitud de viaje {nuevo_viaje.codigo} enviada por aprobación", to_recipients, html_out, "", "", db)
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Solicitud de viaje {nuevo_viaje.code} enviada por aprobación",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
 
 
         respuesta.identity = nuevo_viaje.travel_request_id
@@ -206,8 +235,6 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         )
         # raise PruebaCreationError(str(e))
 
-<<<<<<< Updated upstream
-=======
 def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
@@ -409,8 +436,6 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         # raise PruebaCreationError(str(e))
 
 
->>>>>>> Stashed changes
-
 def actualizar_itinerario_viaje(viaje_id: int, itinerarioList: list[ViajesItinerarioBase], db: Session, validar_eliminacion: bool = True) -> None:
     try:
         # Add new itinerario
@@ -545,7 +570,7 @@ def actualizar_hotel_viaje(viaje_id: int, hotelList: list[ViajesHotelBase], db: 
 
 
 def obtener_viaje_por_id(guuid: str, db: Session) -> ViajesCreate:
-    viajeDb = ViajesRepository.obtener_viaje_por_id(guuid, db)
+    viajeDb = ViajesRepository.obtener_por_guid(guuid, db)
     itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viajeDb.travel_request_id, db)
     hoteles = ViajesHotelRepository.listar_hoteles_por_viaje(viajeDb.travel_request_id, db)
     viajeDTO = viajeCreateDTO(viajeDb, itinerario, hoteles, db)
@@ -589,7 +614,16 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         motivo_anulo=None,
         fecha_anulo=None,
         objetivo=viajeDb.activity_purpose,
-        # Mapea los demás campos necesarios
+        rubro_corto=viajeDb.short_rubro,
+        actividad=f"{viajeDb.activity.code} - {viajeDb.activity.description}" if viajeDb.activity else None,
+        rubro=viajeDb.rubro.rubros if viajeDb.rubro else None,
+        anio_rubro=viajeDb.year_rubro,
+        id_rubro=viajeDb.rubro_id,
+        id_actividad=viajeDb.activity_id,
+        contacto_emergencia=viajeDb.emergency_contact,
+        telefono_emergencia=viajeDb.emergency_phone,
+        parentesco_emergencia=viajeDb.emergency_relationship,
+        fecha_nacimiento_viajero=viajeDb.traveler_birth_date,
     )
     for it in itinerario:
         viajeDTO.itinerario.append(
@@ -742,6 +776,152 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
     return viajeDTO
 
 
+def procesar_accion_solicitud_aprobacion(accion: AccionSolicitudAprobacion, usuario_guid: str, id_categoria: int, db: Session, background_tasks: BackgroundTasks) -> ResponseRequest:
+    try:
+        usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        if not usuario:
+            raise PruebaNotFoundError("Usuario no encontrado")
+
+        
+        # if accion.tipo_accion == "SOLICITUD_AJUSTADA" and usuario_guid.strip() == str(accion.viaje.guid_msft) and accion.tipo_solicitud == "SV":
+        #     actualizar_viaje(accion.viaje.guid, accion.viaje, db, usuario_guid, background_tasks, False)
+        
+        respuesta = SolicitudesAprobacionService.actualizar_ruta(accion, id_categoria, usuario.id, db, accion.viaje.id_supervisor_aprueba, accion.viaje.id_viaje)
+        if respuesta.solicitud_exitosa:
+            viaje = ViajesRepository.obtener_por_guid_id_solicitud_aprobacion(accion.viaje.guid, accion.id_solicitud_aprobacion, db)
+            
+            itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viaje.travel_request_id, db)
+            hoteles = ViajesHotelRepository.listar_hoteles_por_viaje(viaje.travel_request_id, db)
+            # anticipos = AnticiposDetalleRepository.listar_anticipos_por_viaje(viajeDb.id_viaje, db)
+            
+            notificacion_pagos = False
+            destinatarios = []
+            historialAprobacionSolicitud = []
+            historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.travel_request_id, id_categoria, db)
+            if accion.tipo_solicitud == CATEGORIA_APROBACION_SOLICITUD_VIAJE:
+                viaje.travel_status_id = 4 if respuesta.mensaje == "RUTA_COMPLETA" else 2 if respuesta.mensaje == "EN_PROCESO" else 3 if respuesta.mensaje == "AJUSTES" else viaje.travel_status_id
+
+                
+                
+               
+                
+                destinatarios.append(usuario.email)
+
+               
+                # if viaje.travel_status_id == 3:
+                #     destinatarios.append(viaje.user.email)
+                # else:
+                #     emailUsuariosRuta = SolicitudesAprobacionService.obtener_usuarios_ruta(viaje.approval_request_id, db, viaje.supervisor_user_id)
+                #     for email in emailUsuariosRuta:
+                #         destinatarios.append(email)
+
+                # if accion.id_usuarios_mencion:
+                #     usuariosNotificacion = UsuariosRepository.obtener_por_ids(accion.id_usuarios_mencion, db)
+                #     for usuario in usuariosNotificacion:
+                #         if usuario.email not in destinatarios:
+                #             destinatarios.append(usuario.email)
+                    
+                    # notificacion_pagos = SolicitudesAprobacionService.validar_solicitud_para_pago(viaje.id_solicitud_aprobacion, db, viaje.id_supervisor_aprueba)
+                # mensaje = f"Anticipo disponible para pago asociado a la solicitud de viaje {viaje.code}" if notificacion_pagos and pago_realizado == False else f"El anticipo asociado a la solicitud de viaje {viaje.code} ha sido pagado" if notificacion_pagos and pago_realizado else f"Solicitud de viaje {viaje.code} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.code} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.code} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+                # # mensaje = f"Solicitud de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+               
+                # to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+                # print("Destinatarios:", to_recipients)
+                # print("mensaje", mensaje)
+
+                
+
+                
+
+
+
+            # if id_categoria == 2:
+            #     accion.viaje.enviar_aprobacion = False
+            #     # if(viaje.id_viajero == usuario.id_usuario and (accion.orden_actual == 1 or accion.orden_actual is None)):
+            #     #     guardar_legalizacion(accion.viaje, db)
+            #     viaje.travel_status_id = 7 if respuesta.mensaje == "RUTA_COMPLETA" else 5 if respuesta.mensaje == "EN_PROCESO" else 6 if respuesta.mensaje == "AJUSTES" else viaje.travel_status_id
+            #     # if accion.asigna_presupuesto_viajes:
+            #     #     for anticipo in accion.viaje.reintegro.detalle:
+            #     #         # anticipo_detalle_db = db.query(Anticipos).filter(
+            #     #         #     Anticipos.id_anticipo == anticipo.id_anticipo,
+            #     #         #     Anticipos.id_relacion == viaje.id_viaje
+            #     #         # ).first()
+            #     #         anticipo_detalle_db = AnticiposService.obtener_detalle_anticipo_por_id(anticipo.id_anticipo_detalle, db)
+            #     #         if anticipo_detalle_db:
+            #     #             anticipo_detalle_db.id_proyecto = anticipo.id_proyecto
+            #     #             anticipo_detalle_db.id_rubro = anticipo.id_rubro
+            #     #             db.commit()
+            #     #             db.refresh(anticipo_detalle_db)
+                
+            #     notificacion_pagos = False
+            #     pago_realizado = False
+
+            # #     if accion.agrega_documento_contable:
+            # #         if accion.viaje.reintegro.documento_contable:
+            # #             AnticiposService.actualizaEstadoAnticipo(accion.viaje.reintegro.id_anticipo, 2, db, True, True, usuario_guid)
+            # #             notificacion_pagos = True
+
+            # #     if accion.habilitar_pago and viaje.id_estado_solicitud == 5:
+            # #         AnticiposService.actualizaEstadoAnticipo(accion.viaje.reintegro.id_anticipo, 3, db)
+            # #         pago_realizado = True
+            # #         notificacion_pagos = True
+                
+            # #     historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.id_viaje, 2, db)
+                
+               
+                
+            # #     destinatarios.append(usuario.correo)
+
+               
+            # #     if viaje.id_estado_solicitud == 6:
+            # #         destinatarios.append(viaje.usuario.correo)
+            # #     else:
+            # #         emailUsuariosRuta = SolicitudesAprobacionService.obtener_usuarios_ruta(viaje.id_solicitud_aprobacion_legalizacion, db, viaje.id_supervisor_aprueba)
+            # #         for email in emailUsuariosRuta:
+            # #             destinatarios.append(email)
+                    
+            # #         # notificacion_pagos = SolicitudesAprobacionService.validar_solicitud_para_pago(viaje.id_solicitud_aprobacion, db, viaje.id_supervisor_aprueba)
+            # #     # mensaje = f"Anticipo disponible para pago asociado a la solicitud de viaje {viaje.codigo}" if notificacion_pagos else f"Solicitud de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+            # #     # mensaje = f"Solicitud de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 2 else f"Solicitud de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 4 else f"Solicitud de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 3 else ""
+               
+            # #     to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+            # #     print("Destinatarios:", to_recipients)
+
+            # #     mensaje = f"Reintegro disponible para pago asociado a la solicitud de viaje {viaje.codigo}" if notificacion_pagos and pago_realizado == False else f"El reintegro asociado a la solicitud de viaje {viaje.codigo} ha sido pagado" if notificacion_pagos and pago_realizado else f"Legalización de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 5 else f"Legalización de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 7 else f"Legalización de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 6 else ""
+            # #     # mensaje = f"Reintegro disponible para pago asociado a la solicitud de viaje {viaje.codigo}" if notificacion_pagos else f"Legalización de viaje {viaje.codigo} enviada por aprobación" if viaje.id_estado_solicitud == 5 else f"Legalización de viaje {viaje.codigo} aprobada" if viaje.id_estado_solicitud == 7 else f"Legalización de viaje {viaje.codigo} requerimiento de ajustes" if viaje.id_estado_solicitud == 6 else ""
+
+            # # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viaje.id_viaje, False, db)
+            # # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viaje.id_viaje, True, db)
+            # # viajeDTO = viajeCreateDTO(viaje, itinerario, hoteles, anticipo, reintegro, db)
+
+            # # env = Environment(loader=FileSystemLoader(''))
+            # # template = env.get_template('templates/notificacion_sv.html')
+            # # html_out = template.render(**vars(viajeDTO), 
+            # # historialAprobacionSolicitud=historialAprobacionSolicitud)
+            # # print("mensaje: XXX : ", mensaje)
+            # # background_tasks.add_task(
+            # #     NotificacionesService.solicitud_viaje,
+            # #     mensaje,
+            # #     to_recipients,
+            # #     html_out,
+            # #     "",
+            # #     "",
+            # #     db
+            # # )
+            # # NotificacionesService.solicitud_viaje(mensaje, to_recipients, html_out, "", "", db)
+
+            db.commit()
+        return respuesta
+    except Exception as e:
+        logging.error(f"Failed to process accion solicitud aprobacion: {str(e)}")
+        return ResponseRequest(
+            solicitud_exitosa=False,
+            mensaje=str(e)
+        )   
+
+
 
 
 def listar_viajes_por_usuario_sp(
@@ -861,6 +1041,7 @@ def lista_generica_lista_viajes(db: Session) -> list[Listados]:
 def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid, db)
+        anio = datetime.now().year
         if not usuario:
             return None
         departamentos = RegionsRepository.listar_departamentos(db)
@@ -868,18 +1049,11 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
         tipo_cuenta = TipoCuentaRepository.listar(db)
         entidades_bancarias = EntidadBancariaRepository.listar(db)
         conceptos_anticipos = ConceptoAnticiposRepository.listar(db)
-        # talleres = TalleresRepository.listar(db)
-        # proyectos =  db.query(Proyectos).all()
-        # rubros = db.query(ProyectosRubros).filter(or_(ProyectosRubros.activo == True, ProyectosRubros.activo == None)).all()
-        # salarios_minimos = db.query(SalarioMinimo).filter(SalarioMinimo.anio == date.today().year).all()
         supervisor = RoleApprovalSupervisorUsersRepository.listar(db)
         programas = UsersProgramsRepository.listar_programas_por_usuario(int(usuario.id), db)
         usuarios = UsuariosRepository.listar(db)
+        rubros = RubrosRepository.listar_rubros_sp(str(anio), db)
         # usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
-        # regionales = db.query(Regionales).all()
-        # cuentas_fcds = TipoCuentaRepository.listar_cuentas_fcds(db)
-        # tipo_documento_administrativo = db.query(TipoDocumentoAdministrativo).all()
-        # otro_tipo_documento_administrativo = db.query(OtroTipoDocumentoAdministrativo).all()
         listados = []
         lista_catalogos = []
 
@@ -984,7 +1158,7 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
             )
         )
 
-        # #Supervisores
+        #Supervisores
         lista_catalogos = []
         for p in supervisor:
             lista_catalogos.append(
@@ -1004,6 +1178,8 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
                 lista_generica=lista_catalogos
             )
         )
+
+        #Programas usuario
 
         lista_catalogos = []
         for programa in programas:
@@ -1025,6 +1201,7 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
             )
         )
 
+        #Usuarios
         lista_catalogos = []
         for usuario in usuarios:
             lista_catalogos.append(
@@ -1045,7 +1222,27 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
             )
         )
 
-        
+        #Rubros
+        lista_catalogos = []
+        for p in rubros:
+            lista_catalogos.append(
+                ListaGenerica(
+                    identity=p.rubro_id,
+                    valor=f"{p.short_rubro} ({p.rubro})",
+                    idrelacion=p.activity_id,
+                    valorNumerico=anio,
+                    valor_referencia=f"{p.activity_code} - {p.activity_description}",
+                    valor_referencia2=p.short_rubro
+                )
+            )
+
+        listados.append(
+            Listados(
+                id_listado=8,
+                tipo_listado="Rubros",
+                lista_generica=lista_catalogos
+            )
+        )
 
 
 

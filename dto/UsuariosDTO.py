@@ -21,9 +21,19 @@ class UsuariosBase(BaseModel):
 class UsuariosCreateBase(BaseModel):
     guid_msft: uuid.UUID | None = None
     guid: uuid.UUID | None = None
+    first_name: str
+    last_name: str
+    identification_type: int
+    identification_number: int
+    email: str
+    is_active: bool
+    other_name: Optional[str] = None
+    other_last_name: Optional[str] = None
+    position: Optional[str] = None
+    program_ids: list[int] = Field(default_factory=list)
+    role_ids: list[int] = Field(default_factory=list)
     full_name: Optional[str] = None
-    email: Optional[str] = None
-
+    is_guest: Optional[bool] = None
 
 class UsuariosEdicionBase(BaseModel):
     guid: uuid.UUID
@@ -55,3 +65,4 @@ class UsuariosUpdateBase(BaseModel):
     position: Optional[str] = None
     program_ids: list[int] = Field(default_factory=list)
     role_ids: list[int] = Field(default_factory=list)
+    reenviar_invitacion: Optional[bool] = None

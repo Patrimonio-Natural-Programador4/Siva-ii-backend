@@ -42,4 +42,4 @@ class AnticiposReintegrosBase(BaseModel):
     documento_soporte: Optional[str] = None
     ruta_documento_soporte: Optional[str] = None
     class Config:
-        orm_mode = True
+        from_attributes = True

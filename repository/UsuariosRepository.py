@@ -55,6 +55,18 @@ def listar_roles_por_usuario(id_user: int, db: Session) -> list[int]:
         raise PruebaNotFoundError(str(e))
     
 
+def obtener_usuario_por_id(id_user: list[int], db: Session) -> list[Users]:
+    try:
+        usuarios = db.query(Users).filter(Users.id.in_(id_user)).all()
+        return usuarios
+
+    except Exception as e:
+        logging.error(f"Failed to get users by id: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+
+
+#Modulos a los que tiene acceso el usuario
 def obtener_model_type_por_usuario(id_user: int, db: Session) -> str:
     try:
         row = (
@@ -76,6 +88,7 @@ def obtener_model_type_por_usuario(id_user: int, db: Session) -> str:
     except Exception as e:
         logging.error(f"Failed to infer model_type for user roles: {str(e)}")
         return "App\\Models\\User"
+
 
 
 def reemplazar_programas_usuario(
@@ -104,6 +117,29 @@ def reemplazar_programas_usuario(
         logging.error(f"Failed to replace user programs: {str(e)}")
         raise PruebaNotFoundError(str(e))
  
+def obtener_por_correo(correo: str, db: Session) -> Users:
+    try:
+        usuario = db.query(Users).filter(Users.email == correo).first()
+        if not usuario:
+            print(f"Usuario with email {correo} not found")
+            return None
+            # raise PruebaNotFoundError(f"Usuario with email {correo} not found")
+        return usuario
+    except Exception as e:
+        logging.error(f"Failed to get user by email: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+def obtener_por_identificacion(identification_number: int, db: Session) -> Users:
+    try:
+        usuario = db.query(Users).filter(Users.identification_number == identification_number).first()
+        if not usuario:
+            print(f"Usuario with identification number {identification_number} not found")
+            return None
+            # raise PruebaNotFoundError(f"Usuario with identification number {identification_number} not found")
+        return usuario
+    except Exception as e:
+        logging.error(f"Failed to get user by identification number: {str(e)}")
+        raise PruebaNotFoundError(str(e))
 
 
 def reemplazar_roles_usuario(
