@@ -1,1 +1,30 @@
 .env
+<<<<<<< Updated upstream
+=======
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Herramientas / archivos locales
+.codegraph/
+
+# Archivos comprimidos locales
+*.zip
+EOF
+
+# venv
+
+.venv/
+>>>>>>> Stashed changes

@@ -43,6 +43,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.bank_id = viaje.id_entidad_bancaria
         nuevo_viaje.requires_tickets = viaje.requiere_tiquetes
         nuevo_viaje.requires_advance_payment = viaje.requiere_anticipo
+        nuevo_viaje.two_persons_travel = viaje.dos_o_mas_personas
         nuevo_viaje.travel_status_id = 1
         nuevo_viaje.is_international = viaje.viaje_internacional
         nuevo_viaje.country = viaje.pais
@@ -114,6 +115,50 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, True, db)
             # viajeDTO = viajeCreateDTO(nuevo_viaje, itinerario, hoteles, anticipo, reintegro, db)
 
+<<<<<<< Updated upstream
+=======
+            # Calcular número de días e itinerario horas
+            nro_dias = 0
+            nro_horas = 0
+            if nuevo_viaje.travel_start_date and nuevo_viaje.travel_end_date:
+                delta = nuevo_viaje.travel_end_date - nuevo_viaje.travel_start_date
+                nro_dias = delta.days
+                nro_horas = nro_dias * 24
+
+            template_data = {
+                "codigo": nuevo_viaje.code,
+                "usuario": nombre_usuario,
+                "identificacion": usuario.identification_number if usuario.identification_number else "",
+                "fecha_solicitud": nuevo_viaje.created_at.strftime("%Y-%m-%d") if nuevo_viaje.created_at else date.today().strftime("%Y-%m-%d"),
+                "categoria": "Solicitud de viaje y anticipo",
+                "fecha_inicio_viaje": nuevo_viaje.travel_start_date,
+                "fecha_fin_viaje": nuevo_viaje.travel_end_date,
+                "hora_inicio": nuevo_viaje.start_time.strftime("%H:%M") if nuevo_viaje.start_time else "",
+                "hora_fin": nuevo_viaje.end_time.strftime("%H:%M") if nuevo_viaje.end_time else "",
+                "nro_dias": nro_dias,
+                "nro_horas": nro_horas,
+                "es_invitado": nuevo_viaje.is_guest,
+                "persona_invitada": nuevo_viaje.guest_name,
+                "documento_persona_invitada": nuevo_viaje.guest_document,
+                "telefono_persona_invitada": nuevo_viaje.guest_phone,
+                "correo_persona_invitada": nuevo_viaje.guest_email,
+                "fecha_nacimiento_viajero": nuevo_viaje.traveler_birth_date,
+                "viaje_internacional": nuevo_viaje.is_international,
+                "pais": nuevo_viaje.country,
+                "asociado_taller": False,
+                "requiere_anticipo": nuevo_viaje.requires_advance_payment,
+                "dos_o_mas_personas": nuevo_viaje.two_persons_travel,
+                "tipo_cuenta": tipo_cuenta,
+                "entidad_bancaria": entidad_bancaria,
+                "numero_cuenta": nuevo_viaje.account_number,
+                "objetivo_actividad": nuevo_viaje.activity_purpose,
+                "observaciones_adicionales": nuevo_viaje.additional_comments,
+                "itinerario": viaje.itinerario,
+                "hotel": viaje.hotel,
+                "anticipo": viaje.anticipo,
+                "historialAprobacionSolicitud": historialAprobacionSolicitud
+            }
+>>>>>>> Stashed changes
 
             env = Environment(loader=FileSystemLoader(''))
             # template = env.get_template('templates/notificacion_sv.html')
@@ -161,6 +206,210 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         )
         # raise PruebaCreationError(str(e))
 
+<<<<<<< Updated upstream
+=======
+def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
+    respuesta = ResponseRequest(solicitud_exitosa=True)
+    try:
+       
+        usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        viajeDb = ViajesRepository.obtener_por_guid(guid.strip(), db)
+        if not viajeDb:
+            raise PruebaNotFoundError("Viaje no encontrado")
+
+        
+        viajeDb.updated_at = datetime.now()
+        viajeDb.updated_by_user_id = usuario.id
+        viajeDb.traveler_user_id = usuario.id
+        viajeDb.travel_start_date = viaje.fecha_inicio_viaje
+        viajeDb.travel_end_date = viaje.fecha_fin_viaje
+        viajeDb.activity_purpose = viaje.objetivo
+        viajeDb.account_number = viaje.numero_cuenta
+        viajeDb.account_type_id = viaje.id_tipo_cuenta
+        viajeDb.bank_id = viaje.id_entidad_bancaria
+        viajeDb.requires_tickets = viaje.requiere_tiquetes
+        viajeDb.requires_advance_payment = viaje.requiere_anticipo
+        viajeDb.two_persons_travel = viaje.dos_o_mas_personas
+        viajeDb.is_international = viaje.viaje_internacional
+        viajeDb.country = viaje.pais
+        viajeDb.is_guest = viaje.es_invitado
+        viajeDb.guest_name = viaje.persona_invitada
+        viajeDb.guest_document = viaje.documento_persona_invitada
+        viajeDb.guest_phone = viaje.telefono_persona_invitada
+        viajeDb.guest_email = viaje.correo_persona_invitada
+        viajeDb.supervisor_approval_role_id = viaje.id_rol_aprobacion_supervisor
+        viajeDb.supervisor_user_id = viaje.id_supervisor_aprueba
+        viajeDb.additional_comments = viaje.observaciones_adicionales
+        viajeDb.mentions_json = viaje.menciones_json
+        viajeDb.mentioned_user_ids = viaje.id_usuarios_mencion
+        viajeDb.program_id = viaje.id_programa
+        viajeDb.advance_amount = viaje.valor_anticipo
+        viajeDb.rubro_id = viaje.id_rubro
+        viajeDb.activity_id = viaje.id_actividad
+        viajeDb.short_rubro = viaje.rubro_corto
+        viajeDb.emergency_contact = viaje.contacto_emergencia
+        viajeDb.emergency_phone = viaje.telefono_emergencia
+        viajeDb.emergency_relationship = viaje.parentesco_emergencia
+        viajeDb.traveler_birth_date = viaje.fecha_nacimiento_viajero
+        # if(viaje.es_invitado):
+        #     viajeDb.traveler_birth_date = viaje.fecha_nacimiento_viajero
+        # else:
+        #     viajeDb.traveler_birth_date = usuario.fecha_nacimiento
+        #     viajeDb.guest_phone = usuario.telefono
+        viajeDb.start_time = viaje.hora_inicio
+        viajeDb.end_time = viaje.hora_fin
+
+        # if viaje.guid_soporte_pasaporte.strip() != "":
+        #     tmpFile = db.query(TmpSoportes).filter(TmpSoportes.guid == viaje.guid_soporte_pasaporte).first()
+        #     if not tmpFile:
+        #         raise PruebaNotFoundError("Soporte pasaporte no encontrado")
+        #     else:
+        #         viajeDb.soporte_pasaporte = tmpFile.soporte
+        #         viajeDb.ruta_soporte_pasaporte = tmpFile.ruta_soporte
+        db.commit()
+        db.refresh(viajeDb)
+
+        tiene_anticipo = False
+
+        if viaje.hotel:
+            actualizar_hotel_viaje(viajeDb.travel_request_id, viaje.hotel, db)
+        if viaje.itinerario:
+            actualizar_itinerario_viaje(viajeDb.travel_request_id, viaje.itinerario, db)
+        # if viaje.anticipo.detalle:
+        #     tiene_anticipo = True
+        #     viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
+        #     viaje.anticipo.nombre_tercero = f"{usuario.first_name} {usuario.other_name} {usuario.last_name} {usuario.other_last_name}"
+        #     # AnticiposService.actualizar_anticipo(1, viajeDb.travel_request_id, viaje.anticipo, db, usuario.id_usuario)
+        #     # actualizar_anticipo(viajeDb.id_viaje, viaje.anticipo, db)
+
+
+        if viaje.enviar_aprobacion:
+            id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(CATEGORIA_APROBACION_SOLICITUD_VIAJE, db)
+            if not id_categoria_aprobacion:
+                raise PruebaCreationError(f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_SOLICITUD_VIAJE}")
+            id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(id_categoria_aprobacion, viajeDb.travel_request_id, usuario.id, viajeDb.code, db, viajeDb.supervisor_user_id, viajeDb.program_id)
+            viajeDb.approval_request_id = id_solicitud_aprobacion
+            viajeDb.travel_status_id = 2
+            viajeDb.current_request_order = 2
+            db.commit()
+            db.refresh(viajeDb)
+            historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viajeDb.travel_request_id, id_categoria_aprobacion, db)
+
+            itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viajeDb.travel_request_id, db)
+            hoteles = ViajesHotelRepository.listar_hoteles_por_viaje(viajeDb.travel_request_id, db)
+            # anticipos = AnticiposDetalleRepository.listar_anticipos_por_viaje(viajeDb.id_viaje, db)
+            # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, False, db)
+            # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, nuevo_viaje.travel_request_id, True, db)
+            # viajeDTO = viajeCreateDTO(nuevo_viaje, itinerario, hoteles, anticipo, reintegro, db)
+            # Resolviendo nombre y apellidos del solicitante
+            nombre_usuario = ' '.join(
+                part.strip()
+                for part in [usuario.first_name, usuario.other_name or '', usuario.last_name, usuario.other_last_name or '']
+                if part and part.strip()
+            )
+            
+            # Resolviendo nombre del banco
+            entidad_bancaria = ""
+            if viajeDb.bank_id:
+                bank_row = db.query(Banks).filter(Banks.bank_id == viajeDb.bank_id).first()
+                if bank_row:
+                    entidad_bancaria = bank_row.bank
+            
+            # Resolviendo tipo de cuenta
+            tipo_cuenta = ""
+            if viajeDb.account_type_id:
+                acc_type_row = db.query(AccountTypes).filter(AccountTypes.account_type_id == viajeDb.account_type_id).first()
+                if acc_type_row:
+                    tipo_cuenta = acc_type_row.account_type
+
+            # Calcular número de días e itinerario horas
+            nro_dias = 0
+            nro_horas = 0
+            if viajeDb.travel_start_date and viajeDb.travel_end_date:
+                delta = viajeDb.travel_end_date - viajeDb.travel_start_date
+                nro_dias = delta.days
+                nro_horas = nro_dias * 24
+
+            template_data = {
+                "codigo": viajeDb.code,
+                "usuario": nombre_usuario,
+                "identificacion": usuario.identification_number if usuario.identification_number else "",
+                "fecha_solicitud": viajeDb.created_at.strftime("%Y-%m-%d") if viajeDb.created_at else date.today().strftime("%Y-%m-%d"),
+                "categoria": "Solicitud de viaje y anticipo",
+                "fecha_inicio_viaje": viajeDb.travel_start_date,
+                "fecha_fin_viaje": viajeDb.travel_end_date,
+                "hora_inicio": viajeDb.start_time.strftime("%H:%M") if viajeDb.start_time else "",
+                "hora_fin": viajeDb.end_time.strftime("%H:%M") if viajeDb.end_time else "",
+                "nro_dias": nro_dias,
+                "nro_horas": nro_horas,
+                "es_invitado": viajeDb.is_guest,
+                "persona_invitada": viajeDb.guest_name,
+                "documento_persona_invitada": viajeDb.guest_document,
+                "telefono_persona_invitada": viajeDb.guest_phone,
+                "correo_persona_invitada": viajeDb.guest_email,
+                "fecha_nacimiento_viajero": viajeDb.traveler_birth_date,
+                "viaje_internacional": viajeDb.is_international,
+                "pais": viajeDb.country,
+                "asociado_taller": False,
+                "requiere_anticipo": viajeDb.requires_advance_payment,
+                "dos_o_mas_personas": viajeDb.two_persons_travel,
+                "tipo_cuenta": tipo_cuenta,
+                "entidad_bancaria": entidad_bancaria,
+                "numero_cuenta": viajeDb.account_number,
+                "objetivo_actividad": viajeDb.activity_purpose,
+                "observaciones_adicionales": viajeDb.additional_comments,
+                "itinerario": viaje.itinerario,
+                "hotel": viaje.hotel,
+                "historialAprobacionSolicitud": historialAprobacionSolicitud
+            }
+
+            env = Environment(loader=FileSystemLoader(''))
+            template = env.get_template('templates/notificacion_sv.html')
+            html_out = template.render(**template_data)
+
+            # Obtener destinatarios de correo
+            destinatarios = []
+            if viajeDb.supervisor_user_id:
+                supervisor = db.query(Users).filter(Users.id == viajeDb.supervisor_user_id).first()
+                if supervisor and supervisor.email:
+                    destinatarios.append(supervisor.email)
+            
+            if usuario and usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
+
+            if viajeDb.mentioned_user_ids:
+                for m_id in viajeDb.mentioned_user_ids:
+                    m_user = db.query(Users).filter(Users.id == m_id).first()
+                    if m_user and m_user.email and m_user.email not in destinatarios:
+                        destinatarios.append(m_user.email)
+
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Solicitud de viaje {viajeDb.code} enviada por aprobación",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
+
+
+        respuesta.identity = viajeDb.travel_request_id
+        respuesta.mensaje = "Viaje actualizado exitosamente"
+        return respuesta
+    except Exception as e:
+        logging.error(f"Failed to update viaje: {str(e)}")
+        return ResponseRequest(
+            solicitud_exitosa=False,
+            mensaje=str(e)
+        )
+        # raise PruebaCreationError(str(e))
+
+
+>>>>>>> Stashed changes
 
 def actualizar_itinerario_viaje(viaje_id: int, itinerarioList: list[ViajesItinerarioBase], db: Session, validar_eliminacion: bool = True) -> None:
     try:
@@ -313,6 +562,7 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         fecha_inicio_viaje=viajeDb.travel_start_date,
         fecha_fin_viaje=viajeDb.travel_end_date,
         requiere_anticipo=viajeDb.requires_advance_payment,
+        dos_o_mas_personas=viajeDb.two_persons_travel,
         fecha_solicitud=viajeDb.created_at.date() if viajeDb.created_at else None,
         requiere_tiquetes=viajeDb.requires_tickets,
         id_supervisor_aprueba=viajeDb.supervisor_user_id,

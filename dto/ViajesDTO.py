@@ -18,6 +18,8 @@ class ViajesBase(BaseModel):
     fecha_fin_viaje: Optional[datetime] = None
     fecha_solicitud: Optional[date] = None
     requiere_anticipo: Optional[bool] = None
+    dos_o_mas_personas: Optional[bool] = None
+    soporte_dos_o_mas_personas: Optional[str] = None
     numero_cuenta: Optional[str] = None
     valor_anticipo: Optional[decimal.Decimal] = None
     identificacion: Optional[int] = None
@@ -69,6 +71,8 @@ class ViajesCreate(BaseModel):
     objetivo: Optional[str] = None
     fecha_solicitud: Optional[date] = None
     requiere_anticipo: Optional[bool] = None
+    dos_o_mas_personas: Optional[bool] = None
+    soporte_dos_o_mas_personas: Optional[str] = None
     itinerario: Optional[list[ViajesItinerarioBase]] = None
     hotel: Optional[list[ViajesHotelBase]] = None
     # anticipo: Optional[list[AnticiposBase]] = None
@@ -154,6 +158,7 @@ class ViajesListSP(BaseModel):
     fecha_inicio_viaje: Optional[datetime] = None
     fecha_fin_viaje: Optional[datetime] = None
     requiere_anticipo: Optional[bool] = None
+    dos_o_mas_personas: Optional[bool] = None
     valor_anticipo: Optional[decimal.Decimal] = None
     estado: Optional[str] = None
     id_estado: Optional[int] = None,
