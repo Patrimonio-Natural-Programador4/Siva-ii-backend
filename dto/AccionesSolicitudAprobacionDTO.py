@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from dto.ViajesDTO import ViajesCreate
+from dto.CapacityAssessmentsDTO import CapacityAssessmentsCreate
 
 # acciones solicitud aprobacion
 
@@ -13,6 +14,7 @@ class AccionSolicitudAprobacion(BaseModel):
     comentarios: Optional[str] = None
     tipo_accion: Optional[str] = None
     viaje: Optional[ViajesCreate] = None
+    evaluacion_capacidades: Optional[CapacityAssessmentsCreate]
     tipo_solicitud: Optional[str] = None  
     id_usuario_ajuste: Optional[int] = None
     usuario_solicito: Optional[bool] = None

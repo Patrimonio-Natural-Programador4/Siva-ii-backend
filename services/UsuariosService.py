@@ -512,6 +512,33 @@ def obtener_usuario_para_edicion(guid: str, db: Session) -> UsuariosEdicionBase 
         raise PruebaNotFoundError(str(e))
 
 
+
+def obtener_usuario_por_correo(email: str, db: Session) -> UsuariosEdicionBase | None:
+    try:
+        usuario = UsuariosRepository.obtener_por_correo(email, db)
+        if not usuario:
+            return None
+
+        return UsuariosEdicionBase(
+            guid=usuario.guid,
+            first_name=usuario.first_name,
+            last_name=usuario.last_name,
+            identification_type=int(usuario.identification_type),
+            identification_number=int(usuario.identification_number),
+            email=usuario.email,
+            is_active=bool(usuario.is_active),
+            other_name=usuario.other_name,
+            other_last_name=usuario.other_last_name,
+            position=usuario.position,
+            id= usuario.id,
+         
+       
+        )
+    except Exception as e:
+        logging.error(f"Failed to get usuario para edicion: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+
 def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=False)
 
@@ -567,4 +594,19 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> R
         respuesta.mensaje = str(e)
         logging.error(f"Failed to update usuario: {str(e)}")
         return respuesta
+    
+    
+def programs_user ( guid: str, db: Session ) :
+    respuesta = ResponseRequest(solicitud_exitosa=False)    
+    usuario = UsuariosRepository.obtener_por_guid(guid, db)
+    try:
+        programs = UsersProgramsRepository.listado_programas_por_usuario(usuario.id,db)
+        return programs
+    except Exception as e:
+        respuesta.solicitud_exitosa = False
+        respuesta.mensaje = str(e)
+        logging.error(f"Failed to validate usuario: {str(e)}")
+        return respuesta
+    
+    
     

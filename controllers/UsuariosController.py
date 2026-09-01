@@ -19,6 +19,8 @@ import json
 import requests
 import jwt
 
+from repository  import UsersProgramsRepository
+
 router = APIRouter(
     prefix="/usuarios",
     tags=["Usuarios"]
@@ -158,6 +160,15 @@ def listar_usuarios(db: DbSession, user_oid: str = Depends(get_current_user_oid)
     # except Exception as e:
     #     print(f"Error fetching users: {e}")
     #     raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.get("/buscar")
+def obtener_usuario_por_correo(correo: str, db: DbSession):
+    usuario = UsuariosService.obtener_usuario_por_correo(correo, db)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return usuario
 
 
 def random_password(length=12):
@@ -362,3 +373,20 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: DbSession, us
 
     status_code = status.HTTP_404_NOT_FOUND if response_request.mensaje == 'Usuario no encontrado' else status.HTTP_400_BAD_REQUEST
     return JSONResponse(content=response_request.dict(), status_code=status_code)
+
+
+@router.get("/{guid}/programas")
+def programas_usuario(guid: str,  db: DbSession,):
+    #usuario = UsuariosService.obtener_por_guid(guid,db)
+    #return usuario
+    return  UsuariosService.programs_user(guid,db)
+
+
+#@router.get("/{email}")
+#def obtener_usuario_por_correo(email: str, db: DbSession):
+#    usuario = UsuariosService.obtener_usuario_por_correo(email, db)
+#    if not usuario:
+#        raise HTTPException(status_code=404, detail='Usuario no encontrado')
+#    return usuario
+
+
