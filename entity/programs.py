@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 from entity.capacity_assessments import CapacityAssessments
+from entity.previous_studies import PreviousStudies
 
 class Programs(Base):
     __tablename__ = 'programs'
@@ -30,3 +31,4 @@ class Programs(Base):
     
 # Relaciones simples
     capacity_assessments_programa:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="programa")
+    previous_studies_programs: Mapped[list["PreviousStudies"]] = relationship("PreviousStudies", back_populates="programs")
