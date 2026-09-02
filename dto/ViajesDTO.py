@@ -73,6 +73,7 @@ class ViajesCreate(BaseModel):
     requiere_anticipo: Optional[bool] = None
     dos_o_mas_personas: Optional[bool] = None
     soporte_dos_o_mas_personas: Optional[str] = None
+    nombre_archivo_dos_o_mas_personas: Optional[str] = None
     itinerario: Optional[list[ViajesItinerarioBase]] = None
     hotel: Optional[list[ViajesHotelBase]] = None
     # anticipo: Optional[list[AnticiposBase]] = None
