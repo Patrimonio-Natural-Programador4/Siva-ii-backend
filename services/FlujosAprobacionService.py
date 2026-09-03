@@ -234,7 +234,8 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
             categoria=flujo.category.name if flujo.category else None,
             id_categoria=flujo.category_id if flujo.category else None,
             rutas=rutas,
-            id_programa=flujo.program_id if flujo.program_id is not None else None
+            id_programa=flujo.program_id if flujo.program_id is not None else None,
+            template=flujo.template if flujo.template else None
         )
     except Exception as e:
         logging.error(f"Failed to get flujo_aprobacion: {str(e)}")
@@ -422,6 +423,29 @@ def obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(id_categoria: in
 
     except Exception as e:
         logging.error(f"Failed to list roles: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+    
+def obtener_flujo_aprobacion_x_categoria(id_categoria: int, id_usuario: int, db: Session) -> list[VWApprovalFlows]:
+    try:
+        print("id_categoria", id_categoria)
+        print("id_usuario", id_usuario)
+        flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            VWApprovalFlows.user_id == id_usuario,
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.step_order == 1
+        ).all()
+
+        if not flujos_aprobacionDB:
+            return []
+        else:
+            return flujos_aprobacionDB
+
+    except Exception as e:
+        logging.error(f"Failed to list flujos: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
 

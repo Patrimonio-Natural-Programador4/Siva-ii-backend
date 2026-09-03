@@ -286,9 +286,9 @@ def validar_usuario_existente(correo: str, db: Session, identificacion: str = No
 def cuerpo_correo_invitados() -> str:
     url_sistema = os.getenv("url_sistema")
     return f"""
-            Estimado consultor,\n\n
+            Estimado usuario,\n\n
 
-            Le damos la bienvenida a Patrimonio Natural \n\n.
+            Le damos la bienvenida al sistema de información para Visión Amazonía (SIVA II) \n\n.
 
             Por medio de este correo le indicamos las instrucciones de acceso a la plataforma de gestión donde usted tramitará sus cuentas de cobro, informes mensuales de actividades y avances de productos. También podrá tramitar solicitudes de viaje para cumplir con compromisos contractuales si así lo requieren.\n\n
 

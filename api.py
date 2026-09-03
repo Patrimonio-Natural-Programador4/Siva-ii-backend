@@ -1,4 +1,5 @@
-from controllers import SolicitudesAprobacionController, ViajesController
+from controllers import SolicitudesAprobacionController, TdrController, ViajesController
+from controllers import WordParametersController
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -164,6 +165,7 @@ def register_routes(app: FastAPI):
     app.include_router(SolicitudesAprobacionController.router, dependencies=auth_dependency)
     app.include_router(ViajesController.router, dependencies=auth_dependency)
     app.include_router(DocumentsApprovalController.router, dependencies=auth_dependency)
+    # app.include_router(WordParametersController.router, dependencies=auth_dependency)
     app.include_router(PadsController.router, dependencies=auth_dependency)
     app.include_router(ImplementerTypesController.router, dependencies=auth_dependency)
     app.include_router( ModalitiesController.router  , dependencies=auth_dependency)
@@ -179,6 +181,7 @@ def register_routes(app: FastAPI):
     app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
     
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
+    app.include_router(TdrController.router, dependencies=auth_dependency)
     
     
 

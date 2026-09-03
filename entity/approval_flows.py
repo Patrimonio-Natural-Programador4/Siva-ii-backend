@@ -68,3 +68,4 @@ class ApprovalFlow(Base):
         back_populates="approval_flow",
         cascade="all, delete-orphan"
     )
+    template: Mapped[Optional[str]] = mapped_column(Text)
