@@ -25,3 +25,8 @@ EOF
 # venv
 
 .venv/
+
+controllers/WordParametersController.py
+demo_doc/
+services/WordParametersService.py
+soportes/tdr/priview_tdr/
