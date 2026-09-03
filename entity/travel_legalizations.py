@@ -31,3 +31,7 @@ class TravelLegalization(Base):
 
     travel_request: Mapped['TravelRequests'] = relationship('TravelRequests')
     regimen_type: Mapped['RegimenType'] = relationship('RegimenType')
+
+    @property
+    def regimen_name(self) -> Optional[str]:
+        return self.regimen_type.name if self.regimen_type else None

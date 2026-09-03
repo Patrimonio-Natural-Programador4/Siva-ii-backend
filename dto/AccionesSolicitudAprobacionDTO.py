@@ -14,7 +14,7 @@ class AccionSolicitudAprobacion(BaseModel):
     comentarios: Optional[str] = None
     tipo_accion: Optional[str] = None
     viaje: Optional[ViajesCreate] = None
-    evaluacion_capacidades: Optional[CapacityAssessmentsCreate]
+    evaluacion_capacidades: Optional[CapacityAssessmentsCreate] = None
     tipo_solicitud: Optional[str] = None  
     id_usuario_ajuste: Optional[int] = None
     usuario_solicito: Optional[bool] = None
