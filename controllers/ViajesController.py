@@ -3,7 +3,7 @@ import os
 import datetime
 from pathlib import Path
 import io
-
+import sys
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import status
@@ -13,7 +13,7 @@ from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ResponseRequest import ResponseRequest
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
 from dto.ViajesDTO import ViajesCreate
-from services import ViajesService, SolicitudesAprobacionService
+from services import ViajesService, SolicitudesAprobacionService, SoportesService
 from jinja2 import Environment, FileSystemLoader
 from entity.travel_requests import TravelRequests
 from entity.programs import Programs
@@ -167,7 +167,6 @@ def accion_solicitud_aprobacion(
         print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 def generar_pdf_solicitud(viaje_db: TravelRequests, db: DbSession) -> bytes:
     # Cargar DLLs de WeasyPrint en Windows si es necesario
     if os.name == "nt" and hasattr(os, "add_dll_directory"):
@@ -177,6 +176,28 @@ def generar_pdf_solicitud(viaje_db: TravelRequests, db: DbSession) -> bytes:
                 os.add_dll_directory(tesseract_path)
             except Exception as e:
                 print(f"Error adding DLL directory: {e}")
+
+    # Configuración para ver los archivos PDF en macOS.
+    if sys.platform == "darwin":
+        import ctypes.util
+        orig_find = ctypes.util.find_library
+
+        def _custom_find_library(name):
+            res = orig_find(name)
+            if res:
+                return res
+            search_dirs = ["/opt/homebrew/lib", "/usr/local/lib"]
+            candidates = [name, f"lib{name}" if not name.startswith("lib") else name]
+            suffixes = ["", ".dylib", ".0.dylib", "-0.dylib", ".so"]
+            for d in search_dirs:
+                for base in candidates:
+                    for suffix in suffixes:
+                        candidate = os.path.join(d, base + suffix)
+                        if os.path.exists(candidate):
+                            return candidate
+            return None
+
+        ctypes.util.find_library = _custom_find_library
 
     from weasyprint import HTML
 
@@ -310,6 +331,32 @@ def obtener_pdf_solicitud(guid: str, db: DbSession):
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": f"inline; filename={filename}"}
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{guid}/archivo/dos_o_mas_personas")
+def descargar_archivo_dos_o_mas_personas(guid: str, db: DbSession):
+    from fastapi.responses import FileResponse
+    try:
+        viaje_db = db.query(TravelRequests).filter(TravelRequests.guid == guid).first()
+        if not viaje_db:
+            raise HTTPException(status_code=404, detail="Viaje no encontrado")
+            
+        path_document = SoportesService.obtener_path_document_viaje(viaje_db.travel_request_id, db)
+        nombre_archivo = SoportesService.obtener_nombre_archivo_viaje(viaje_db.travel_request_id, db)
+        
+        if not path_document or not os.path.exists(path_document):
+            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            
+        return FileResponse(
+            path=path_document,
+            filename=nombre_archivo,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except HTTPException as e:
         raise e

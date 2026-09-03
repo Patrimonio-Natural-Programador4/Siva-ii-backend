@@ -19,7 +19,7 @@ from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from datetime import date, datetime, time
 from jinja2 import Environment, FileSystemLoader
-from services import SolicitudesAprobacionService, NotificacionesService
+from services import SolicitudesAprobacionService, NotificacionesService, SoportesService
 from entity.users import Users
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
@@ -47,6 +47,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.bank_id = viaje.id_entidad_bancaria
         nuevo_viaje.requires_tickets = viaje.requiere_tiquetes
         nuevo_viaje.requires_advance_payment = viaje.requiere_anticipo
+        nuevo_viaje.two_persons_travel = viaje.dos_o_mas_personas
         nuevo_viaje.travel_status_id = 1
         nuevo_viaje.is_international = viaje.viaje_internacional
         nuevo_viaje.country = viaje.pais
@@ -96,6 +97,19 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             actualizar_hotel_viaje(nuevo_viaje.travel_request_id, viaje.hotel, db)
         if viaje.itinerario:
             actualizar_itinerario_viaje(nuevo_viaje.travel_request_id, viaje.itinerario, db)
+
+        # Guardar archivo Excel de listado de invitados si aplica
+        if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
+            try:
+                SoportesService.guardar_excel_viaje(
+                    codigo_viaje=nuevo_viaje.code,
+                    base64_data=viaje.soporte_dos_o_mas_personas,
+                    db=db,
+                    travel_request_id=nuevo_viaje.travel_request_id
+                )
+            except ValueError as e:
+                logging.warning(f"Error al guardar archivo Excel del viaje {nuevo_viaje.code}: {e}")
+
         # if viaje.anticipo.detalle:
         #     tiene_anticipo = True
         #     viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
@@ -177,6 +191,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "pais": nuevo_viaje.country,
                 "asociado_taller": False,
                 "requiere_anticipo": nuevo_viaje.requires_advance_payment,
+                "dos_o_mas_personas": nuevo_viaje.two_persons_travel,
                 "tipo_cuenta": tipo_cuenta,
                 "entidad_bancaria": entidad_bancaria,
                 "numero_cuenta": nuevo_viaje.account_number,
@@ -254,6 +269,7 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         viajeDb.bank_id = viaje.id_entidad_bancaria
         viajeDb.requires_tickets = viaje.requiere_tiquetes
         viajeDb.requires_advance_payment = viaje.requiere_anticipo
+        viajeDb.two_persons_travel = viaje.dos_o_mas_personas
         viajeDb.is_international = viaje.viaje_internacional
         viajeDb.country = viaje.pais
         viajeDb.is_guest = viaje.es_invitado
@@ -299,6 +315,19 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
             actualizar_hotel_viaje(viajeDb.travel_request_id, viaje.hotel, db)
         if viaje.itinerario:
             actualizar_itinerario_viaje(viajeDb.travel_request_id, viaje.itinerario, db)
+
+        # Guardar archivo Excel de listado de invitados si aplica
+        if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
+            try:
+                SoportesService.guardar_excel_viaje(
+                    codigo_viaje=viajeDb.code,
+                    base64_data=viaje.soporte_dos_o_mas_personas,
+                    db=db,
+                    travel_request_id=viajeDb.travel_request_id
+                )
+            except ValueError as e:
+                logging.warning(f"Error al guardar archivo Excel del viaje {viajeDb.code}: {e}")
+
         # if viaje.anticipo.detalle:
         #     tiene_anticipo = True
         #     viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
@@ -376,6 +405,7 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
                 "pais": viajeDb.country,
                 "asociado_taller": False,
                 "requiere_anticipo": viajeDb.requires_advance_payment,
+                "dos_o_mas_personas": viajeDb.two_persons_travel,
                 "tipo_cuenta": tipo_cuenta,
                 "entidad_bancaria": entidad_bancaria,
                 "numero_cuenta": viajeDb.account_number,
@@ -430,7 +460,6 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
             mensaje=str(e)
         )
         # raise PruebaCreationError(str(e))
-
 
 
 def actualizar_itinerario_viaje(viaje_id: int, itinerarioList: list[ViajesItinerarioBase], db: Session, validar_eliminacion: bool = True) -> None:
@@ -584,6 +613,7 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         fecha_inicio_viaje=viajeDb.travel_start_date,
         fecha_fin_viaje=viajeDb.travel_end_date,
         requiere_anticipo=viajeDb.requires_advance_payment,
+        dos_o_mas_personas=viajeDb.two_persons_travel,
         fecha_solicitud=viajeDb.created_at.date() if viajeDb.created_at else None,
         requiere_tiquetes=viajeDb.requires_tickets,
         id_supervisor_aprueba=viajeDb.supervisor_user_id,
@@ -620,6 +650,8 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         telefono_emergencia=viajeDb.emergency_phone,
         parentesco_emergencia=viajeDb.emergency_relationship,
         fecha_nacimiento_viajero=viajeDb.traveler_birth_date,
+        valor_anticipo=viajeDb.advance_amount,
+        nombre_archivo_dos_o_mas_personas=SoportesService.obtener_nombre_archivo_viaje(viajeDb.travel_request_id, db),
     )
     for it in itinerario:
         viajeDTO.itinerario.append(

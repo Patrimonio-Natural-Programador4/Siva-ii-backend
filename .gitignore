@@ -1,12 +1,10 @@
-
-
 .env
-
 # Python
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *.pyo
+*.pyc
 
 # Entornos virtuales
 .venv/
@@ -23,7 +21,6 @@ env/
 # Archivos comprimidos locales
 *.zip
 EOF
-
 
 # venv
 
