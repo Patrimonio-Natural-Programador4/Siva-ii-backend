@@ -12,7 +12,7 @@ from dependencies.auth_dependency import get_current_user_oid
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ResponseRequest import ResponseRequest
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
-from dto.ViajesDTO import ViajesCreate
+from dto.ViajesDTO import ViajesCalendar, ViajesCreate
 from services import ViajesService, SolicitudesAprobacionService, SoportesService
 from jinja2 import Environment, FileSystemLoader
 from entity.travel_requests import TravelRequests
@@ -20,6 +20,8 @@ from entity.programs import Programs
 from entity.activities import Activities
 from entity.rubros import Rubros
 from repository.ViajesItinerarioRepository import listar_itinerarios_por_viaje
+from html import escape
+from services import TravelLegalizationsService
 
 router = APIRouter(
     prefix='/viajes',
@@ -105,6 +107,16 @@ def listar_viajes_filtro(
     # return ViajesService.listar_viajes(db, decoded["oid"])
 
 
+@router.get("/calendario", response_model=list[ViajesCalendar])
+def listar_viajes_calendario(
+    db: DbSession,
+    fechaDesde: datetime.date = Query(...),
+    fechaHasta: datetime.date = Query(...),
+    user_oid: str = Depends(get_current_user_oid)
+) -> list[ViajesCalendar]:
+    return ViajesService.listar_viajes_calendario(db, fechaDesde, fechaHasta)
+
+
 @router.get("/{guid}/detalle", response_model=ViajesCreate)
 def obtener_viaje(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)) -> ViajesCreate:
     viaje = ViajesService.obtener_viaje_por_id(guid, db)
@@ -167,166 +179,317 @@ def accion_solicitud_aprobacion(
         print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-def generar_pdf_solicitud(viaje_db: TravelRequests, db: DbSession) -> bytes:
-    # Cargar DLLs de WeasyPrint en Windows si es necesario
-    if os.name == "nt" and hasattr(os, "add_dll_directory"):
-        tesseract_path = r"C:\Program Files\Tesseract-OCR"
-        if os.path.isdir(tesseract_path):
-            try:
-                os.add_dll_directory(tesseract_path)
-            except Exception as e:
-                print(f"Error adding DLL directory: {e}")
+# def generar_pdf_solicitud(viaje_db: TravelRequests, db: DbSession) -> bytes:
+#     # Cargar DLLs de WeasyPrint en Windows si es necesario
+#     if os.name == "nt" and hasattr(os, "add_dll_directory"):
+#         tesseract_path = r"C:\Program Files\Tesseract-OCR"
+#         if os.path.isdir(tesseract_path):
+#             try:
+#                 os.add_dll_directory(tesseract_path)
+#             except Exception as e:
+#                 print(f"Error adding DLL directory: {e}")
 
-    # Configuración para ver los archivos PDF en macOS.
-    if sys.platform == "darwin":
-        import ctypes.util
-        orig_find = ctypes.util.find_library
+#     # Configuración para ver los archivos PDF en macOS.
+#     if sys.platform == "darwin":
+#         import ctypes.util
+#         orig_find = ctypes.util.find_library
 
-        def _custom_find_library(name):
-            res = orig_find(name)
-            if res:
-                return res
-            search_dirs = ["/opt/homebrew/lib", "/usr/local/lib"]
-            candidates = [name, f"lib{name}" if not name.startswith("lib") else name]
-            suffixes = ["", ".dylib", ".0.dylib", "-0.dylib", ".so"]
-            for d in search_dirs:
-                for base in candidates:
-                    for suffix in suffixes:
-                        candidate = os.path.join(d, base + suffix)
-                        if os.path.exists(candidate):
-                            return candidate
-            return None
+#         def _custom_find_library(name):
+#             res = orig_find(name)
+#             if res:
+#                 return res
+#             search_dirs = ["/opt/homebrew/lib", "/usr/local/lib"]
+#             candidates = [name, f"lib{name}" if not name.startswith("lib") else name]
+#             suffixes = ["", ".dylib", ".0.dylib", "-0.dylib", ".so"]
+#             for d in search_dirs:
+#                 for base in candidates:
+#                     for suffix in suffixes:
+#                         candidate = os.path.join(d, base + suffix)
+#                         if os.path.exists(candidate):
+#                             return candidate
+#             return None
 
-        ctypes.util.find_library = _custom_find_library
+#         ctypes.util.find_library = _custom_find_library
 
-    from weasyprint import HTML
+#     from weasyprint import HTML
 
-    # Cargar nombres/descripciones relacionadas
-    proyecto_name = "N/A"
-    if viaje_db.program_id:
-        program = db.query(Programs).filter(Programs.id == viaje_db.program_id).first()
-        if program:
-            proyecto_name = program.name
+#     # Cargar nombres/descripciones relacionadas
+#     proyecto_name = "N/A"
+#     if viaje_db.program_id:
+#         program = db.query(Programs).filter(Programs.id == viaje_db.program_id).first()
+#         if program:
+#             proyecto_name = program.name
 
-    actividad_name = "N/A"
-    if viaje_db.activity_id:
-        activity = db.query(Activities).filter(Activities.id == viaje_db.activity_id).first()
-        if activity:
-            actividad_name = activity.description
+#     actividad_name = "N/A"
+#     if viaje_db.activity_id:
+#         activity = db.query(Activities).filter(Activities.id == viaje_db.activity_id).first()
+#         if activity:
+#             actividad_name = activity.description
 
-    rubro_code = viaje_db.short_rubro or "N/A"
-    if (not rubro_code or rubro_code == "N/A") and viaje_db.rubro_id:
-        rubro = db.query(Rubros).filter(Rubros.id == viaje_db.rubro_id).first()
-        if rubro:
-            rubro_code = rubro.rubros
+#     rubro_code = viaje_db.short_rubro or "N/A"
+#     if (not rubro_code or rubro_code == "N/A") and viaje_db.rubro_id:
+#         rubro = db.query(Rubros).filter(Rubros.id == viaje_db.rubro_id).first()
+#         if rubro:
+#             rubro_code = rubro.rubros
 
-    solicitante_name = viaje_db.user.full_name if viaje_db.user else "N/A"
-    cargo = viaje_db.user.position if (viaje_db.user and viaje_db.user.position) else ""
-    solicitante_cargo = f"{solicitante_name} - {cargo}" if cargo else solicitante_name
+#     solicitante_name = viaje_db.user.full_name if viaje_db.user else "N/A"
+#     cargo = viaje_db.user.position if (viaje_db.user and viaje_db.user.position) else ""
+#     solicitante_cargo = f"{solicitante_name} - {cargo}" if cargo else solicitante_name
 
-    # Cargar itinerarios usando el repositorio existente
-    itinerarios_db = listar_itinerarios_por_viaje(viaje_db.travel_request_id, db)
+#     # Cargar itinerarios usando el repositorio existente
+#     itinerarios_db = listar_itinerarios_por_viaje(viaje_db.travel_request_id, db)
     
-    lugar_ejecucion = viaje_db.location_report or "N/A"
-    if (not lugar_ejecucion or lugar_ejecucion == "N/A") and itinerarios_db:
-        if itinerarios_db[0].destination_municipality:
-            lugar_ejecucion = itinerarios_db[0].destination_municipality.name
+#     lugar_ejecucion = viaje_db.location_report or "N/A"
+#     if (not lugar_ejecucion or lugar_ejecucion == "N/A") and itinerarios_db:
+#         if itinerarios_db[0].destination_municipality:
+#             lugar_ejecucion = itinerarios_db[0].destination_municipality.name
 
-    if viaje_db.is_guest:
-        traveler_name = viaje_db.guest_name
-        traveler_id = viaje_db.guest_document
-        traveler_phone = viaje_db.guest_phone
-        traveler_email = viaje_db.guest_email
-        emergency_name = solicitante_name
-        emergency_phone = viaje_db.user.mobile_phone if viaje_db.user else ""
-        emergency_relation = "Compañero(a) de trabajo"
-    else:
-        traveler_name = solicitante_name
-        traveler_id = viaje_db.user.identification_number if viaje_db.user else ""
-        traveler_phone = viaje_db.user.mobile_phone if viaje_db.user else ""
-        traveler_email = viaje_db.user.email if viaje_db.user else ""
-        emergency_name = ""
-        emergency_phone = ""
-        emergency_relation = ""
+#     if viaje_db.is_guest:
+#         traveler_name = viaje_db.guest_name
+#         traveler_id = viaje_db.guest_document
+#         traveler_phone = viaje_db.guest_phone
+#         traveler_email = viaje_db.guest_email
+#         emergency_name = solicitante_name
+#         emergency_phone = viaje_db.user.mobile_phone if viaje_db.user else ""
+#         emergency_relation = "Compañero(a) de trabajo"
+#     else:
+#         traveler_name = solicitante_name
+#         traveler_id = viaje_db.user.identification_number if viaje_db.user else ""
+#         traveler_phone = viaje_db.user.mobile_phone if viaje_db.user else ""
+#         traveler_email = viaje_db.user.email if viaje_db.user else ""
+#         emergency_name = ""
+#         emergency_phone = ""
+#         emergency_relation = ""
 
-    traveler_id_formatted = ""
-    if traveler_id:
-        try:
-            val = int(str(traveler_id).replace(",", "").replace(".", ""))
-            traveler_id_formatted = f"{val:,}"
-        except:
-            traveler_id_formatted = str(traveler_id)
+#     traveler_id_formatted = ""
+#     if traveler_id:
+#         try:
+#             val = int(str(traveler_id).replace(",", "").replace(".", ""))
+#             traveler_id_formatted = f"{val:,}"
+#         except:
+#             traveler_id_formatted = str(traveler_id)
 
-    traveler_birth_date = ""
-    if viaje_db.traveler_birth_date:
-        traveler_birth_date = viaje_db.traveler_birth_date.strftime("%m/%d/%Y")
+#     traveler_birth_date = ""
+#     if viaje_db.traveler_birth_date:
+#         traveler_birth_date = viaje_db.traveler_birth_date.strftime("%m/%d/%Y")
 
-    fecha_solicitud = ""
-    if viaje_db.created_at:
-        months_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-        dt = viaje_db.created_at
-        fecha_solicitud = f"{dt.day:02d}-{months_es[dt.month - 1]}-{str(dt.year)[-2:]}"
+#     fecha_solicitud = ""
+#     if viaje_db.created_at:
+#         months_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+#         dt = viaje_db.created_at
+#         fecha_solicitud = f"{dt.day:02d}-{months_es[dt.month - 1]}-{str(dt.year)[-2:]}"
 
-    itinerario_list = []
-    for it in itinerarios_db:
-        leg_date = ""
-        if it.travel_date:
-            months_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-            leg_date = f"{it.travel_date.day:02d}-{months_es[it.travel_date.month - 1]}-{str(it.travel_date.year)[-2:]}"
+#     itinerario_list = []
+#     for it in itinerarios_db:
+#         leg_date = ""
+#         if it.travel_date:
+#             months_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+#             leg_date = f"{it.travel_date.day:02d}-{months_es[it.travel_date.month - 1]}-{str(it.travel_date.year)[-2:]}"
         
-        itinerario_list.append({
-            "municipio_origen": it.origin_municipality.name if it.origin_municipality else "",
-            "municipio_destino": it.destination_municipality.name if it.destination_municipality else "",
-            "fecha": leg_date,
-            "hora": it.departure_time or "",
-            "observaciones": it.comments or ""
-        })
+#         itinerario_list.append({
+#             "municipio_origen": it.origin_municipality.name if it.origin_municipality else "",
+#             "municipio_destino": it.destination_municipality.name if it.destination_municipality else "",
+#             "fecha": leg_date,
+#             "hora": it.departure_time or "",
+#             "observaciones": it.comments or ""
+#         })
 
-    # Logo local
-    logo_path = Path(__file__).parent.parent.parent / "siva-ii-frontend" / "public" / "images" / "logos" / "logo_patrimonio.png"
-    logo_uri = ""
-    if logo_path.is_file():
-        logo_uri = logo_path.as_uri()
+#     # Logo local
+#     logo_path = Path(__file__).parent.parent.parent / "siva-ii-frontend" / "public" / "images" / "logos" / "logo_patrimonio.png"
+#     logo_uri = ""
+#     if logo_path.is_file():
+#         logo_uri = logo_path.as_uri()
 
-    template_dir = Path(__file__).parent.parent / "templates"
-    jinja_env = Environment(loader=FileSystemLoader(template_dir))
-    template = jinja_env.get_template("solicitud_viaje.html")
+#     template_dir = Path(__file__).parent.parent / "templates"
+#     jinja_env = Environment(loader=FileSystemLoader(template_dir))
+#     template = jinja_env.get_template("solicitud_viaje.html")
 
-    html_content = template.render(
-        logo_path=logo_uri,
-        fecha_solicitud=fecha_solicitud,
-        proyecto_name=proyecto_name,
-        actividad_name=actividad_name,
-        rubro_code=rubro_code,
-        solicitante_cargo=solicitante_cargo,
-        lugar_ejecucion=lugar_ejecucion,
-        objetivo=viaje_db.activity_purpose,
-        itinerario=itinerario_list,
-        traveler_name=traveler_name,
-        traveler_id=traveler_id,
-        traveler_id_formatted=traveler_id_formatted,
-        traveler_birth_date=traveler_birth_date,
-        traveler_phone=traveler_phone,
-        traveler_email=traveler_email,
-        emergency_name=emergency_name,
-        emergency_phone=emergency_phone,
-        emergency_relation=emergency_relation
+#     html_content = template.render(
+#         logo_path=logo_uri,
+#         fecha_solicitud=fecha_solicitud,
+#         proyecto_name=proyecto_name,
+#         actividad_name=actividad_name,
+#         rubro_code=rubro_code,
+#         solicitante_cargo=solicitante_cargo,
+#         lugar_ejecucion=lugar_ejecucion,
+#         objetivo=viaje_db.activity_purpose,
+#         itinerario=itinerario_list,
+#         traveler_name=traveler_name,
+#         traveler_id=traveler_id,
+#         traveler_id_formatted=traveler_id_formatted,
+#         traveler_birth_date=traveler_birth_date,
+#         traveler_phone=traveler_phone,
+#         traveler_email=traveler_email,
+#         emergency_name=emergency_name,
+#         emergency_phone=emergency_phone,
+#         emergency_relation=emergency_relation
+#     )
+
+#     pdf_bytes = HTML(string=html_content).write_pdf()
+#     return pdf_bytes
+
+TEMPLATE_DIR = Path(__file__).parent.parent / "templates"
+env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+WEASYPRINT_WINDOWS_DLL_CANDIDATES = [
+    os.getenv("TESSERACT_OCR_PATH")
+]
+_weasyprint_dll_handles = []
+_weasyprint_runtime_initialized = False
+url_sistema = os.getenv("url_sistema")
+PDF_HEADER_LOGO_URL = f"{url_sistema}/images/logos/logo_patrimonio.png"
+pdf_styles_template = env.get_template("pdf_styles.css")
+PDF_PAGE_STYLES = pdf_styles_template.render() 
+pdf_styles_template = env.get_template("pdf_styles_horizontal.css")
+PDF_PAGE_STYLES_HORIZONTAL = pdf_styles_template.render() 
+
+
+
+def plantilla_pdf_solicitud_html(viaje, historial_aprobacion_solicitud, end_point: str) -> str:
+    template = env.get_template('solicitud_viaje.html')
+    return template.render(
+        **vars(viaje),
+        historialAprobacionSolicitud=historial_aprobacion_solicitud,
+        end_point=end_point
     )
 
-    pdf_bytes = HTML(string=html_content).write_pdf()
-    return pdf_bytes
+def plantilla_pdf_legalizacion_html(viaje, historial_aprobacion_solicitud, end_point: str, legalizaciones) -> str:
+    template = env.get_template('legalizacion_viaje.html')
+    return template.render(
+        **vars(viaje),
+        historialAprobacionSolicitud=historial_aprobacion_solicitud,
+        end_point=end_point,
+        legalizaciones=legalizaciones
+    )
 
+def cargar_clases_weasyprint():
+    verificar_entorno_weasyprint()
+
+    try:
+        from weasyprint import CSS, HTML
+    except OSError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "WeasyPrint no pudo cargar las librerias nativas requeridas. "
+                "Configure WEASYPRINT_DLL_DIR apuntando a una carpeta que contenga GTK/Pango, "
+                "por ejemplo C:\\Program Files\\Tesseract-OCR."
+            )
+        ) from exc
+
+    return CSS, HTML
+
+
+def verificar_entorno_weasyprint() -> None:
+    global _weasyprint_runtime_initialized
+
+    if _weasyprint_runtime_initialized:
+        return
+
+    if os.name == "nt" and hasattr(os, "add_dll_directory"):
+        seen_paths = set()
+        for candidate in WEASYPRINT_WINDOWS_DLL_CANDIDATES:
+            if not candidate or not os.path.isdir(candidate):
+                continue
+
+            normalized_candidate = os.path.normpath(candidate)
+            if normalized_candidate in seen_paths:
+                continue
+
+            seen_paths.add(normalized_candidate)
+            _weasyprint_dll_handles.append(os.add_dll_directory(normalized_candidate))
+
+    _weasyprint_runtime_initialized = True
+
+
+
+def generar_pdf_solicitud(codigo: str, html_out: str) -> bytes:
+    return generar_pdf(codigo, html_out)
+
+def generar_pdf_legalizacion(codigo: str, html_out: str) -> bytes:
+    CSS, HTML = cargar_clases_weasyprint()
+    html_with_pdf_header = (
+        '<div class="pdf-page-header-left">'
+        f'<img class="pdf-page-header__logo" src="{PDF_HEADER_LOGO_URL}" alt="Logo" />'
+        '</div>'
+        '<div class="pdf-page-header-right">'
+        f'<span class="pdf-page-header__title">FORMATO LEGALIZACIÓN DE ANTICIPO <br>Solicitud Nro: {escape(codigo)}</span>'
+        '</div>'
+        f'{html_out}'
+    )
+    css = CSS(string=PDF_PAGE_STYLES_HORIZONTAL)
+    return HTML(string=html_with_pdf_header, base_url=str(TEMPLATE_DIR)).write_pdf(
+        stylesheets=[css]
+    )
+
+def generar_pdf(codigo: str, html_out: str) -> bytes:
+    CSS, HTML = cargar_clases_weasyprint()
+    html_with_pdf_header = (
+        '<div class="pdf-page-header-left">'
+        f'<img class="pdf-page-header__logo" src="{PDF_HEADER_LOGO_URL}" alt="Logo" />'
+        '</div>'
+        '<div class="pdf-page-header-right">'
+        f'<span class="pdf-page-header__title">FORMATO SOLICITUD DE TIQUETES PATRIMONIO NATURAL <br>Solicitud Nro: {escape(codigo)}</span>'
+        '</div>'
+        f'{html_out}'
+    )
+    css = CSS(string=PDF_PAGE_STYLES)
+    return HTML(string=html_with_pdf_header, base_url=str(TEMPLATE_DIR)).write_pdf(
+        stylesheets=[css]
+    )
 
 @router.get("/{guid}/pdf_solicitud/documento")
 def obtener_pdf_solicitud(guid: str, db: DbSession):
     try:
-        viaje_db = db.query(TravelRequests).filter(TravelRequests.guid == guid).first()
-        if not viaje_db:
+        viaje = ViajesService.obtener_viaje_por_id(guid, db)
+        if not viaje:
             raise HTTPException(status_code=404, detail="Viaje no encontrado")
-            
-        pdf_bytes = generar_pdf_solicitud(viaje_db, db)
+        end_point = f"{os.getenv('url_endpoint')}{os.getenv('endpoint')}"
+        id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion("SOL_VIA_ANT", db)
+        historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.id_viaje, id_categoria, db)
         
-        filename = f"solicitud_{viaje_db.code or viaje_db.travel_request_id}.pdf"
+        html_out = plantilla_pdf_solicitud_html(
+            viaje,
+            historialAprobacionSolicitud,
+            end_point
+        )
+                
+        pdf_bytes = generar_pdf_solicitud(viaje.codigo, html_out)
+        
+        filename = f"solicitud_{viaje.codigo or viaje.id_viaje}.pdf"
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"inline; filename={filename}"}
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.get("/{guid}/pdf_legalizacion/documento")
+def obtener_pdf_legalizacion(guid: str, db: DbSession):
+    try:
+        viaje = ViajesService.obtener_viaje_por_id(guid, db)
+        if not viaje:
+            raise HTTPException(status_code=404, detail="Viaje no encontrado")
+        end_point = f"{os.getenv('url_endpoint')}{os.getenv('endpoint')}"
+        id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion("SOL_VIA_ANT", db)
+        historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.id_viaje, id_categoria, db)
+        legalizaciones = TravelLegalizationsService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
+        html_out = plantilla_pdf_legalizacion_html(
+            viaje,
+            historialAprobacionSolicitud,
+            end_point,
+            legalizaciones
+        )
+                
+        pdf_bytes = generar_pdf_legalizacion(viaje.codigo, html_out)
+        
+        filename = f"legalizacion_{viaje.codigo or viaje.id_viaje}.pdf"
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",

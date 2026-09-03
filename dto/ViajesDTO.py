@@ -154,6 +154,7 @@ class ViajesCreate(BaseModel):
     actividad: Optional[str] = None
     anio_rubro: Optional[int] = None
     id_rubro: Optional[int] = None
+    programa: Optional[str] = None
     class Config:
         from_attributes = True
 

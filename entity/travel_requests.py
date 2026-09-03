@@ -9,6 +9,7 @@ from database.database import Base
 from sqlalchemy import Sequence, text
 from sqlalchemy.orm import mapped_column, Mapped
 
+from entity.programs import Programs
 from entity.travel_status import TravelStatus
 from entity.users import Users
 from entity.activities import Activities
@@ -104,5 +105,6 @@ class TravelRequests(Base):
     travel_status: Mapped[Optional['TravelStatus']] = relationship('TravelStatus')
     activity: Mapped[Optional['Activities']] = relationship('Activities')
     rubro: Mapped[Optional['Rubros']] = relationship('Rubros')
+    program: Mapped[Optional['Programs']] = relationship('Programs')
     # travel_accommodations: Mapped[list['TravelAccommodations']] = relationship('TravelAccommodations', back_populates='travel_request')
     # travel_itineraries: Mapped[list['TravelItineraries']] = relationship('TravelItineraries', back_populates='travel_request')

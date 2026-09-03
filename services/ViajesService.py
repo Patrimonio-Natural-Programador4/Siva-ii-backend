@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
-from dto.ViajesDTO import ViajesCreate, ViajesListSP
+from dto.ViajesDTO import ViajesCalendar, ViajesCreate, ViajesListSP
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
@@ -174,13 +174,14 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "usuario": nombre_usuario,
                 "identificacion": usuario.identification_number if usuario.identification_number else "",
                 "fecha_solicitud": nuevo_viaje.created_at.strftime("%Y-%m-%d") if nuevo_viaje.created_at else date.today().strftime("%Y-%m-%d"),
-                "categoria": "Solicitud de viaje y anticipo",
+                "categoria": f"{nuevo_viaje.activity.code} - {nuevo_viaje.activity.description}" if nuevo_viaje.activity else None,
                 "fecha_inicio_viaje": nuevo_viaje.travel_start_date,
                 "fecha_fin_viaje": nuevo_viaje.travel_end_date,
                 "hora_inicio": nuevo_viaje.start_time.strftime("%H:%M") if nuevo_viaje.start_time else "",
                 "hora_fin": nuevo_viaje.end_time.strftime("%H:%M") if nuevo_viaje.end_time else "",
                 "nro_dias": nro_dias,
                 "nro_horas": nro_horas,
+                "rubro": f"{nuevo_viaje.short_rubro} - {nuevo_viaje.rubro.rubros}",
                 "es_invitado": nuevo_viaje.is_guest,
                 "persona_invitada": nuevo_viaje.guest_name,
                 "documento_persona_invitada": nuevo_viaje.guest_document,
@@ -199,7 +200,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "observaciones_adicionales": nuevo_viaje.additional_comments,
                 "itinerario": viaje.itinerario,
                 "hotel": viaje.hotel,
-                "anticipo": viaje.anticipo,
+                "valor_anticipo": viaje.valor_anticipo if viaje.valor_anticipo else 0,
                 "historialAprobacionSolicitud": historialAprobacionSolicitud
             }
 
@@ -652,6 +653,8 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         fecha_nacimiento_viajero=viajeDb.traveler_birth_date,
         valor_anticipo=viajeDb.advance_amount,
         nombre_archivo_dos_o_mas_personas=SoportesService.obtener_nombre_archivo_viaje(viajeDb.travel_request_id, db),
+        programa=viajeDb.program.name if viajeDb.program else None,
+        identificacion=viajeDb.user.identification_number if viajeDb.user else None
     )
     for it in itinerario:
         viajeDTO.itinerario.append(
@@ -1007,6 +1010,14 @@ def listar_viajes_por_usuario_sp(
         return viajes
     except Exception as e:
         logging.error(f"Failed to list viajes: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+
+def listar_viajes_calendario(db: Session, fecha_desde: date, fecha_hasta: date) -> list[ViajesCalendar]:
+    try:
+        return ViajesRepository.listar_viajes_calendario(db, fecha_desde, fecha_hasta)
+    except Exception as e:
+        logging.error(f"Failed to list viajes calendar: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
 

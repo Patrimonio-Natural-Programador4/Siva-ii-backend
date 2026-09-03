@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Viaje</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 5mm 0 0 10mm;
+            font-size: 11px;
+            color: #333333;
+        }
+        
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        .main-table td, .main-table th {
+            border: 1px solid #7f7f7f;
+            padding: 6px 10px;
+            vertical-align: middle;
+        }
+
+        .header-logo-cell {
+            width: 40%;
+            text-align: center;
+            padding: 10px !important;
+        }
+        
+        .header-logo {
+            max-height: 45px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+        
+        .header-title-cell {
+            width: 60%;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            color: #000000;
+        }
+
+        .section-title-row td {
+            background-color: #D9D9D9;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11px;
+            color: #000000;
+            padding: 5px !important;
+            text-transform: uppercase;
+        }
+
+        .label-cell {
+            background-color: #F2F2F2;
+            font-weight: bold;
+            text-align: center;
+            width: 25%;
+            color: #000000;
+        }
+
+        .value-cell {
+            background-color: #FFFFFF;
+            text-align: left;
+            width: 25%;
+        }
+
+        /* Column Headers for Table */
+        .table-header-cell {
+            background-color: #B4C6E7;
+            font-weight: bold;
+            text-align: center;
+            color: #000000;
+            font-size: 10px;
+            padding: 5px !important;
+        }
+
+        .table-data-cell {
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .table-data-cell.left-align {
+            text-align: left;
+        }
+
+        .table-footer-cell {
+            background-color: #cecece;
+            color: #000000;
+            font-weight: 500;
+            text-align: center;
+            font-size: 10px;
+            padding: 5px !important;
+        }
+
+        .email-link {
+            color: #0563C1;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Section I: INFORMACIÓN GENERAL -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="4">I. INFORMACIÓN GENERAL</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Fecha de Solicitud:</td>
+            <td class="value-cell">{{ fecha_solicitud or '' }}</td>
+            <td class="label-cell">Nombre del Solicitante:</td>
+            <td class="value-cell">{{ usuario or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Proyecto:</td>
+            <td class="value-cell">{{ programa or '' }}</td>
+            <td class="label-cell">Categoria de Gasto (Actividad):</td>
+            <td class="value-cell">{{ actividad or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Cod. Rubro presupuestal:</td>
+            <td class="value-cell">{{ rubro_corto or '' }} - {{ rubro or '' }}</td>
+            <td class="label-cell">Nombre del taller o evento:</td>
+            <td class="value-cell">{{ objetivo or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Fecha de inicio:</td>
+            <td class="value-cell">{{ fecha_inicio_viaje or '' }}</td>
+            <td class="label-cell">Fecha de finalización:</td>
+            <td class="value-cell">{{ fecha_fin_viaje or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Requiere anticipo:</td>
+            <td class="value-cell">{{ 'Sí' if requiere_anticipo else 'No' }}
+                <br>
+
+                <b>Tipo de cuenta:</b> {{ tipo_cuenta }}<br>
+                <b>Entidad bancaria:</b> {{ entidad_bancaria }}<br>
+                <b>Número de cuenta:</b> {{ numero_cuenta }}
+            </td>
+            <td class="label-cell">Valor del anticipo:</td>
+            <td class="value-cell">{{'{:,.2f}'.format(valor_anticipo or 0) if requiere_anticipo else 'No aplica'}}</td>
+        </tr>
+    </table>
+
+    <!-- Section II: INFORMACIÓN SOBRE EL EVENTO/TALLER O REUNIÓN -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="2">II. INFORMACIÓN SOBRE EL EVENTO/TALLER O REUNIÓN</td>
+        </tr>
+        <tr>
+            <td class="label-cell" style="width: 30%;">NOMBRE DEL TALLER O EVENTO</td>
+            <td class="value-cell" style="width: 70%;">{{ objetivo or '' }}</td>
+        </tr>
+    </table>
+
+    <!-- II. INFORMACIÓN DE LA LEGALIZACIÓN -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="11">II. INFORMACIÓN DE LA LEGALIZACIÓN</td>
+        </tr>
+        <tr>
+            <td class="table-header-cell">Fecha factura</td>
+            <td class="table-header-cell">Número documento</td>
+            <td class="table-header-cell">Beneficiario</td>
+            <td class="table-header-cell">NIT / CC</td>
+            <td class="table-header-cell">Régimen</td>
+            <td class="table-header-cell">Subtotal</td>
+            <td class="table-header-cell">IVA</td>
+            <td class="table-header-cell">% Retención</td>
+            <td class="table-header-cell">Retención</td>
+            <td class="table-header-cell">Valor Cancelado</td>
+            <td class="table-header-cell">Observaciones</td>
+        </tr>
+        {% if legalizaciones and legalizaciones|length > 0 %}
+            {% set totales = namespace(subtotal=0, iva=0, retention=0, amount_paid=0) %}
+            {% for leg in legalizaciones %}
+            {% set totales.subtotal = totales.subtotal + (leg.subtotal or 0) %}
+            {% set totales.iva = totales.iva + (leg.iva or 0) %}
+            {% set totales.retention = totales.retention + (leg.retention or 0) %}
+            {% set totales.amount_paid = totales.amount_paid + (leg.amount_paid or 0) %}
+            <tr>
+                <!-- <td class="table-data-cell left-align">{{ traveler_name or '' }}</td>
+                <td class="table-data-cell">{{ traveler_id or '' }}</td> -->
+                <td class="table-data-cell">{{ leg.check_date or '' }}</td>
+                <td class="table-data-cell">{{ leg.check_number or '' }}</td>
+                <td class="table-data-cell">{{ leg.beneficiary or '' }}</td>
+                <td class="table-data-cell">{{ leg.nit_beneficiary or '' }}</td>
+                <td class="table-data-cell">{{ leg.regimen_name or '' }}</td>
+                <td class="table-data-cell">{{ '{:,.2f}'.format(leg.subtotal or 0) or '' }}</td>
+                <td class="table-data-cell">{{ '{:,.2f}'.format(leg.iva or 0) or '' }}</td>
+                <td class="table-data-cell">{{ leg.retention_porcentage or '' }}</td>
+                <td class="table-data-cell">{{ '{:,.2f}'.format(leg.retention or 0) or '' }}</td>
+                <td class="table-data-cell">{{ '{:,.2f}'.format(leg.amount_paid or 0) or '' }}</td>
+                <td class="table-data-cell">{{ leg.observations or '' }}</td>
+              
+            </tr>
+            {% endfor %}
+            <tr>
+                <td class="table-footer-cell">Total</td>
+                <td class="table-footer-cell"></td>
+                <td class="table-footer-cell"></td>
+                <td class="table-footer-cell"></td>
+                <td class="table-footer-cell"></td>
+                <td class="table-footer-cell">{{ '{:,.2f}'.format(totales.subtotal or 0) }}</td>
+                <td class="table-footer-cell">{{ '{:,.2f}'.format(totales.iva or 0) }}</td>
+                <td class="table-footer-cell"></td>
+                <td class="table-footer-cell">{{ '{:,.2f}'.format(totales.retention or 0) }}</td>
+                <td class="table-footer-cell">{{ '{:,.2f}'.format(totales.amount_paid or 0) }}</td>
+                <td class="table-footer-cell"></td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="11" class="table-data-cell" style="color: #999;">No se registraron legalizaciones.</td>
+            </tr>
+        {% endif %}
+    </table>
+
+    <!-- III. RESUMEN LEGALIZACIÓN -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="11">III. RESUMEN LEGALIZACIÓN</td>
+        </tr>
+        <tr>
+            <td class="table-header-cell">TOTAL DINERO CANCELADO</td>
+            <td class="table-header-cell">RETEFUENTE PRACTICADA</td>
+            <td class="table-header-cell">TOTAL GASTO EJECUTADO</td>
+            <td class="table-header-cell">TOTAL DINERO CONSIGNADO</td>
+            <td class="table-header-cell">PENDIENTE POR REINTEGRAR AL SOLICITANTE</td>
+        </tr>
+        <tr>
+            <td class="table-data-cell">{{ '{:,.2f}'.format(totales.amount_paid or 0) }}</td>
+            <td class="table-data-cell">{{ '{:,.2f}'.format(totales.retention or 0) }}</td>
+            <td class="table-data-cell">{{ '{:,.2f}'.format(totales.retention + totales.amount_paid or 0) }}</td>
+            <td class="table-data-cell">{{ '{:,.2f}'.format(valor_anticipo - totales.amount_paid or 0) }}</td>
+            <td class="table-data-cell">
+                {% if (totales.amount_paid + totales.retention) > valor_anticipo %}
+                    {{ '{:,.2f}'.format(totales.amount_paid - totales.retention - valor_anticipo or 0) }}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+
+    <!-- Section IV: FLUJO DE APROBACIÓN -->
+    <table class="main-table" style="margin-bottom: 0px;">
+        <tr class="section-title-row">
+            <td colspan="7">IV. FLUJO DE APROBACIÓN</td>
+        </tr>
+    </table>
+    <table class="main-table">
+        <thead>
+            <tr>
+                <!-- <td class="table-header-cell">NOMBRE DEL VIAJERO</td>
+                <td class="table-header-cell">CEDULA DEL VIAJERO</td> -->
+                <td class="table-header-cell">ROL</td>
+                <td class="table-header-cell">USUARIO APROBO</td>
+                <td class="table-header-cell">FECHA DE REQUERIMIENTO</td>
+                <td class="table-header-cell">FECHA DE APROBACIÓN</td>
+                <td class="table-header-cell">ESTADO</td>
+                <td class="table-header-cell">OBSERVACIONES</td>
+            </tr>
+        </thead>
+        {% if historialAprobacionSolicitud and historialAprobacionSolicitud|length > 0 %}
+            {% for ruta in historialAprobacionSolicitud %}
+            <tr>
+                <!-- <td class="table-data-cell left-align">{{ traveler_name or '' }}</td>
+                <td class="table-data-cell">{{ traveler_id or '' }}</td> -->
+                <td class="table-data-cell">{{ ruta.rol or '' }}</td>
+                <td class="table-data-cell">{{ ruta.usuario or '' }}</td>
+                <td class="table-data-cell">{{ ruta.fecha_crea.strftime('%Y-%m-%d %H:%M:%S') if ruta.fecha_crea else '' }}</td>
+                <td class="table-data-cell">{{ ruta.fecha_aprobacion.strftime('%Y-%m-%d %H:%M:%S') if ruta.fecha_aprobacion else ''}}</td>
+                <td class="table-data-cell">{{ ruta.estado_aprobacion_ruta if ruta.estado_aprobacion_ruta else '' }}</td>
+                <td class="table-data-cell left-align">{{ ruta.observaciones if ruta.observaciones else '' }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="7" class="table-data-cell" style="color: #999;">No se registraron aprobaciones.</td>
+            </tr>
+        {% endif %}
+    </table>
+
+</body>
+</html>
