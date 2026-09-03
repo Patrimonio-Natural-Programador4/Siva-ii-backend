@@ -12,6 +12,7 @@ router = APIRouter(
 )
 
 @router.post("", response_model=ResponseRequest)
+@router.post("/Legalizacion", response_model=ResponseRequest, include_in_schema=False)
 def crear_legalizacion(
     legalizacion: TravelLegalizationCreate,
     db: DbSession,
@@ -29,25 +30,25 @@ def crear_legalizacion(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear legalización: {str(e)}")
 
-@router.get("/{travel_request_id}", response_model=Optional[TravelLegalizationResponse])
-def obtener_legalizacion(
+@router.get("/{travel_request_id}", response_model=list[TravelLegalizationResponse])
+def obtener_legalizaciones(
     travel_request_id: int,
     db: DbSession,
     user_oid: str = Depends(get_current_user_oid)
 ):
-    return TravelLegalizationsService.obtener_legalizacion_por_viaje(db, travel_request_id)
+    return TravelLegalizationsService.obtener_legalizaciones_por_viaje(db, travel_request_id)
 
-@router.patch("/{travel_request_id}", response_model=ResponseRequest)
+@router.patch("/{legalization_id}", response_model=ResponseRequest)
 def actualizar_legalizacion(
-    travel_request_id: int,
+    legalization_id: int,
     legalizacion: TravelLegalizationUpdate,
     db: DbSession,
     user_oid: str = Depends(get_current_user_oid)
 ):
     try:
-        actualizado = TravelLegalizationsService.actualizar_legalizacion(db, travel_request_id, legalizacion)
+        actualizado = TravelLegalizationsService.actualizar_legalizacion(db, legalization_id, legalizacion)
         if not actualizado:
-            raise HTTPException(status_code=404, detail="Legalización no encontrada para este viaje")
+            raise HTTPException(status_code=404, detail="Legalización no encontrada")
         return ResponseRequest(
             solicitud_exitosa=True,
             mensaje="Legalización actualizada exitosamente",
