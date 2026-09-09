@@ -7,7 +7,7 @@ from dto.ListadosDTO import Listados
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase, UsuariosEdicionBase, UsuariosUpdateBase
-from repository import UsersProgramsRepository, UsuariosRepository
+from repository import DocumentypesRepository, UsersProgramsRepository, UsuariosRepository
 from dto.ResponseRequest import ResponseRequest
 from pathlib import Path
 import json
@@ -16,6 +16,7 @@ import requests
 from typing import List, Optional, TypedDict
 import bcrypt
 from entity.users import Users
+from services import RolesService
 
 class InvitacionResponse(TypedDict):
     registro_exitoso: bool
@@ -607,6 +608,75 @@ def programs_user ( guid: str, db: Session ) :
         respuesta.mensaje = str(e)
         logging.error(f"Failed to validate usuario: {str(e)}")
         return respuesta
+
+def lista_generica(guid: str, db: Session, user_oid: str):
+    respuesta = ResponseRequest(solicitud_exitosa=False)
+    usuario = UsuariosRepository.obtener_por_guid(guid, db)    
+    try:
+        programs = UsersProgramsRepository.listado_programas_por_usuario(usuario.id,db)
+        roles = RolesService.listar_roles(db)
+        tipos_documentos =  DocumentypesRepository.listar(db)
+
+        listados = []
+        lista_catalogos = []
     
+        #Listado de departamentos
+        for p in programs:
+            lista_catalogos.append(
+                ListaGenerica(
+                    identity=p["id_programa"],
+                    valor=p["name"]
+                )
+            )
+        
+        listados.append(
+            Listados(
+                id_listado=0, 
+                tipo_listado="Programas", 
+                lista_generica=lista_catalogos
+            )
+        )
+
+        lista_catalogos = []
+        for p in roles:
+            lista_catalogos.append(
+                ListaGenerica(
+                    identity=p.id_rol,
+                    valor=p.rol
+                )
+            )
+        
+        listados.append(
+            Listados(
+                id_listado=1,
+                tipo_listado="Roles", 
+                lista_generica=lista_catalogos
+            )
+        )
+
+        lista_catalogos = []
+        for p in tipos_documentos:
+            lista_catalogos.append(
+                ListaGenerica(
+                    identity=p.id,
+                    valor=p.name
+                )
+            )
+        
+        listados.append(
+            Listados(
+                id_listado=2,
+                tipo_listado="Tipos Documentos", 
+                lista_generica=lista_catalogos
+            )
+        )
+
+
+        return listados
+    except Exception as e:
+        respuesta.solicitud_exitosa = False
+        respuesta.mensaje = str(e)
+        logging.error(f"Failed to obtener lista generica: {str(e)}")
+        return respuesta
     
     

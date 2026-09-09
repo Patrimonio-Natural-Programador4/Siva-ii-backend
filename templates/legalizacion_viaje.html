@@ -161,13 +161,14 @@
     <!-- II. INFORMACIÓN DE LA LEGALIZACIÓN -->
     <table class="main-table">
         <tr class="section-title-row">
-            <td colspan="11">II. INFORMACIÓN DE LA LEGALIZACIÓN</td>
+            <td colspan="12">II. INFORMACIÓN DE LA LEGALIZACIÓN</td>
         </tr>
         <tr>
             <td class="table-header-cell">Fecha factura</td>
             <td class="table-header-cell">Número documento</td>
             <td class="table-header-cell">Beneficiario</td>
             <td class="table-header-cell">NIT / CC</td>
+            <td class="table-header-cell">Descripción del gasto</td>
             <td class="table-header-cell">Régimen</td>
             <td class="table-header-cell">Subtotal</td>
             <td class="table-header-cell">IVA</td>
@@ -190,6 +191,7 @@
                 <td class="table-data-cell">{{ leg.check_number or '' }}</td>
                 <td class="table-data-cell">{{ leg.beneficiary or '' }}</td>
                 <td class="table-data-cell">{{ leg.nit_beneficiary or '' }}</td>
+                <td class="table-data-cell">{{ leg.observations_outlay or '' }}</td>
                 <td class="table-data-cell">{{ leg.regimen_name or '' }}</td>
                 <td class="table-data-cell">{{ '{:,.2f}'.format(leg.subtotal or 0) or '' }}</td>
                 <td class="table-data-cell">{{ '{:,.2f}'.format(leg.iva or 0) or '' }}</td>
@@ -206,6 +208,7 @@
                 <td class="table-footer-cell"></td>
                 <td class="table-footer-cell"></td>
                 <td class="table-footer-cell"></td>
+                <td class="table-footer-cell"></td>
                 <td class="table-footer-cell">{{ '{:,.2f}'.format(totales.subtotal or 0) }}</td>
                 <td class="table-footer-cell">{{ '{:,.2f}'.format(totales.iva or 0) }}</td>
                 <td class="table-footer-cell"></td>
@@ -215,7 +218,7 @@
             </tr>
         {% else %}
             <tr>
-                <td colspan="11" class="table-data-cell" style="color: #999;">No se registraron legalizaciones.</td>
+                <td colspan="12" class="table-data-cell" style="color: #999;">No se registraron legalizaciones.</td>
             </tr>
         {% endif %}
     </table>

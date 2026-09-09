@@ -382,6 +382,11 @@ def programas_usuario(guid: str,  db: DbSession,):
     return  UsuariosService.programs_user(guid,db)
 
 
+@router.get("/listados/{guid}")
+def lista_generica(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    return UsuariosService.lista_generica(guid,db, user_oid)
+
+
 #@router.get("/{email}")
 #def obtener_usuario_por_correo(email: str, db: DbSession):
 #    usuario = UsuariosService.obtener_usuario_por_correo(email, db)
