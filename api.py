@@ -1,5 +1,5 @@
 from controllers import SolicitudesAprobacionController, TdrController, ViajesController
-from controllers import WordParametersController
+#from controllers import WordParametersController
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status

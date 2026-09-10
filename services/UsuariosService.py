@@ -16,6 +16,7 @@ import requests
 from typing import List, Optional, TypedDict
 import bcrypt
 from entity.users import Users
+from entity.users_delegate import UsersDelegate
 from services import RolesService
 
 class InvitacionResponse(TypedDict):
@@ -221,6 +222,14 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
             model_type = UsuariosRepository.obtener_model_type_por_usuario(int(new_usuario.id), db)
             UsuariosRepository.reemplazar_programas_usuario(int(new_usuario.id), usuario.program_ids or [], db)
             UsuariosRepository.reemplazar_roles_usuario(int(new_usuario.id), usuario.role_ids or [], model_type, db)
+            
+            if usuario.delegados_ids is not None:
+                for delegado_id in usuario.delegados_ids:
+                    nuevo_delegado = UsersDelegate(
+                        responsable_id=new_usuario.id,
+                        delegate_id=delegado_id
+                    )
+                    db.add(nuevo_delegado)
             
             try:
                 db.commit()
@@ -493,6 +502,9 @@ def obtener_usuario_para_edicion(guid: str, db: Session) -> UsuariosEdicionBase 
 
         programas = UsersProgramsRepository.listar_ids_programas_por_usuario(int(usuario.id), db)
         roles = UsuariosRepository.listar_roles_por_usuario(int(usuario.id), db)
+        
+        delegados_query = db.query(UsersDelegate.delegate_id).filter(UsersDelegate.responsable_id == usuario.id).all()
+        delegados_ids = [d[0] for d in delegados_query]
 
         return UsuariosEdicionBase(
             guid=usuario.guid,
@@ -507,6 +519,7 @@ def obtener_usuario_para_edicion(guid: str, db: Session) -> UsuariosEdicionBase 
             position=usuario.position,
             program_ids=programas,
             role_ids=roles,
+            delegados_ids=delegados_ids,
         )
     except Exception as e:
         logging.error(f"Failed to get usuario para edicion: {str(e)}")
@@ -562,6 +575,16 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> R
         model_type = UsuariosRepository.obtener_model_type_por_usuario(int(usuario.id), db)
         UsuariosRepository.reemplazar_programas_usuario(int(usuario.id), payload.program_ids or [], db)
         UsuariosRepository.reemplazar_roles_usuario(int(usuario.id), payload.role_ids or [], model_type, db)
+        
+        if payload.delegados_ids is not None:
+            db.query(UsersDelegate).filter(UsersDelegate.responsable_id == usuario.id).delete()
+            for delegado_id in payload.delegados_ids:
+                nuevo_delegado = UsersDelegate(
+                    responsable_id=usuario.id,
+                    delegate_id=delegado_id
+                )
+                db.add(nuevo_delegado)
+                
         UsuariosRepository.guardar(db)
 
 
@@ -671,6 +694,24 @@ def lista_generica(guid: str, db: Session, user_oid: str):
             )
         )
 
+
+        lista_catalogos = []
+        usuarios_todos = UsuariosRepository.listar(db)
+        for p in usuarios_todos:
+            lista_catalogos.append(
+                ListaGenerica(
+                    identity=p.id,
+                    valor=f"{p.first_name} {p.last_name}"
+                )
+            )
+        
+        listados.append(
+            Listados(
+                id_listado=3,
+                tipo_listado="Usuarios", 
+                lista_generica=lista_catalogos
+            )
+        )
 
         return listados
     except Exception as e:

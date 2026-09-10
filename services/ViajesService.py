@@ -21,6 +21,7 @@ from datetime import date, datetime, time
 from jinja2 import Environment, FileSystemLoader
 from services import SolicitudesAprobacionService, NotificacionesService, SoportesService
 from entity.users import Users
+from entity.users_delegate import UsersDelegate
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
 
@@ -38,7 +39,10 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.code = f"V-{fecha_actual.year}-{viajes + 1:02d}"
         nuevo_viaje.created_at = datetime.now()
         nuevo_viaje.created_by_user_id = usuario.id
-        nuevo_viaje.traveler_user_id = usuario.id
+        if viaje.es_para_funcionario and viaje.id_funcionario_responsable:
+            nuevo_viaje.traveler_user_id = viaje.id_funcionario_responsable
+        else:
+            nuevo_viaje.traveler_user_id = usuario.id
         nuevo_viaje.travel_start_date = viaje.fecha_inicio_viaje
         nuevo_viaje.travel_end_date = viaje.fecha_fin_viaje
         nuevo_viaje.activity_purpose = viaje.objetivo
@@ -101,7 +105,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         # Guardar archivo Excel de listado de invitados si aplica
         if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
             try:
-                SoportesService.guardar_excel_viaje(
+                SoportesService.guardar_documento_viaje(
                     codigo_viaje=nuevo_viaje.code,
                     base64_data=viaje.soporte_dos_o_mas_personas,
                     db=db,
@@ -261,7 +265,10 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         
         viajeDb.updated_at = datetime.now()
         viajeDb.updated_by_user_id = usuario.id
-        viajeDb.traveler_user_id = usuario.id
+        if viaje.es_para_funcionario and viaje.id_funcionario_responsable:
+            viajeDb.traveler_user_id = viaje.id_funcionario_responsable
+        else:
+            viajeDb.traveler_user_id = usuario.id
         viajeDb.travel_start_date = viaje.fecha_inicio_viaje
         viajeDb.travel_end_date = viaje.fecha_fin_viaje
         viajeDb.activity_purpose = viaje.objetivo
@@ -320,7 +327,7 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         # Guardar archivo Excel de listado de invitados si aplica
         if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
             try:
-                SoportesService.guardar_excel_viaje(
+                SoportesService.guardar_documento_viaje(
                     codigo_viaje=viajeDb.code,
                     base64_data=viaje.soporte_dos_o_mas_personas,
                     db=db,
@@ -629,6 +636,9 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         usuario=viajeDb.user.full_name if viajeDb.user else None,
         id_solicitud_aprobacion=viajeDb.approval_request_id,
         es_invitado=viajeDb.is_guest,
+        es_para_funcionario=viajeDb.created_by_user_id != viajeDb.traveler_user_id 
+        if viajeDb.created_by_user_id else False,id_funcionario_responsable=viajeDb.traveler_user_id
+        if (viajeDb.created_by_user_id and viajeDb.created_by_user_id != viajeDb.traveler_user_id) else None,
         persona_invitada=viajeDb.guest_name,
         documento_persona_invitada=viajeDb.guest_document,
         telefono_persona_invitada=viajeDb.guest_phone,
@@ -1497,8 +1507,26 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
         #     )
         # )
 
-       
-
+        responsables_query = db.query(UsersDelegate).filter(UsersDelegate.delegate_id == usuario.id).all()
+        lista_catalogos = []
+        for p in responsables_query:
+            if p.responsable:
+                lista_catalogos.append(
+                    ListaGenerica(
+                        identity=p.responsable.id,
+                        valor=f"{p.responsable.first_name} {p.responsable.last_name}",
+                        idrelacion=None,
+                        valorNumerico=None,
+                        valor_referencia=None
+                    )
+                )
+        listados.append(
+            Listados(
+                id_listado=9,
+                tipo_listado="Responsables",
+                lista_generica=lista_catalogos
+            )
+        )
         
         return listados
     except Exception as e:
