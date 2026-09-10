@@ -100,11 +100,11 @@ def guardar_documento_viaje(
 
     prefijo = ""
     if document_type_id == 1:
-        prefijo = "FACT_"
+        prefijo = "FACT"
     elif document_type_id == 2:
-        prefijo = "DRELACIONADO_"
+        prefijo = "DRELACIONADO"
 
-    nombre_archivo = f"{prefijo}{nombre_base}_{fecha_hora}{extension.lower()}"
+    nombre_archivo = f"{prefijo}{fecha_hora}{extension.lower()}"
     ruta_archivo = carpeta_viaje / nombre_archivo
 
     # Escribir archivo en disco
