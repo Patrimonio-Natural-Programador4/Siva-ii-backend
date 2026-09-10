@@ -61,12 +61,14 @@ def listar_capacity_assessments_por_usuario_sp(
 ) -> list[CapacityAssessmentListSP]:
     try:
         query = text("""
-            SELECT * FROM list_capacity_assesstment(
-                :guid_usuario_msft, :page, :v_status, :filtro, :v_program
-            )
-        """).bindparams(
-            bindparam('v_status', type_=ARRAY(Integer))
-        )
+    SELECT sp.*, p.first_name, p.other_name, p.last_name, p.other_last_name
+    FROM list_capacity_assesstment(
+        :guid_usuario_msft, :page, :v_status, :filtro, :v_program
+    ) sp
+    LEFT JOIN persons p ON p.id = sp.persons_id
+""").bindparams(
+    bindparam('v_status', type_=ARRAY(Integer))
+)
 
         result = db.execute(
             query,
@@ -81,19 +83,36 @@ def listar_capacity_assessments_por_usuario_sp(
 
         return [
             CapacityAssessmentListSP(
-                guid=row[0],
-                codigo=row[1],
-                name=row[2],
-                implementer_id=row[3],
-                implementer_name=row[4],
-                pending_my_approval=row[5],
-                capacity_assessments_id=row[6],
-                approval_request_id=row[7],
-                user_id=row[8],
-                guid_msft=row[9],
-                step_order_actual_request=row[10],
-                guid_msft_adjustment=row[11],
-                total_records=row[12],
+                guid=row[0],                              # guid
+                name=row[1],                               # name
+                observation=row[2],                        # observation
+                approximate_value=row[3],                  # approximate_value
+                implementer_id=row[4],                      # implementer_id
+                implementer_name=row[5],                    # implementer_name
+                policy_approval_date=row[6],                # policy_approval_date
+                document_signature_date=row[7],             # document_signature_date
+                start_date=row[8],                          # start_date
+                end_date=row[9],                            # end_date
+                codigo=row[10],                             # code
+                program_id=row[11],                         # program_id
+                program_name=row[12],                       # program_name
+                pid_id=row[13],                             # pid_id
+                pad_name=row[14],                           # pad_name
+                persons_id=row[15],                         # persons_id
+                persons_name=" ".join(x for x in [row[28], row[29], row[30], row[31]] if x), 
+                #persons_email=row[16],                      # persons_email
+                capacity_assessments_states_id=row[17],     # capacity_assessments_states_id
+                modality_id=row[18],                        # modality_id
+                modality_name=row[19],                      # modality_name
+                pending_my_approval=row[20],                # pending_my_approval
+                capacity_assessments_id=row[21],            # capacity_assestments_id (typo en la función SQL)
+                approval_request_id=row[22],                # approval_request_id
+                user_id=row[23],                            # user_id
+                guid_msft=row[24],                          # guid_msft
+                step_order_actual_request=row[25],          # step_order_actual_request
+                guid_msft_adjustment=row[26],               # guid_msft_adjustment
+                total_records=row[27],                      # total_records
+
             )
             for row in result
         ]

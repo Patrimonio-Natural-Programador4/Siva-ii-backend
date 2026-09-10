@@ -35,11 +35,21 @@ def listar(db: Session) -> list[PreviousStudiesBase]:
             total_value_executes_ei= e.total_value_executes_ei,
             contributions_fpn = e.contributions_fpn,
             estimated_term=e.estimated_term,           
-            cap_assessments_state=e.cap_assessments_state.state if e.cap_assessments_state else None,
+            #cap_assessments_state=e.cap_assessments_state.state if e.cap_assessments_state else None,
+            previous_studies_states_id=e.previous_studies_states_id,
+            prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
+            approval_request_id=e.approval_request_id,   
             app_request=e.app_request.name if e.app_request else None,
+            implementer_id=e.implementer_id,
             implementers=e.implementers.acronym if (e.implementers and hasattr(e.implementers, 'acronym')) else None,
-            persons=e.persons.email if e.persons else None,
+            persons_id=e.persons_id,
+            persons=(
+                " ".join(p for p in [e.persons.first_name, e.persons.other_name, e.persons.last_name, e.persons.other_last_name] if p)
+                if e.persons else None
+            ),
+            capacity_assessment_id=e.capacity_assessment_id,
             capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
+            program_id=e.program_id,
             programs =e.programs.description if e.programs else None,
             code =e.code 
             
@@ -48,33 +58,44 @@ def listar(db: Session) -> list[PreviousStudiesBase]:
     ]
     
 def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | None:
-    c = PreviousStudiesRepository.obtener_por_id(id, db)
-    if not c:
+    e = PreviousStudiesRepository.obtener_por_id(id, db)
+    if not e:
         return None
     return PreviousStudiesBase(
-                id=int(c.id),
-                precedents=c.precedents,
-                justification=c.justification,
-                scope=c.scope,
-                overall_objective=c.overall_objective,
-                term=c.term,
-                obligations= c.obligations,
-                supervisor = c.supervisor,
-                user_session=c.user_session,
-                create_date=c.create_date,
-                total_value= c.total_value,
-                contributions_ei= c.contributions_ei,
-                total_value_executes_fpn=c.total_value_executes_fpn,
-                total_value_executes_ei= c.total_value_executes_ei,
-                contributions_fpn = c.contributions_fpn,
-                estimated_term=c.estimated_term,           
-                cap_assessments_state=c.cap_assessments_state.state if c.cap_assessments_state else None,
-                app_request=c.app_request.name if c.app_request else None,
-                implementers=c.implementers.acronym if (c.implementers and hasattr(c.implementers, 'acronym')) else None,
-                persons=c.persons.email if c.persons else None,
-                capacity_assessment=c.capacity_assessment.name if c.capacity_assessment else None,
-                programs =c.programs.description if c.programs else None,
-                code= c.code
+            id=int(e.id),
+            precedents=e.precedents,
+            justification=e.justification,
+            scope=e.scope,
+            overall_objective=e.overall_objective,
+            term=e.term,
+            obligations= e.obligations,
+            supervisor = e.supervisor,
+            user_session=e.user_session,
+            create_date=e.create_date,
+            total_value= e.total_value,
+            contributions_ei= e.contributions_ei,
+            total_value_executes_fpn=e.total_value_executes_fpn,
+            total_value_executes_ei= e.total_value_executes_ei,
+            contributions_fpn = e.contributions_fpn,
+            estimated_term=e.estimated_term,           
+            #cap_assessments_state=e.cap_assessments_state.state if e.cap_assessments_state else None,
+            previous_studies_states_id=e.previous_studies_states_id,
+            prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
+            approval_request_id=e.approval_request_id,   
+            app_request=e.app_request.name if e.app_request else None,
+            implementer_id=e.implementer_id,
+            implementers=e.implementers.acronym if (e.implementers and hasattr(e.implementers, 'acronym')) else None,
+            persons_id=e.persons_id,
+            persons=(
+                " ".join(p for p in [e.persons.first_name, e.persons.other_name, e.persons.last_name, e.persons.other_last_name] if p)
+                if e.persons else None
+            ),
+            capacity_assessment_id=e.capacity_assessment_id,
+            capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
+            program_id=e.program_id,
+            programs =e.programs.description if e.programs else None,
+            code =e.code 
+                            
             )   
     
 
@@ -102,7 +123,8 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.contributions_ei = previous_studies.contributions_ei
         nuevo_estudio_previo.total_value_executes_fpn = previous_studies.total_value_executes_fpn
         nuevo_estudio_previo.total_value_executes_ei = previous_studies.total_value_executes_ei
-        nuevo_estudio_previo.capacity_assessments_states_id = previous_studies.capacity_assessments_states_id
+       # nuevo_estudio_previo.capacity_assessments_states_id = previous_studies.capacity_assessments_states_id
+        nuevo_estudio_previo.previous_studies_states_id= previous_studies.previous_studies_states_id
         nuevo_estudio_previo.approval_request_id = previous_studies.approval_request_id
         nuevo_estudio_previo.implementer_id = previous_studies.implementer_id
         nuevo_estudio_previo.persons_id = previous_studies.persons_id

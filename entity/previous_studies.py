@@ -16,12 +16,13 @@ class PreviousStudies(Base):
         PrimaryKeyConstraint('id', name='previous_studies_pkey'),
         
         #foranea
-        ForeignKeyConstraint(["capacity_assessments_states_id"], ["capacity_assessments_states.id"],name="fk_previous_studies_capacity_assessments_states"),
+        #ForeignKeyConstraint(["capacity_assessments_states_id"], ["capacity_assessments_states.id"],name="fk_previous_studies_capacity_assessments_states"),
         ForeignKeyConstraint(["approval_request_id"], ["approval_requests.approval_request_id"],name="fk_previous_studies_approval_request_fkey",),
         ForeignKeyConstraint(["implementer_id"], ["implementers.id"],name="fk_previous_studies_capacity_implementers"),
         ForeignKeyConstraint(["persons_id"], ["persons.id"],name="fk_previous_studies_assessment_persons"),
         ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),  
-        ForeignKeyConstraint(["program_id"], ["programs.id"], name="fk_previous_studies_programs"),           
+        ForeignKeyConstraint(["program_id"], ["programs.id"], name="fk_previous_studies_programs"), 
+        ForeignKeyConstraint(["previous_studies_states_id"], ["previous_studies_states.id"],name="fk_previous_studies_previous_studies_states"),          
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -38,7 +39,8 @@ class PreviousStudies(Base):
     contributions_ei:Mapped[int] = mapped_column(BigInteger, nullable=False)
     total_value_executes_fpn: Mapped[int] = mapped_column(BigInteger, nullable=False)
     total_value_executes_ei: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    capacity_assessments_states_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    #capacity_assessments_states_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    previous_studies_states_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     approval_request_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     implementer_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     persons_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
@@ -50,10 +52,10 @@ class PreviousStudies(Base):
     code: Mapped[str] = mapped_column(CITEXT, nullable=False)
    
    #Relacion simples
-    cap_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="previous_studies")
+    #cap_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="previous_studies")
     app_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests", back_populates="previous_studies")
     implementers: Mapped["Implementers"] = relationship("Implementers", back_populates="previous_studies_implementer") #back populates debe coincidir con el nombre de la contraparte
     persons: Mapped["Persons"] = relationship("Persons", back_populates="previous_studies_person") 
     capacity_assessment: Mapped["CapacityAssessments"] = relationship("CapacityAssessments", back_populates="previous_studies_capacity_assessment") 
     programs:  Mapped["Programs"] = relationship("Programs", back_populates="previous_studies_programs")
-   
+    prev_studies_state: Mapped["PreviousStudiesStates"] = relationship("PreviousStudiesStates", back_populates="previous_studies")

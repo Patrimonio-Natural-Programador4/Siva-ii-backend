@@ -54,7 +54,6 @@ def listar_programas_por_usuario(id_user: int, db: Session) -> list[Programs]:
     
 def programas_por_usuario(id_user: int, db: Session) -> list[dict]:
     try:
-        # Hacemos join con la tabla Programs
         rows = (
             db.query(UsersPrograms.program_id, Programs.name)
             .join(Programs, UsersPrograms.program_id == Programs.id)
@@ -63,7 +62,6 @@ def programas_por_usuario(id_user: int, db: Session) -> list[dict]:
             .all()
         )
 
-        # Devolvemos lista de diccionarios con id y nombre
         return [
             {"program_id": row.program_id, "program_name": row.name}
             for row in rows
@@ -76,7 +74,7 @@ def programas_por_usuario(id_user: int, db: Session) -> list[dict]:
  
 def listado_programas_por_usuario(id_user: int, db: Session) -> list[dict]:
     try:
-        # Hacemos join con la tabla Programs
+
         rows = (
             db.query(UsersPrograms.program_id, Programs.name)
             .join(Programs, UsersPrograms.program_id == Programs.id)
@@ -85,7 +83,6 @@ def listado_programas_por_usuario(id_user: int, db: Session) -> list[dict]:
             .all()
         )
 
-        # Devolvemos lista de diccionarios con id y nombre
         return [
             {"id_programa": row.program_id, "name": row.name}
             for row in rows
