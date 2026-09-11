@@ -23,6 +23,7 @@ from services import SolicitudesAprobacionService, NotificacionesService, Soport
 from entity.users import Users
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
+CATEGORIA_APROBACION_LEGALIZACION_VIAJE = "LEG_VIA_ANT"
 
 def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
@@ -861,7 +862,8 @@ def procesar_accion_solicitud_aprobacion(accion: AccionSolicitudAprobacion, usua
                 # print("Destinatarios:", to_recipients)
                 # print("mensaje", mensaje)
 
-                
+            if accion.tipo_solicitud == CATEGORIA_APROBACION_LEGALIZACION_VIAJE:
+                viaje.travel_status_id = 7 if respuesta.mensaje == "RUTA_COMPLETA" else 5 if respuesta.mensaje == "EN_PROCESO" else 6 if respuesta.mensaje == "AJUSTES" else viaje.travel_status_id
 
                 
 
@@ -1504,3 +1506,82 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
     except Exception as e:
         logging.error(f"Failed to list: {str(e)}")
         raise PruebaCreationError(str(e))
+
+
+
+def guardar_legalizacion(viaje: ViajesCreate, db: Session):
+    respuesta = ResponseRequest(solicitud_exitosa=True)
+    try:
+        viajeDb = ViajesRepository.obtener_por_guid(viaje.guid, db)
+
+
+        if viaje.enviar_aprobacion:
+            # viaje.anticipo.valor = 0 if not viaje.anticipo.valor else viaje.anticipo.valor
+            # viaje.anticipo.gastos_bancarios = 0 if not viaje.anticipo.gastos_bancarios else viaje.anticipo.gastos_bancarios
+            # print(viaje.anticipo.valor - viaje.anticipo.gastos_bancarios)
+            # requiere_aprobacion_supervisor = False
+            # requiere_aprobacion_pagos = False
+            # if valor_reintegro > 0 and valor_reintegro > (viaje.anticipo.valor - viaje.anticipo.gastos_bancarios):
+            #     requiere_aprobacion_pagos = True
+            
+            # if viaje.anticipo.valor == 0 and valor_reintegro == 0:
+            #     requiere_aprobacion_supervisor = False
+            # elif (viaje.anticipo.valor - viaje.anticipo.gastos_bancarios == 0 and valor_reintegro > 0) or ((valor_reintegro - viaje.anticipo.valor - viaje.anticipo.gastos_bancarios) / (viaje.anticipo.valor - viaje.anticipo.gastos_bancarios) > 0.3):
+            #     requiere_aprobacion_supervisor = True
+
+                
+            id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(CATEGORIA_APROBACION_LEGALIZACION_VIAJE, db)
+            id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(id_categoria_aprobacion, viajeDb.travel_request_id, viajeDb.traveler_user_id, 
+                                                                                              viajeDb.code, db, None, viajeDb.program_id)
+            viajeDb.expense_approval_request_id = id_solicitud_aprobacion
+            viajeDb.travel_status_id = 5
+            db.commit()
+
+            # emailUsuariosRuta = SolicitudesAprobacionService.obtener_usuarios_ruta(viajeDb.expense_approval_request_id, db)
+
+            # destinatarios = []
+            # destinatarios.append(viajeDb.usuario.correo)
+
+            # for email in emailUsuariosRuta:
+            #     destinatarios.append(email)
+
+            # facturas = []
+            # facturas = FacturasService.obtener_factura_por_id(viajeDb.guid, 1, db)
+
+
+            # historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viajeDb.id_viaje, 1, db)
+            # historialAprobacionLegalizacion = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viajeDb.id_viaje, 2, db)
+            # to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            # env = Environment(loader=FileSystemLoader(''))
+            # template = env.get_template('templates/notificacion_sv.html')
+
+            
+            
+            # itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viajeDb.id_viaje, db)
+            # hoteles = ViajesHotelRepository.listar_hoteles_por_viaje(viajeDb.id_viaje, db)
+            # # anticipos = AnticiposDetalleRepository.listar_anticipos_por_viaje(viajeDb.id_viaje, db)
+            # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viajeDb.id_viaje, False, db)
+            # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viajeDb.id_viaje, True, db)
+            # viajeDTO = viajeCreateDTO(viajeDb, itinerario, hoteles, anticipo, reintegro, db)
+        
+            # html_out = template.render(**vars(viajeDTO), 
+            #                            historialAprobacionSolicitud=historialAprobacionSolicitud,
+            #                            historialAprobacionLegalizacion=historialAprobacionLegalizacion,
+            #                            facturas=facturas)
+            
+            # print(destinatarios)
+            # NotificacionesService.solicitud_viaje(f"Legalización de viaje {viajeDb.codigo} enviada por aprobación", to_recipients, html_out, "", "", db)
+
+        
+
+        respuesta.identity = viajeDb.travel_request_id
+        respuesta.mensaje = "Información guardada exitosamente"
+        return respuesta
+    except Exception as e:
+        logging.error(f"Failed to create viaje: {str(e)}")
+        return ResponseRequest(
+            solicitud_exitosa=False,
+            mensaje=str(e)
+        )
+
+    

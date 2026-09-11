@@ -528,3 +528,21 @@ def descargar_archivo_dos_o_mas_personas(guid: str, db: DbSession):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/{guid}/legalizacion", response_model=ResponseRequest)
+def guardar_legalizacion(viaje: ViajesCreate, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    try:
+
+        response_request = ViajesService.guardar_legalizacion(viaje, db)
+        # response_request = SolicitudesAprobacionService.enviar_solicitud_aprobacion(viaje.id_viaje, 1, decoded["oid"], db)
+
+        return JSONResponse(
+            content=response_request.dict(),
+            status_code=status.HTTP_200_OK
+        )
+    except HTTPException as e:
+        print(f"HTTPException: {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

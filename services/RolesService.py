@@ -69,25 +69,26 @@ def obtener_rol_por_id(id_rol: int, db: Session) -> RolesBase | None:
 
     acceso_modulos = [
         AccesoModulosBase(
-            id_acceso_modulo=int(am.id_acceso_modulo),
-            id_rol=int(am.id_rol),
-            id_modulo=int(am.id_modulo),
-            acceso_modulo=am.acceso_modulo,
-            modulo=am.modules.name if am.modules else None,
-            descripcion=am.modules.description if am.modules else None
+            id_acceso_modulo=int(am.module_access_id),
+            id_rol=int(am.role_id),
+            id_modulo=int(am.module_id),
+            acceso_modulo=am.has_access,
+            modulo=am.module.name if am.module else None,
+            descripcion=am.module.description if am.module else None
         )
         for am in acceso_modulos_db
     ]
 
-    acceso_controles = [
-        AccesoControlesBase(
-            id_acceso_control=int(ac.id_acceso_control),
-            id_rol=int(ac.id_rol),
-            id_control=int(ac.id_control),
-            acceso_control=ac.acceso_control
-        )
-        for ac in acceso_controles_db
-    ]
+    # acceso_controles = [
+    #     AccesoControlesBase(
+    #         id_acceso_control=int(ac.id_acceso_control),
+    #         id_rol=int(ac.id_rol),
+    #         id_control=int(ac.id_control),
+    #         acceso_control=ac.acceso_control
+    #     )
+    #     for ac in acceso_controles_db
+    # ]
+    acceso_controles = []
 
     return RolesBase(
         id_rol=int(rol.id),
@@ -179,7 +180,7 @@ def actualizar_rol(id_rol: int, payload: RolesCreateBase, db: Session) -> Respon
 def _actualizar_acceso_modulos(rol: Roles, acceso_modulos: list[AccesoModulosBase], db: Session) -> None:
     id_rol = int(rol.id)
     actuales = RolesRepository.listar_acceso_modulos_rol(id_rol, db)
-    ids_actuales = {int(am.id_modulo) for am in actuales}
+    ids_actuales = {int(am.module_id) for am in actuales}
     ids_nuevos = {int(m.id_modulo) for m in acceso_modulos if m.id_modulo is not None}
 
     for id_modulo in (ids_actuales - ids_nuevos):

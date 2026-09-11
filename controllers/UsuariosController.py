@@ -9,7 +9,7 @@ from dto.UsuariosDTO import UsuariosUpdateBase
 # from dto.validation_error import ValidationError
 from pathlib import Path
 # from repository import UsuariosRepository
-from services import UsuariosService
+from services import MenuService, UsuariosService
 from database.database import DbSession
 from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase
 import msal
@@ -99,7 +99,17 @@ SCOPE = ["https://graph.microsoft.com/.default"]
 #     # return MenuService.listar_menu_x_rol(ids_rol, db)
 
 
-
+@router.get("/menu")
+def listar_menu_x_rol(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    try:
+        menu = MenuService.listar_menu_x_rol(user_oid, db)
+        return menu
+    except HTTPException as e:
+        print(f"HTTPException: {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("")
 def crear_usuario(usuario: UsuariosCreateBase, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
@@ -385,6 +395,8 @@ def programas_usuario(guid: str,  db: DbSession,):
 @router.get("/listados/{guid}")
 def lista_generica(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return UsuariosService.lista_generica(guid,db, user_oid)
+
+
 
 
 #@router.get("/{email}")
