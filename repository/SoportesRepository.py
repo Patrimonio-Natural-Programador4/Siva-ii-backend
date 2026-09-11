@@ -10,13 +10,17 @@ def guardar_soporte(
     travel_request_id: int,
     nombre_archivo: str,
     ruta_archivo: str,
-    db: Session
+    db: Session,
+    document_type_id: int | None = None,
+    observations: str | None = None
 ) -> AttachmentTravelTp:
     try:
         nuevo_registro = AttachmentTravelTp(
             attachment_name=nombre_archivo,
             path_document=str(ruta_archivo),
-            travel_request_id=travel_request_id
+            travel_request_id=travel_request_id,
+            document_type_id=document_type_id,
+            observations=observations
         )
         db.add(nuevo_registro)
         db.commit()
@@ -32,10 +36,11 @@ def guardar_o_reemplazar_soporte(
     travel_request_id: int,
     nombre_archivo: str,
     ruta_archivo: str,
-    db: Session
+    db: Session,
+    document_type_id: int | None = None,
+    observations: str | None = None
 ) -> AttachmentTravelTp:
-    """Alias compatible para guardar nuevo registro de soporte sin sobreescribir."""
-    return guardar_soporte(travel_request_id, nombre_archivo, ruta_archivo, db)
+    return guardar_soporte(travel_request_id, nombre_archivo, ruta_archivo, db, document_type_id, observations)
 
 
 def obtener_soporte_por_travel_request_id(

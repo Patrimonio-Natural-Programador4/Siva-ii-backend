@@ -99,6 +99,8 @@ class ViajesCreate(BaseModel):
     enviar_aprobacion: Optional[bool] = None
     id_solicitud_aprobacion: Optional[int] = None
     es_invitado: Optional[bool] = None
+    es_para_funcionario: Optional[bool] = None
+    id_funcionario_responsable: Optional[int] = None
     persona_invitada: Optional[str] = None
     documento_persona_invitada: Optional[str] = None
     telefono_persona_invitada: Optional[str] = None

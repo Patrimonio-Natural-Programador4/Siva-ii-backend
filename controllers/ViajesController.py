@@ -13,6 +13,7 @@ from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ResponseRequest import ResponseRequest
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
 from dto.ViajesDTO import ViajesCalendar, ViajesCreate
+from dto.DocumentosAsociadosDTO import DocumentoAsociadoCreate, DocumentoAsociadoResponse
 from services import ViajesService, SolicitudesAprobacionService, SoportesService
 from jinja2 import Environment, FileSystemLoader
 from entity.travel_requests import TravelRequests
@@ -468,8 +469,89 @@ def obtener_pdf_solicitud(guid: str, db: DbSession):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/{guid}/documento_asociado", response_model=ResponseRequest)
+def subir_documento_asociado(
+    guid: str,
+    documento: DocumentoAsociadoCreate,
+    db: DbSession
+):
+    try:
+        viaje_db = db.query(TravelRequests).filter(TravelRequests.guid == guid).first()
+        if not viaje_db:
+            raise HTTPException(status_code=404, detail="Viaje no encontrado")
+            
+        nombre_archivo = SoportesService.guardar_documento_viaje(
+            codigo_viaje=viaje_db.code,
+            base64_data=documento.base64_data,
+            db=db,
+            travel_request_id=viaje_db.travel_request_id,
+            nombre_original=documento.nombre_original,
+            document_type_id=documento.document_type_id,
+            observaciones=documento.observaciones
+        )
+        
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje="Documento guardado exitosamente",
+            identity=viaje_db.travel_request_id
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/{guid}/documentos_asociados", response_model=list[DocumentoAsociadoResponse])
+def listar_documentos_asociados(guid: str, db: DbSession):
+    try:
+        viaje_db = db.query(TravelRequests).filter(TravelRequests.guid == guid).first()
+        if not viaje_db:
+            raise HTTPException(status_code=404, detail="Viaje no encontrado")
+            
+        from repository import SoportesRepository
+        registros = SoportesRepository.listar_soportes_por_travel_request_id(viaje_db.travel_request_id, db)
+        
+        return [
+            DocumentoAsociadoResponse(
+                id=r.id,
+                attachment_name=r.attachment_name,
+                document_type_id=r.document_type_id,
+                observaciones=r.observations
+            ) for r in registros if r.document_type_id in [1, 2]
+        ]
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/{guid}/archivo/{attachment_id}")
+def descargar_archivo_asociado(guid: str, attachment_id: int, db: DbSession):
+    from fastapi.responses import FileResponse
+    try:
+        viaje_db = db.query(TravelRequests).filter(TravelRequests.guid == guid).first()
+        if not viaje_db:
+            raise HTTPException(status_code=404, detail="Viaje no encontrado")
+            
+        from entity.attachment_travel_tp import AttachmentTravelTp
+        registro = db.query(AttachmentTravelTp).filter(
+            AttachmentTravelTp.id == attachment_id,
+            AttachmentTravelTp.travel_request_id == viaje_db.travel_request_id
+        ).first()
+        
+        if not registro or not registro.path_document or not os.path.exists(registro.path_document):
+            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            
+        return FileResponse(
+            path=registro.path_document,
+            filename=registro.attachment_name
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 @router.get("/{guid}/pdf_legalizacion/documento")
 def obtener_pdf_legalizacion(guid: str, db: DbSession):
     try:
