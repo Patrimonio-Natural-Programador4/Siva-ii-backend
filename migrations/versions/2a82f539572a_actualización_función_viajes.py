@@ -21,9 +21,11 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade():
     op.execute("""
 
-    DROP FUNCTION IF EXISTS list_travels();
+    -- FUNCTION: public.list_travels(character varying, integer, integer[], character varying, date, date, integer)
 
-    CREATE OR REPLACE FUNCTION list_travels(
+-- DROP FUNCTION IF EXISTS public.list_travels(character varying, integer, integer[], character varying, date, date, integer);
+
+CREATE OR REPLACE FUNCTION public.list_travels(
 	guid_user_msft character varying,
 	page integer DEFAULT 1,
 	v_status integer[] DEFAULT ARRAY['-1'::integer],
@@ -77,9 +79,10 @@ BEGIN
     FROM approval_request_history a
     INNER JOIN approval_requests b ON a.approval_request_id = b.approval_request_id
     INNER JOIN approval_flows c ON b.approval_workflow_id = c.approval_flow_id
+	INNER JOIN approval_categories e on c.category_id = e.category_id
     WHERE a.approval_status_id = 6
     AND a.user_id = v_id_user
-    AND c.category_id IN (2);
+    AND e.code IN ('SOL_VIA_ANT','LEG_VIA_ANT');
 	--2 = id_categoria aprobación viajes
 
     -- Insertar registros adicionales en la tabla de viajes pendientes
@@ -89,12 +92,13 @@ BEGIN
     INNER JOIN approval_requests b ON a.approval_request_id = b.approval_request_id
     INNER JOIN approval_flows c ON b.approval_workflow_id = c.approval_flow_id
     INNER JOIN approval_role_users d ON a.approval_role_id = d.approval_role_id
+	INNER JOIN approval_categories e on c.category_id = e.category_id
     AND d.user_id = v_id_user
     WHERE a.approval_status_id = 6
     AND b.approval_status_id = 6
     AND d.user_id = v_id_user
 	and a.user_id is null
-    AND c.category_id IN (2);
+    AND e.code IN ('SOL_VIA_ANT','LEG_VIA_ANT');
 
     -- Consultar el valor de "TS" y "UBS" en tmp_controles
     SELECT count(*) INTO v_list_all_request
@@ -268,6 +272,8 @@ BEGIN
 	drop table tmp_pending_travels;
 END;
 $BODY$;
+
+
 
 
 

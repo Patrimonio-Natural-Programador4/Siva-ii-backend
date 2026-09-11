@@ -1560,7 +1560,7 @@ def guardar_legalizacion(viaje: ViajesCreate, db: Session):
                 
             id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(CATEGORIA_APROBACION_LEGALIZACION_VIAJE, db)
             id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(id_categoria_aprobacion, viajeDb.travel_request_id, viajeDb.traveler_user_id, 
-                                                                                              viajeDb.code, db, None, viajeDb.program_id)
+                                                                                              viajeDb.code, db, viajeDb.supervisor_user_id, viajeDb.program_id)
             viajeDb.expense_approval_request_id = id_solicitud_aprobacion
             viajeDb.travel_status_id = 5
             db.commit()
