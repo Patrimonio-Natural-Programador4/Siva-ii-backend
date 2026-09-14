@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Estudio previo</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        padding: 10px;
+        font-size: 11px;
+        color: #333333;
+      }
+
+      .main-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+      }
+
+      .main-table td,
+      .main-table th {
+        border: 1px solid #7f7f7f;
+        padding: 6px 10px;
+        vertical-align: middle;
+      }
+
+      .header-logo-cell {
+        width: 40%;
+        text-align: center;
+        padding: 10px !important;
+      }
+
+      .header-logo {
+        max-height: 45px;
+        max-width: 100%;
+        object-fit: contain;
+      }
+
+      .header-title-cell {
+        width: 60%;
+        text-align: center;
+        font-weight: bold;
+        font-size: 13px;
+        color: #000000;
+      }
+
+      .section-title-row td {
+        background-color: #d9d9d9;
+        font-weight: bold;
+        text-align: center;
+        font-size: 11px;
+        color: #000000;
+        padding: 5px !important;
+        text-transform: uppercase;
+      }
+
+      .label-cell {
+        background-color: #f2f2f2;
+        font-weight: bold;
+        text-align: center;
+        width: 35%;
+        color: #000000;
+      }
+
+      .value-cell {
+        background-color: #ffffff;
+        text-align: left;
+        width: 65%;
+      }
+
+      /* Column Headers for Table */
+      .table-header-cell {
+        background-color: #b4c6e7;
+        font-weight: bold;
+        text-align: center;
+        color: #000000;
+        font-size: 10px;
+        padding: 5px !important;
+      }
+
+      .table-data-cell {
+        text-align: center;
+        font-size: 10px;
+      }
+
+      .table-data-cell.left-align {
+        text-align: left;
+      }
+
+      .email-link {
+        color: #0563c1;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header Section -->
+    <table class="main-table">
+      <tr>
+        <td class="header-logo-cell">
+          {% if logo_path %}
+          <img
+            src="{{ logo_path }}"
+            alt="Patrimonio Natural Logo"
+            class="header-logo"
+          />
+          {% else %}
+          <span style="font-weight: bold">PATRIMONIO NATURAL</span>
+          {% endif %}
+        </td>
+        <td class="header-title-cell">
+          FORMATO EVALUACIÓN DE CAPACIDADES<br />
+          PATRIMONIO NATURAL
+        </td>
+      </tr>
+    </table>
+
+    <!-- Section I: INFORMACIÓN GENERAL -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">I. INFORMACIÓN GENERAL</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Estudio previo:</td>
+        <td class="value-cell">{{ name or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Código:</td>
+        <td class="value-cell">{{ code or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Programa:</td>
+        <td class="value-cell">{{ programa or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">PID:</td>
+        <td class="value-cell">{{ pid or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Modalidad:</td>
+        <td class="value-cell">{{ modalidad or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Section II: PARTICIPANTES -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">II. PARTICIPANTES</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Entidad implementadora:</td>
+        <td class="value-cell">{{ implementer or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Responsable:</td>
+        <td class="value-cell">{{ person or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Section III: DETALLES ADMINISTRATIVOS -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">III. DETALLES ADMINISTRATIVOS</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Estado de la solicitud:</td>
+        <td class="value-cell">{{ capacity_assessments_state or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Observación:</td>
+        <td class="value-cell">{{ observation or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Section IV: FECHAS CLAVE -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">IV. FECHAS CLAVE</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Fecha inicial:</td>
+        <td class="value-cell">{{ start_date or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Fecha final:</td>
+        <td class="value-cell">{{ end_date or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Fecha aprobación evaluación:</td>
+        <td class="value-cell">{{ policy_approval_date or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Fecha firma documento:</td>
+        <td class="value-cell">{{ document_signature_date or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Section V: VALORES ECONÓMICOS -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">V. VALORES ECONÓMICOS</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor aproximado:</td>
+        <td class="value-cell">{{ approximate_value or '' }}</td>
+      </tr>
+    </table>
+  </body>
+</html>
