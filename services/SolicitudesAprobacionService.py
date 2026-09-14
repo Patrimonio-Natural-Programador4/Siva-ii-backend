@@ -456,7 +456,7 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         id_ruta,
                         db,
                         id_usuario_aprobacion,
-                        label_ajustes
+                        'Ajustar solicitud'
                     )
                     respuesta.mensaje = "AJUSTES"
                 elif accion.tipo_accion == "SOLICITUD_AJUSTADA":
