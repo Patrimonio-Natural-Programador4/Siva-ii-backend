@@ -89,7 +89,7 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
 
         numSolicitudes = SolicitudesAprobacionRepository.numero_solicitudes(db)
         fecha_actual = date.today()
-        id_flujo_aprobacion, categoria, id_rol_aprobacion, id_ruta = FlujosAprobacionService.obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(
+        id_flujo_aprobacion, categoria, id_rol_aprobacion, id_ruta, label_aprobacion, label_ajuste, label_pendiente = FlujosAprobacionService.obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(
             id_categoria_aprobacion, id_usuario_solicita, db, id_programa
         )
         
@@ -118,11 +118,12 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
             id_rol_aprobacion,
             id_usuario_solicita,
             id_ruta,
-            db
+            db,
+            label_aprobacion
         )
 
 
-        id_rol_aprobacion, id_ruta, es_supervisor = FlujosAprobacionService.obtener_siguiente_paso_ruta(
+        id_rol_aprobacion, id_ruta, es_supervisor, label_aprobacion, label_ajuste, label_pendiente = FlujosAprobacionService.obtener_siguiente_paso_ruta(
             id_categoria_aprobacion, 1, id_flujo_aprobacion,  db
         )
 
@@ -134,7 +135,8 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
             id_rol_aprobacion,
             id_ruta,
             db,
-            id_supervisor
+            id_supervisor,
+            label_pendiente
         )
 
 
@@ -145,7 +147,7 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
         raise
 
 
-def asignar_inicio_ruta(id_solicitud: int, id_rol_aprobacion: int, id_usuario: int, id_ruta: int, db: Session) -> None:
+def asignar_inicio_ruta(id_solicitud: int, id_rol_aprobacion: int, id_usuario: int, id_ruta: int, db: Session, label_aprobacion: str = None) -> None:
     try:
         solicitud_historial = ApprovalRequestHistory(
             approval_request_id=id_solicitud,
@@ -157,6 +159,7 @@ def asignar_inicio_ruta(id_solicitud: int, id_rol_aprobacion: int, id_usuario: i
             received_at=datetime.now(),
             comments="Solicitud envíada para aprobación",
             step_id=id_ruta,
+            state_label=label_aprobacion,
         )
         asignar_usuario_aprobo_si_aplica(solicitud_historial, db)
         db.add(solicitud_historial)
@@ -183,7 +186,7 @@ def obtener_usuario_aprobo(id_usuario: int, db: Session) -> str | None:
         return None
     return usuario.first_name + " " + usuario.other_name + " " + usuario.last_name + " " + usuario.other_last_name
 
-def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: int, db: Session, id_supervisor: int = None) -> None:
+def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: int, db: Session, id_supervisor: int = None, label_pendiente: str = None) -> None:
     try:
         solicitud_historial = ApprovalRequestHistory(
             approval_request_id=id_solicitud,
@@ -193,7 +196,8 @@ def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: i
             received_at=datetime.now(),
             comments=None,
             step_id=id_ruta,
-            user_id=id_supervisor
+            user_id=id_supervisor,
+            state_label=label_pendiente
         )
         asignar_usuario_aprobo_si_aplica(solicitud_historial, db)
         db.add(solicitud_historial)
@@ -382,7 +386,7 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
             else:
 
                 solicitudRuta.approval_status_id = ESTADO_APROBACION_APROBADO if accion.tipo_accion == "APROBAR" else ESTADO_APROBACION_AJUSTES_REALIZADOS if accion.tipo_accion == "SOLICITUD_AJUSTADA" else ESTADO_APROBACION_AJUSTES
-                
+                solicitudRuta.state_label = flujoRuta.approved_label if accion.tipo_accion == "APROBAR" else flujoRuta.approved_label if accion.tipo_accion == "SOLICITUD_AJUSTADA" else flujoRuta.adjustment_label  
                 solicitudRuta.approved_at = datetime.now()
                 solicitudRuta.comments = accion.comentarios
                 solicitudRuta.user_id = id_usuario if solicitudRuta.user_id is None else solicitudRuta.user_id
@@ -406,7 +410,7 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         # Asignar siguiente paso
                         solicitudHistorial = ApprovalRequestHistoryRepository.obtener_historial_ultima_aprobacion(identity, id_categoria, db)
 
-                        id_rol_aprobacion, id_ruta, es_supervisor = FlujosAprobacionService.obtener_siguiente_paso_ruta(
+                        id_rol_aprobacion, id_ruta, es_supervisor, label_aprobado, label_ajustes, label_pendiente = FlujosAprobacionService.obtener_siguiente_paso_ruta(
                             solicitudHistorial.category_id, solicitudHistorial.step_order, id_flujo_aprobacion,  db
                         )
                         if es_supervisor == False:
@@ -420,7 +424,8 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                             id_rol_aprobacion,
                             id_ruta,
                             db,
-                            id_supervisor
+                            id_supervisor,
+                            label_pendiente
                         )
                         respuesta.mensaje = "EN_PROCESO"
                 elif accion.tipo_accion == "AJUSTAR":
@@ -436,7 +441,7 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         paso_actual = orden
                         id_usuario_aprobacion = accion.id_usuario_ajuste
                     else:
-                        id_rol_aprobacion, id_ruta, es_supervisor = FlujosAprobacionService.obtener_siguiente_paso_ruta(
+                        id_rol_aprobacion, id_ruta, es_supervisor, label_aprobado, label_ajustes, label_pendiente  = FlujosAprobacionService.obtener_siguiente_paso_ruta(
                             solicitudHistorial.category_id, 0, id_flujo_aprobacion,  db
                         )
                         # if es_supervisor == False:
@@ -450,7 +455,8 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         id_rol_aprobacion,
                         id_ruta,
                         db,
-                        id_usuario_aprobacion
+                        id_usuario_aprobacion,
+                        label_ajustes
                     )
                     respuesta.mensaje = "AJUSTES"
                 elif accion.tipo_accion == "SOLICITUD_AJUSTADA":

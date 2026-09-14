@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def crear_legalizacion(db: Session, legalizacion: TravelLegalizationCreate) -> TravelLegalization:
+def crear_factura(db: Session, legalizacion: TravelLegalizationCreate) -> TravelLegalization:
     try:
         nuevo_registro = TravelLegalization(**legalizacion.dict())
         db.add(nuevo_registro)
@@ -14,7 +14,7 @@ def crear_legalizacion(db: Session, legalizacion: TravelLegalizationCreate) -> T
         return nuevo_registro
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al crear legalizacion: {str(e)}")
+        logger.error(f"Error al crear factura: {str(e)}")
         raise e
 
 def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int) -> list[TravelLegalization]:

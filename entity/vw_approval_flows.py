@@ -48,6 +48,9 @@ class VWApprovalFlows(Base):
     supervisor_settlement_approval = Column(Boolean)
     payment_approval = Column(Boolean)
     program_id = Column(Integer)
+    approved_label = Column(Text)
+    adjustment_label = Column(Text)
+    pending_label = Column(Text)
 
     __mapper_args__ = {
         'primary_key': [unique_id]  # Usar la columna artificial como clave primaria
