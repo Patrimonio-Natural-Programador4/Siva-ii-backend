@@ -493,3 +493,5 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
     except Exception as e:
         logging.error(f"Error al actualizar ruta: {e}")
         raise
+
+
