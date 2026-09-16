@@ -189,6 +189,10 @@ def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
                     activo=r.active,
                     rol=r.approval_role.name if r.approval_role else None,
                     descripcion=r.approval_role.description if r.approval_role else None,
+                    label_aprobacion=r.approved_label,
+                    label_ajuste=r.adjustment_label,
+                    asigna_revisor=r.assign_reviewer,
+                    label_pendiente=r.pending_label,
                 )
                 for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
             ]
@@ -202,6 +206,7 @@ def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
                 rutas=rutas,
                 id_programa=flujo.program_id if flujo.program_id else None,
                 programa=flujo.program.name if flujo.program else None,
+                es_aprobacion_paralela=flujo.is_parallel_approval,
             ))
         return result
     except Exception as e:
@@ -223,6 +228,10 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
                 activo=r.active,
                 rol=r.approval_role.name if r.approval_role else None,
                 descripcion=r.approval_role.description if r.approval_role else None,
+                label_aprobacion=r.approved_label,
+                label_ajuste=r.adjustment_label,
+                asigna_revisor=r.assign_reviewer,
+                label_pendiente=r.pending_label,
             )
             for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
         ]
@@ -234,7 +243,9 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
             categoria=flujo.category.name if flujo.category else None,
             id_categoria=flujo.category_id if flujo.category else None,
             rutas=rutas,
-            id_programa=flujo.program_id if flujo.program_id is not None else None
+            id_programa=flujo.program_id if flujo.program_id is not None else None,
+            template=flujo.template if flujo.template else None,
+            es_aprobacion_paralela=flujo.is_parallel_approval,
         )
     except Exception as e:
         logging.error(f"Failed to get flujo_aprobacion: {str(e)}")
@@ -318,7 +329,12 @@ def crear_flujo_aprobacion(payload: FlujosAprobacionBase, db: Session) -> Respon
             description=payload.descripcion,
             category_id=payload.id_categoria,
             active=payload.activo if payload.activo is not None else True,
-            program_id=payload.id_programa
+            program_id=payload.id_programa,
+            is_parallel_approval=(
+                payload.es_aprobacion_paralela
+                if payload.es_aprobacion_paralela is not None
+                else False
+            ),
         )
         db.add(flujo)
         db.commit()
@@ -344,6 +360,8 @@ def actualizar_flujo_aprobacion(flow_id: int, payload: FlujosAprobacionBase, db:
             flujo.active = payload.activo
         if payload.id_programa is not None:
             flujo.program_id = payload.id_programa
+        if payload.es_aprobacion_paralela is not None:
+            flujo.is_parallel_approval = payload.es_aprobacion_paralela
         db.commit()
         _actualizar_rutas_flujo(flow_id, payload.rutas, db)
         return ResponseRequest(solicitud_exitosa=True, mensaje='Flujo actualizado correctamente', identity=flow_id)
@@ -358,6 +376,7 @@ def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase]
         ApprovalFlowStep.approval_flow_id == id_flujo
     ).all()
     ids_actuales = {r.step_id for r in rutas_actuales}
+    rutas_actuales_por_id = {r.step_id: r for r in rutas_actuales}
     ids_nuevos = {r.id_ruta for r in rutas if r.id_ruta is not None}
 
     for ruta in rutas_actuales:
@@ -371,7 +390,20 @@ def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase]
                 approval_role_id=ruta.id_rol_aprobacion,
                 step_order=ruta.orden,
                 active=True,
+                approved_label=ruta.label_aprobacion,
+                adjustment_label=ruta.label_ajuste,
+                assign_reviewer=ruta.asigna_revisor if ruta.asigna_revisor is not None else False,
+                pending_label=ruta.label_pendiente,
             ))
+        else:
+            ruta_actual = rutas_actuales_por_id[ruta.id_ruta]
+            ruta_actual.approval_role_id = ruta.id_rol_aprobacion
+            ruta_actual.step_order = ruta.orden
+            ruta_actual.active = ruta.activo if ruta.activo is not None else True
+            ruta_actual.approved_label = ruta.label_aprobacion
+            ruta_actual.adjustment_label = ruta.label_ajuste
+            ruta_actual.assign_reviewer = ruta.asigna_revisor if ruta.asigna_revisor is not None else False
+            ruta_actual.pending_label = ruta.label_pendiente
     db.commit()
 
 
@@ -415,13 +447,36 @@ def obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(id_categoria: in
         ).first()
 
         if not flujos_aprobacionDB:
-            return None, None, None, None
+            return None, None, None, None, None, None, None
         else:
-            return flujos_aprobacionDB.approval_flow_id, flujos_aprobacionDB.category, flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id
+            return flujos_aprobacionDB.approval_flow_id, flujos_aprobacionDB.category, flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id, flujos_aprobacionDB.approved_label, flujos_aprobacionDB.adjustment_label, flujos_aprobacionDB.pending_label
             # return flujos_aprobacionDB.id_flujo_aprobacion, flujos_aprobacionDB.categoria, flujos_aprobacionDB.id_rol_aprobacion, flujos_aprobacionDB.id_ruta
 
     except Exception as e:
         logging.error(f"Failed to list roles: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+    
+def obtener_flujo_aprobacion_x_categoria(id_categoria: int, id_usuario: int, db: Session) -> list[VWApprovalFlows]:
+    try:
+        print("id_categoria", id_categoria)
+        print("id_usuario", id_usuario)
+        flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            VWApprovalFlows.user_id == id_usuario,
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.step_order == 1
+        ).all()
+
+        if not flujos_aprobacionDB:
+            return []
+        else:
+            return flujos_aprobacionDB
+
+    except Exception as e:
+        logging.error(f"Failed to list flujos: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
 
@@ -438,9 +493,9 @@ def obtener_siguiente_paso_ruta(id_categoria: int, paso_actual: int, id_flujo_ap
             VWApprovalFlows.approval_flow_id == id_flujo_aprobacion
         ).first()
         if not flujos_aprobacionDB:
-            return None, None, None
+            return None, None, None, None, None, None
         else:
-            return flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id, flujos_aprobacionDB.is_supervisor
+            return flujos_aprobacionDB.approval_role_id, flujos_aprobacionDB.step_id, flujos_aprobacionDB.is_supervisor, flujos_aprobacionDB.approved_label, flujos_aprobacionDB.adjustment_label, flujos_aprobacionDB.pending_label
 
     except Exception as e:
         logging.error(f"Failed to list roles: {str(e)}")

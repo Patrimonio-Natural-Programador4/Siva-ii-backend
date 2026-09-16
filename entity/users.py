@@ -1,12 +1,12 @@
 import datetime
-from typing import Optional
 from sqlalchemy.orm import declarative_base
 from database.database import Base 
 import uuid
-
+from typing import List, Optional
 from sqlalchemy import BigInteger, Boolean, Computed, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
+from entity.model_has_roles import ModelHasRoles
 
 class Users(Base):
     __tablename__ = 'users'
@@ -45,6 +45,14 @@ class Users(Base):
         Computed(None, persisted=True)
     )
     is_guest: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    # model_has_roles: Mapped[list['ModelHasRoles']] = relationship('ModelHasRoles', back_populates='model')
+
+    roles: Mapped[List["ModelHasRoles"]] = relationship(
+        "ModelHasRoles",
+        back_populates="usr",
+        cascade="all, delete-orphan"
+    )
+
     # document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='users')
     # person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
     # annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='user')

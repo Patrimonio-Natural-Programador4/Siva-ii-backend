@@ -228,6 +228,18 @@
 #     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='contract_type')
 
 
+# class DataTypesTermsReference(Base):
+#     __tablename__ = 'data_types_terms_reference'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('data_type_id', name='data_types_terms_reference_pkey'),
+#     )
+
+#     data_type_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     data_type: Mapped[Optional[str]] = mapped_column(Text)
+
+#     map_columns_terms_reference: Mapped[list['MapColumnsTermsReference']] = relationship('MapColumnsTermsReference', back_populates='data_type')
+
+
 # class DisbursementState(Base):
 #     __tablename__ = 'disbursement_state'
 #     __table_args__ = (
@@ -469,6 +481,7 @@
 #     module: Mapped[Optional['Modules']] = relationship('Modules', remote_side=[id], back_populates='module_reverse')
 #     module_reverse: Mapped[list['Modules']] = relationship('Modules', remote_side=[module_id], back_populates='module')
 #     controls: Mapped[list['Controls']] = relationship('Controls', back_populates='module')
+#     menu: Mapped[list['Menu']] = relationship('Menu', back_populates='module')
 #     module_access: Mapped[list['ModuleAccess']] = relationship('ModuleAccess', back_populates='module')
 
 
@@ -834,6 +847,18 @@
 #     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='purchase_type')
 
 
+# class RegimenTypes(Base):
+#     __tablename__ = 'regimen_types'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('id', name='regimen_types_pkey'),
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+#     travel_legalizations: Mapped[list['TravelLegalizations']] = relationship('TravelLegalizations', back_populates='regimen_type')
+
+
 # class Regions(Base):
 #     __tablename__ = 'regions'
 #     __table_args__ = (
@@ -887,9 +912,9 @@
 #     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
 
 #     permission: Mapped[list['Permissions']] = relationship('Permissions', secondary='role_has_permissions', back_populates='role')
-#     model_has_roles: Mapped[list['ModelHasRoles']] = relationship('ModelHasRoles', back_populates='role')
 #     module_access: Mapped[list['ModuleAccess']] = relationship('ModuleAccess', back_populates='role')
 #     control_access: Mapped[list['ControlAccess']] = relationship('ControlAccess', back_populates='role')
+#     model_has_roles: Mapped[list['ModelHasRoles']] = relationship('ModelHasRoles', back_populates='role')
 
 
 # class Rubros(Base):
@@ -1006,6 +1031,48 @@
 #     Column('aud_vgn_ini', DateTime),
 #     Column('aud_vgn_fin', DateTime)
 # )
+
+
+# class TermsReference(Base):
+#     __tablename__ = 'terms_reference'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('terms_reference_id', name='terms_reference_pkey'),
+#     )
+
+#     terms_reference_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+#     rubro_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     pid_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     expense_categories_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     selection_procedure_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     activity_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     evaluation_method_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     object: Mapped[Optional[str]] = mapped_column(Text)
+#     process_number: Mapped[Optional[str]] = mapped_column(Text)
+#     scope: Mapped[Optional[str]] = mapped_column(Text)
+#     execution_period: Mapped[Optional[str]] = mapped_column(Text)
+#     place_execution: Mapped[Optional[str]] = mapped_column(Text)
+#     supervisor_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     educational_background: Mapped[Optional[str]] = mapped_column(Text)
+#     general_professional_experience: Mapped[Optional[str]] = mapped_column(Text)
+#     name: Mapped[Optional[str]] = mapped_column(Text)
+#     description: Mapped[Optional[str]] = mapped_column(Text)
+#     program_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     approval_request_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     created_by_user_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+#     status_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     approval_flow_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+
+# class TermsReferenceStatus(Base):
+#     __tablename__ = 'terms_reference_status'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('status_id', name='terms_reference_status_pkey'),
+#     )
+
+#     status_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     status: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 # class TestTable(Base):
@@ -1125,6 +1192,22 @@
 #     Column('guid', Uuid),
 #     Column('approval_route_status', Text),
 #     Column('is_supervisor', Boolean)
+# )
+
+
+# t_vw_menu = Table(
+#     'vw_menu', Base.metadata,
+#     Column('menu_id', Integer),
+#     Column('name', Text),
+#     Column('parent_menu_id', Integer),
+#     Column('order_menu', Integer),
+#     Column('module_id', Integer),
+#     Column('icon', Text),
+#     Column('url', Text),
+#     Column('parent_value', Text),
+#     Column('parent_order', Integer),
+#     Column('role_id', BigInteger),
+#     Column('parent_icon', Text)
 # )
 
 
@@ -1303,10 +1386,12 @@
 #     supervisor_settlement_approval: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('false'))
 #     payment_approval: Mapped[Optional[bool]] = mapped_column(Boolean)
 #     program_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     template: Mapped[Optional[str]] = mapped_column(Text)
 
 #     category: Mapped['ApprovalCategories'] = relationship('ApprovalCategories', back_populates='approval_flows')
 #     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='approval_flows')
 #     approval_flow_steps: Mapped[list['ApprovalFlowSteps']] = relationship('ApprovalFlowSteps', back_populates='approval_flow')
+#     approval_flows_terms_reference_columns: Mapped[list['ApprovalFlowsTermsReferenceColumns']] = relationship('ApprovalFlowsTermsReferenceColumns', back_populates='approval_flow')
 #     approval_requests: Mapped[list['ApprovalRequests']] = relationship('ApprovalRequests', back_populates='approval_workflow')
 
 
@@ -1453,6 +1538,43 @@
 #     acquisition_implementer: Mapped[list['AcquisitionImplementer']] = relationship('AcquisitionImplementer', back_populates='implementer')
 
 
+# class MapColumnsTermsReference(Base):
+#     __tablename__ = 'map_columns_terms_reference'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['data_type_id'], ['data_types_terms_reference.data_type_id'], name='map_columns_terms_reference_data_type_id_fkey'),
+#         PrimaryKeyConstraint('map_columns_terms_reference_id', name='map_columns_terms_reference_pkey')
+#     )
+
+#     map_columns_terms_reference_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     data_type_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     column_name: Mapped[Optional[str]] = mapped_column(Text)
+#     table_name_relation: Mapped[Optional[str]] = mapped_column(Text)
+#     column_name_relation_id: Mapped[Optional[str]] = mapped_column(Text)
+#     column_name_description: Mapped[Optional[str]] = mapped_column(Text)
+#     description: Mapped[Optional[str]] = mapped_column(Text)
+
+#     data_type: Mapped[Optional['DataTypesTermsReference']] = relationship('DataTypesTermsReference', back_populates='map_columns_terms_reference')
+#     approval_flows_terms_reference_columns: Mapped[list['ApprovalFlowsTermsReferenceColumns']] = relationship('ApprovalFlowsTermsReferenceColumns', back_populates='map_columns_terms_reference')
+
+
+# class Menu(Base):
+#     __tablename__ = 'menu'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['module_id'], ['modules.id'], name='menu_module_id_fkey'),
+#         PrimaryKeyConstraint('menu_id', name='menu_pkey')
+#     )
+
+#     menu_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     name: Mapped[str] = mapped_column(Text, nullable=False)
+#     parent_menu_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     order_menu: Mapped[Optional[int]] = mapped_column(Integer)
+#     module_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     icon: Mapped[Optional[str]] = mapped_column(Text)
+#     url: Mapped[Optional[str]] = mapped_column(Text)
+
+#     module: Mapped[Optional['Modules']] = relationship('Modules', back_populates='menu')
+
+
 # class ModelHasPermissions(Base):
 #     __tablename__ = 'model_has_permissions'
 #     __table_args__ = (
@@ -1466,21 +1588,6 @@
 #     model_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
 #     permission: Mapped['Permissions'] = relationship('Permissions', back_populates='model_has_permissions')
-
-
-# class ModelHasRoles(Base):
-#     __tablename__ = 'model_has_roles'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE', name='model_has_roles_role_id_foreign'),
-#         PrimaryKeyConstraint('role_id', 'model_id', 'model_type', name='model_has_roles_pkey'),
-#         Index('model_has_roles_model_id_model_type_index', 'model_id', 'model_type')
-#     )
-
-#     role_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     model_type: Mapped[str] = mapped_column(String(255), primary_key=True)
-#     model_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-
-#     role: Mapped['Roles'] = relationship('Roles', back_populates='model_has_roles')
 
 
 # class ModuleAccess(Base):
@@ -1820,6 +1927,23 @@
 #     approval_flow: Mapped['ApprovalFlows'] = relationship('ApprovalFlows', back_populates='approval_flow_steps')
 #     approval_role: Mapped['ApprovalRoles'] = relationship('ApprovalRoles', back_populates='approval_flow_steps')
 #     approval_request_history: Mapped[list['ApprovalRequestHistory']] = relationship('ApprovalRequestHistory', back_populates='step')
+
+
+# class ApprovalFlowsTermsReferenceColumns(Base):
+#     __tablename__ = 'approval_flows_terms_reference_columns'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['approval_flow_id'], ['approval_flows.approval_flow_id'], name='approval_flows_terms_reference_columns_approval_flow_id_fkey'),
+#         ForeignKeyConstraint(['map_columns_terms_reference_id'], ['map_columns_terms_reference.map_columns_terms_reference_id'], name='approval_flows_terms_referenc_map_columns_terms_reference__fkey'),
+#         PrimaryKeyConstraint('approval_flows_terms_reference_columns_id', name='approval_flows_terms_reference_columns_pkey')
+#     )
+
+#     approval_flows_terms_reference_columns_id: Mapped[int] = mapped_column(Integer, Sequence('approval_flows_terms_referenc_approval_flows_terms_referenc_seq'), primary_key=True)
+#     map_columns_terms_reference_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     approval_flow_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     visible: Mapped[Optional[bool]] = mapped_column(Boolean)
+
+#     approval_flow: Mapped[Optional['ApprovalFlows']] = relationship('ApprovalFlows', back_populates='approval_flows_terms_reference_columns')
+#     map_columns_terms_reference: Mapped[Optional['MapColumnsTermsReference']] = relationship('MapColumnsTermsReference', back_populates='approval_flows_terms_reference_columns')
 
 
 # class ApprovalRequests(Base):
@@ -2304,6 +2428,7 @@
 #     person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
 #     annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='user')
 #     approval_role_users: Mapped[list['ApprovalRoleUsers']] = relationship('ApprovalRoleUsers', back_populates='user')
+#     model_has_roles: Mapped[list['ModelHasRoles']] = relationship('ModelHasRoles', back_populates='model')
 #     notifications: Mapped[list['Notifications']] = relationship('Notifications', back_populates='user')
 #     tasks_applicant: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.applicant_id]', back_populates='applicant')
 #     tasks_executor: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.executor_id]', back_populates='executor')
@@ -2500,6 +2625,23 @@
 #     product: Mapped['AgreementsProducts'] = relationship('AgreementsProducts', back_populates='disbursement_products')
 
 
+# class ModelHasRoles(Base):
+#     __tablename__ = 'model_has_roles'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['model_id'], ['users.id'], name='model_has_roles_model_id_fkey'),
+#         ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE', name='model_has_roles_role_id_foreign'),
+#         PrimaryKeyConstraint('role_id', 'model_id', 'model_type', name='model_has_roles_pkey'),
+#         Index('model_has_roles_model_id_model_type_index', 'model_id', 'model_type')
+#     )
+
+#     role_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     model_type: Mapped[str] = mapped_column(String(255), primary_key=True)
+#     model_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+#     model: Mapped['Users'] = relationship('Users', back_populates='model_has_roles')
+#     role: Mapped['Roles'] = relationship('Roles', back_populates='model_has_roles')
+
+
 # class MovementsPads(Base):
 #     __tablename__ = 'movements_pads'
 #     __table_args__ = (
@@ -2684,14 +2826,20 @@
 #     short_rubro: Mapped[Optional[str]] = mapped_column(Text)
 #     year_rubro: Mapped[Optional[int]] = mapped_column(Integer)
 #     activity_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     emergency_contact: Mapped[Optional[str]] = mapped_column(Text)
+#     emergency_phone: Mapped[Optional[str]] = mapped_column(Text)
+#     emergency_relationship: Mapped[Optional[str]] = mapped_column(Text)
+#     two_persons_travel: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('false'))
 
 #     activity: Mapped[Optional['Activities']] = relationship('Activities', back_populates='travel_requests')
 #     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='travel_requests')
 #     rubro: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='travel_requests')
 #     travel_status: Mapped[Optional['TravelStatus']] = relationship('TravelStatus', back_populates='travel_requests')
 #     traveler_user: Mapped[Optional['Users']] = relationship('Users', back_populates='travel_requests')
+#     attachment_travel_tp: Mapped[list['AttachmentTravelTp']] = relationship('AttachmentTravelTp', back_populates='travel_request')
 #     travel_accommodations: Mapped[list['TravelAccommodations']] = relationship('TravelAccommodations', back_populates='travel_request')
 #     travel_itineraries: Mapped[list['TravelItineraries']] = relationship('TravelItineraries', back_populates='travel_request')
+#     travel_legalizations: Mapped[list['TravelLegalizations']] = relationship('TravelLegalizations', back_populates='travel_request')
 
 
 # class UsersPrograms(Base):
@@ -2708,6 +2856,21 @@
 
 #     program: Mapped['Programs'] = relationship('Programs', back_populates='users_programs')
 #     user: Mapped['Users'] = relationship('Users', back_populates='users_programs')
+
+
+# class AttachmentTravelTp(Base):
+#     __tablename__ = 'attachment_travel_tp'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['travel_request_id'], ['travel_requests.travel_request_id'], ondelete='CASCADE', onupdate='CASCADE', name='fk_attachment_travel_tp_travel_request'),
+#         PrimaryKeyConstraint('id', name='attachment_travel_tp_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     attachment_name: Mapped[Optional[str]] = mapped_column(Text)
+#     path_document: Mapped[Optional[str]] = mapped_column(Text)
+#     travel_request_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+#     travel_request: Mapped[Optional['TravelRequests']] = relationship('TravelRequests', back_populates='attachment_travel_tp')
 
 
 # class Observations(Base):
@@ -2787,3 +2950,31 @@
 #     destination_municipality: Mapped[Optional['Regions']] = relationship('Regions', foreign_keys=[destination_municipality_id], back_populates='travel_itineraries_destination_municipality')
 #     origin_municipality: Mapped[Optional['Regions']] = relationship('Regions', foreign_keys=[origin_municipality_id], back_populates='travel_itineraries_origin_municipality')
 #     travel_request: Mapped['TravelRequests'] = relationship('TravelRequests', back_populates='travel_itineraries')
+
+
+# class TravelLegalizations(Base):
+#     __tablename__ = 'travel_legalizations'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['regimen_type_id'], ['regimen_types.id'], name='travel_legalizations_regimen_type_id_fkey'),
+#         ForeignKeyConstraint(['travel_request_id'], ['travel_requests.travel_request_id'], name='travel_legalizations_travel_request_id_fkey'),
+#         PrimaryKeyConstraint('legalization_id', name='travel_legalizations_pkey')
+#     )
+
+#     legalization_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     travel_request_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     check_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+#     beneficiary: Mapped[str] = mapped_column(String(255), nullable=False)
+#     nit_beneficiary: Mapped[str] = mapped_column(String(20), nullable=False)
+#     regimen_type_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     subtotal: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+#     iva: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+#     retention_porcentage: Mapped[decimal.Decimal] = mapped_column(Numeric(5, 2), nullable=False)
+#     retention: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+#     amount_paid: Mapped[decimal.Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+#     created_at: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+#     check_number: Mapped[Optional[str]] = mapped_column(String(50))
+#     observations_outlay: Mapped[Optional[str]] = mapped_column(Text)
+#     observations: Mapped[Optional[str]] = mapped_column(Text)
+
+#     regimen_type: Mapped['RegimenTypes'] = relationship('RegimenTypes', back_populates='travel_legalizations')
+#     travel_request: Mapped['TravelRequests'] = relationship('TravelRequests', back_populates='travel_legalizations')

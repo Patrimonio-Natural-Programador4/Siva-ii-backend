@@ -1,0 +1,46 @@
+@page {
+    size: A4 landscape;
+    margin: 20mm 10mm 15mm 1mm;
+
+    @top-left {
+        content: element(pdf-page-header-left);
+        vertical-align: middle;
+    }
+
+    @top-right {
+        content: element(pdf-page-header-right);
+        vertical-align: middle;
+    }
+
+    @bottom-right {
+        content: "Pagina " counter(page) " de " counter(pages);
+        font-family: Arial, sans-serif;
+        font-size: 11px;
+    }
+}
+
+.pdf-page-header-left,
+.pdf-page-header-right {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+}
+
+.pdf-page-header-left {
+    position: running(pdf-page-header-left);
+    margin-left: 10mm;
+}
+
+.pdf-page-header-right {
+    position: running(pdf-page-header-right);
+    font-weight: bold;
+    text-align: right;
+}
+
+.pdf-page-header__title {
+    font-weight: bold;
+}
+
+.pdf-page-header__logo {
+    height: 16mm;
+    width: auto;
+}

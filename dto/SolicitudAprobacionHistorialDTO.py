@@ -30,6 +30,7 @@ class SolicitudAprobacionHistorialDTOBase(BaseModel):
     valida_soportes_hotel: Optional[bool] = None
     agrega_rpc: Optional[bool] = None
     agrega_documento_contable: Optional[bool] = None
+    label_estado: Optional[str] = None
 
     class Config:
         from_attributes = True

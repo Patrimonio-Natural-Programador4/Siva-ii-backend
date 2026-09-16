@@ -68,3 +68,8 @@ class ApprovalFlow(Base):
         back_populates="approval_flow",
         cascade="all, delete-orphan"
     )
+    template: Mapped[Optional[str]] = mapped_column(Text)
+    is_parallel_approval: Mapped[Optional[bool]] = mapped_column(
+        Boolean,
+        server_default=text('false')
+    )

@@ -37,6 +37,7 @@ class ApprovalRequestHistory(Base):
     mentioned_user_ids: Mapped[Optional[list[int]]] = mapped_column(ARRAY(Integer()))
     approver_user_id: Mapped[Optional[int]] = mapped_column(Integer)
     approved_by_user: Mapped[Optional[str]] = mapped_column(Text)
+    state_label: Mapped[Optional[str]] = mapped_column(Text)
 
     # approval_request: Mapped['ApprovalRequests'] = relationship('ApprovalRequests', back_populates='approval_request_history')
     # approval_role: Mapped['ApprovalRoles'] = relationship('ApprovalRoles', back_populates='approval_request_history')

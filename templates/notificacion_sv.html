@@ -55,7 +55,7 @@
             font-size: 12px;
             margin: 0;
             padding: 0 15mm;
-            width: 100%;
+            width: 90%;
         }
         .header-container {
             display: flex;
@@ -91,29 +91,29 @@
         <table>
             <thead>
                 <tr>
-                    <th>Nombre del Viajero</th>
+                    <th>Nombre del solicitante</th>
                     <th>Identificación</th>
-                    <th>Fecha de Solicitud</th>
-                    <th>Categoría de viaje</th>
+                    <th>Rubro</th>
+                    <th>Categoría de Gasto (Actividad)</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>{{ usuario }}</td>
                     <td>{{ identificacion }}</td>
-                    <td>{{ fecha_solicitud }}</td>
+                    <td>{{ rubro }}</td>
                     <td>{{ categoria }}</td>
                 </tr>
                 <tr>
-                    <th>Fecha y hora Inicio del Viaje</th>
-                    <th>Fecha y hora Fin del Viaje</th>
-                    <th>Número de horas</th>
+                    <th>Fecha de Solicitud</th>
+                    <th>Fecha Inicio del Viaje</th>
+                    <th>Fecha Fin del Viaje</th>
                     <th>Número de días</th>
                 </tr>
                 <tr>
-                    <td>{{ fecha_inicio_viaje }} : {{ hora_inicio }}</td>
-                    <td>{{ fecha_fin_viaje }} : {{ hora_fin }}</td>
-                    <td>{{ nro_horas }}</td>
+                    <td>{{ fecha_solicitud }}</td>
+                    <td>{{ fecha_inicio_viaje }}</td>
+                    <td>{{ fecha_fin_viaje }}</td>
                     <td>{{ nro_dias }}</td>
                 </tr>
                 <tr>
@@ -149,14 +149,6 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>Viaje asociado a un taller</th>
-                    <td>
-                        {% if asociado_taller %}
-                        Sí
-                        {% else %}
-                        No
-                        {% endif %}
-                    </td>
                     <th>Requiere anticipo</th>
                     <td>
                         {% if requiere_anticipo %}
@@ -164,6 +156,10 @@
                         {% else %}
                         No
                         {% endif %}
+                    </td>
+                    <th>Valor del anticipo</th>
+                    <td>
+                        {{'{:,.2f}'.format(valor_anticipo or 0) if requiere_anticipo else 'No aplica'}}
                     </td>
                 </tr>
                 
@@ -232,7 +228,7 @@
     </div>
 
     <div class="section">
-        <h2>Requerimientos de Hotel</h2>
+        <h2>Requerimiento de hospedaje</h2>
         <table>
             <thead>
                 <tr>
@@ -240,8 +236,6 @@
                     <th>Fecha de llegada</th>
                     <th>Fecha de salida</th>
                     <th>Observaciones</th>
-                    <th>Tipo de alojamiento</th>
-                    <th>El pago del hotel lo gestiona</th>
                 </tr>
             </thead>
             <tbody>
@@ -251,58 +245,12 @@
                     <td>{{ item.fecha_llegada }}</td>
                     <td>{{ item.fecha_salida }}</td>
                     <td>{{ item.observaciones }}</td>
-                    <td>
-                        {% if item.tipo_alojamiento == 'ZR' %}
-                            Zona Rural
-                        {% elif item.tipo_alojamiento == 'C' %}
-                            Ciudad
-                        {% endif %} 
-                    </td>
-                    <td>
-                        {{ 'Patrimonio Natural' if item.pago_gestiona_fundacion else 'Gestión propia' }}
-                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    {% if requiere_anticipo %}
-    <div class="section">
-        <h2>Requerimiento de anticipo</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Concepto</th>
-                    <th>Valor</th>
-                    <th>Observaciones</th>
-                    <th>Proyecto</th>
-                    <th>Rubro</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ant in anticipo.detalle %}
-                <tr>
-                    <td>{{ ant.concepto }}</td>
-                    <td>{{ '{:,.2f}'.format(ant.valor_anticipo or 0) }}</td>
-                    <td>{{ ant.observaciones if ant.observaciones else '' }}</td>
-                    <td>{{ ant.proyecto if ant.proyecto else '' }}</td>
-                    <td>{{ ant.rubro if ant.rubro else '' }}</td>
-                </tr>
-                {% endfor %}
-                <tr>
-                    <th>Gastos bancarios</th>
-                    <th colspan="4">{{ '{:,.2f}'.format(anticipo.gastos_bancarios or 0) }}</th>
-                </tr>
-                <tr>
-                    <th>Total Anticipo Solicitado</th>
-                    <th colspan="4">{{ '{:,.2f}'.format(anticipo.valor or 0) }}</th>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-     
     <div class="section info">
         <h2>Ruta de aprobación de la solicitud de viaje</h2>
         <table>

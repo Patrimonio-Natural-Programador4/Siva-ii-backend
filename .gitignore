@@ -1,12 +1,10 @@
-
-
 .env
-
 # Python
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *.pyo
+*.pyc
 
 # Entornos virtuales
 .venv/
@@ -24,7 +22,23 @@ env/
 *.zip
 EOF
 
-
 # venv
 
 .venv/
+
+soportes/tdr/priview_tdr/
+soportes/tdr/priview_tdr/*
+demo_doc/
+demo_doc/*
+
+
+services/WordParametersService.py
+controllers/WordParametersController.py
+
+# 3 plantillas de minutas
+# Sub acuerdos
+# Convenios 
+# Convenios de coejecución
+
+# Minutas subacuerdo
+# Dependiendo del pilar se toma una plantilla u otra (pilar 4 una  - los demas otra plantilla)

@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session
 import logging
-from dto.ViajesDTO import ViajesListSP
+from datetime import datetime, time
+from dto.ViajesDTO import ViajesCalendar, ViajesListSP
 from entity.travel_requests import TravelRequests
+from entity.users import Users
 from exceptions import PruebaNotFoundError
-from sqlalchemy import and_, or_, text
+from sqlalchemy import and_, func, or_, text
 
 def numero_viajes(db: Session) -> int:
     try:
@@ -99,5 +101,35 @@ def listar_viajes_por_usuario_sp(guidmsf: str, db: Session, page: int = 1, estad
         return viajes
     except Exception as e:
         logging.error(f"Failed to fetch viajes ")
+        raise PruebaNotFoundError(str(e))
+
+
+def listar_viajes_calendario(db: Session, fecha_desde, fecha_hasta) -> list[ViajesCalendar]:
+    try:
+        fecha_fin_viaje = func.coalesce(TravelRequests.travel_end_date, TravelRequests.travel_start_date)
+        result = db.query(TravelRequests, Users.full_name).join(
+            Users,
+            TravelRequests.traveler_user_id == Users.id
+        ).filter(
+            TravelRequests.travel_start_date.isnot(None),
+            TravelRequests.travel_start_date < fecha_hasta,
+            fecha_fin_viaje >= fecha_desde,
+            or_(TravelRequests.is_cancelled.is_(None), TravelRequests.is_cancelled.is_(False))
+        ).order_by(
+            TravelRequests.travel_start_date.asc(),
+            TravelRequests.code.asc()
+        ).all()
+
+        return [
+            ViajesCalendar(
+                id=viaje.guid,
+                title=f"{viaje.code or ''} - {usuario or ''}".strip(" -"),
+                start=datetime.combine(viaje.travel_start_date, time.min),
+                end=datetime.combine(viaje.travel_end_date or viaje.travel_start_date, time.min)
+            )
+            for viaje, usuario in result
+        ]
+    except Exception as e:
+        logging.error(f"Failed to fetch viajes calendar: {str(e)}")
         raise PruebaNotFoundError(str(e))
     

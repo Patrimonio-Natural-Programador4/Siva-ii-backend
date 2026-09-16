@@ -29,6 +29,10 @@ class FlujosAprobacionRutaBase(BaseModel):
     activo: Optional[bool] = None
     rol: Optional[str] = None
     descripcion: Optional[str] = None
+    label_aprobacion: Optional[str] = None
+    label_ajuste: Optional[str] = None
+    asigna_revisor: Optional[bool] = None
+    label_pendiente: Optional[str] = None
 
 
 class FlujosAprobacionBase(BaseModel):
@@ -41,6 +45,8 @@ class FlujosAprobacionBase(BaseModel):
     id_categoria: Optional[int] = None
     id_programa: Optional[int] = None
     programa: Optional[str] = None
+    template: Optional[str] = None
+    es_aprobacion_paralela: Optional[bool] = None
 
 
 class UsuarioDelegadoBase(BaseModel):

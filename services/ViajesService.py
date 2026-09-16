@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
-from dto.ViajesDTO import ViajesCreate, ViajesListSP
+from dto.ViajesDTO import ViajesCalendar, ViajesCreate, ViajesListSP
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
@@ -19,10 +19,12 @@ from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from datetime import date, datetime, time
 from jinja2 import Environment, FileSystemLoader
-from services import SolicitudesAprobacionService, NotificacionesService
+from services import SolicitudesAprobacionService, NotificacionesService, SoportesService
 from entity.users import Users
+from entity.users_delegate import UsersDelegate
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
+CATEGORIA_APROBACION_LEGALIZACION_VIAJE = "LEG_VIA_ANT"
 
 def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
@@ -38,7 +40,10 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.code = f"V-{fecha_actual.year}-{viajes + 1:02d}"
         nuevo_viaje.created_at = datetime.now()
         nuevo_viaje.created_by_user_id = usuario.id
-        nuevo_viaje.traveler_user_id = usuario.id
+        if viaje.es_para_funcionario and viaje.id_funcionario_responsable:
+            nuevo_viaje.traveler_user_id = viaje.id_funcionario_responsable
+        else:
+            nuevo_viaje.traveler_user_id = usuario.id
         nuevo_viaje.travel_start_date = viaje.fecha_inicio_viaje
         nuevo_viaje.travel_end_date = viaje.fecha_fin_viaje
         nuevo_viaje.activity_purpose = viaje.objetivo
@@ -47,6 +52,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.bank_id = viaje.id_entidad_bancaria
         nuevo_viaje.requires_tickets = viaje.requiere_tiquetes
         nuevo_viaje.requires_advance_payment = viaje.requiere_anticipo
+        nuevo_viaje.two_persons_travel = viaje.dos_o_mas_personas
         nuevo_viaje.travel_status_id = 1
         nuevo_viaje.is_international = viaje.viaje_internacional
         nuevo_viaje.country = viaje.pais
@@ -96,6 +102,19 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             actualizar_hotel_viaje(nuevo_viaje.travel_request_id, viaje.hotel, db)
         if viaje.itinerario:
             actualizar_itinerario_viaje(nuevo_viaje.travel_request_id, viaje.itinerario, db)
+
+        # Guardar archivo Excel de listado de invitados si aplica
+        if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
+            try:
+                SoportesService.guardar_documento_viaje(
+                    codigo_viaje=nuevo_viaje.code,
+                    base64_data=viaje.soporte_dos_o_mas_personas,
+                    db=db,
+                    travel_request_id=nuevo_viaje.travel_request_id
+                )
+            except ValueError as e:
+                logging.warning(f"Error al guardar archivo Excel del viaje {nuevo_viaje.code}: {e}")
+
         # if viaje.anticipo.detalle:
         #     tiene_anticipo = True
         #     viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
@@ -160,13 +179,14 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "usuario": nombre_usuario,
                 "identificacion": usuario.identification_number if usuario.identification_number else "",
                 "fecha_solicitud": nuevo_viaje.created_at.strftime("%Y-%m-%d") if nuevo_viaje.created_at else date.today().strftime("%Y-%m-%d"),
-                "categoria": "Solicitud de viaje y anticipo",
+                "categoria": f"{nuevo_viaje.activity.code} - {nuevo_viaje.activity.description}" if nuevo_viaje.activity else None,
                 "fecha_inicio_viaje": nuevo_viaje.travel_start_date,
                 "fecha_fin_viaje": nuevo_viaje.travel_end_date,
                 "hora_inicio": nuevo_viaje.start_time.strftime("%H:%M") if nuevo_viaje.start_time else "",
                 "hora_fin": nuevo_viaje.end_time.strftime("%H:%M") if nuevo_viaje.end_time else "",
                 "nro_dias": nro_dias,
                 "nro_horas": nro_horas,
+                "rubro": f"{nuevo_viaje.short_rubro} - {nuevo_viaje.rubro.rubros}",
                 "es_invitado": nuevo_viaje.is_guest,
                 "persona_invitada": nuevo_viaje.guest_name,
                 "documento_persona_invitada": nuevo_viaje.guest_document,
@@ -177,6 +197,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "pais": nuevo_viaje.country,
                 "asociado_taller": False,
                 "requiere_anticipo": nuevo_viaje.requires_advance_payment,
+                "dos_o_mas_personas": nuevo_viaje.two_persons_travel,
                 "tipo_cuenta": tipo_cuenta,
                 "entidad_bancaria": entidad_bancaria,
                 "numero_cuenta": nuevo_viaje.account_number,
@@ -184,7 +205,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "observaciones_adicionales": nuevo_viaje.additional_comments,
                 "itinerario": viaje.itinerario,
                 "hotel": viaje.hotel,
-                "anticipo": viaje.anticipo,
+                "valor_anticipo": viaje.valor_anticipo if viaje.valor_anticipo else 0,
                 "historialAprobacionSolicitud": historialAprobacionSolicitud
             }
 
@@ -245,7 +266,10 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         
         viajeDb.updated_at = datetime.now()
         viajeDb.updated_by_user_id = usuario.id
-        viajeDb.traveler_user_id = usuario.id
+        if viaje.es_para_funcionario and viaje.id_funcionario_responsable:
+            viajeDb.traveler_user_id = viaje.id_funcionario_responsable
+        else:
+            viajeDb.traveler_user_id = usuario.id
         viajeDb.travel_start_date = viaje.fecha_inicio_viaje
         viajeDb.travel_end_date = viaje.fecha_fin_viaje
         viajeDb.activity_purpose = viaje.objetivo
@@ -254,6 +278,7 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         viajeDb.bank_id = viaje.id_entidad_bancaria
         viajeDb.requires_tickets = viaje.requiere_tiquetes
         viajeDb.requires_advance_payment = viaje.requiere_anticipo
+        viajeDb.two_persons_travel = viaje.dos_o_mas_personas
         viajeDb.is_international = viaje.viaje_internacional
         viajeDb.country = viaje.pais
         viajeDb.is_guest = viaje.es_invitado
@@ -299,6 +324,19 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
             actualizar_hotel_viaje(viajeDb.travel_request_id, viaje.hotel, db)
         if viaje.itinerario:
             actualizar_itinerario_viaje(viajeDb.travel_request_id, viaje.itinerario, db)
+
+        # Guardar archivo Excel de listado de invitados si aplica
+        if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
+            try:
+                SoportesService.guardar_documento_viaje(
+                    codigo_viaje=viajeDb.code,
+                    base64_data=viaje.soporte_dos_o_mas_personas,
+                    db=db,
+                    travel_request_id=viajeDb.travel_request_id
+                )
+            except ValueError as e:
+                logging.warning(f"Error al guardar archivo Excel del viaje {viajeDb.code}: {e}")
+
         # if viaje.anticipo.detalle:
         #     tiene_anticipo = True
         #     viaje.anticipo.id_tipo_cuenta = viaje.id_tipo_cuenta
@@ -376,6 +414,7 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
                 "pais": viajeDb.country,
                 "asociado_taller": False,
                 "requiere_anticipo": viajeDb.requires_advance_payment,
+                "dos_o_mas_personas": viajeDb.two_persons_travel,
                 "tipo_cuenta": tipo_cuenta,
                 "entidad_bancaria": entidad_bancaria,
                 "numero_cuenta": viajeDb.account_number,
@@ -430,7 +469,6 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
             mensaje=str(e)
         )
         # raise PruebaCreationError(str(e))
-
 
 
 def actualizar_itinerario_viaje(viaje_id: int, itinerarioList: list[ViajesItinerarioBase], db: Session, validar_eliminacion: bool = True) -> None:
@@ -584,6 +622,7 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         fecha_inicio_viaje=viajeDb.travel_start_date,
         fecha_fin_viaje=viajeDb.travel_end_date,
         requiere_anticipo=viajeDb.requires_advance_payment,
+        dos_o_mas_personas=viajeDb.two_persons_travel,
         fecha_solicitud=viajeDb.created_at.date() if viajeDb.created_at else None,
         requiere_tiquetes=viajeDb.requires_tickets,
         id_supervisor_aprueba=viajeDb.supervisor_user_id,
@@ -598,6 +637,9 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         usuario=viajeDb.user.full_name if viajeDb.user else None,
         id_solicitud_aprobacion=viajeDb.approval_request_id,
         es_invitado=viajeDb.is_guest,
+        es_para_funcionario=viajeDb.created_by_user_id != viajeDb.traveler_user_id 
+        if viajeDb.created_by_user_id else False,id_funcionario_responsable=viajeDb.traveler_user_id
+        if (viajeDb.created_by_user_id and viajeDb.created_by_user_id != viajeDb.traveler_user_id) else None,
         persona_invitada=viajeDb.guest_name,
         documento_persona_invitada=viajeDb.guest_document,
         telefono_persona_invitada=viajeDb.guest_phone,
@@ -620,6 +662,10 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         telefono_emergencia=viajeDb.emergency_phone,
         parentesco_emergencia=viajeDb.emergency_relationship,
         fecha_nacimiento_viajero=viajeDb.traveler_birth_date,
+        valor_anticipo=viajeDb.advance_amount,
+        nombre_archivo_dos_o_mas_personas=SoportesService.obtener_nombre_archivo_viaje(viajeDb.travel_request_id, db),
+        programa=viajeDb.program.name if viajeDb.program else None,
+        identificacion=viajeDb.user.identification_number if viajeDb.user else None
     )
     for it in itinerario:
         viajeDTO.itinerario.append(
@@ -826,7 +872,8 @@ def procesar_accion_solicitud_aprobacion(accion: AccionSolicitudAprobacion, usua
                 # print("Destinatarios:", to_recipients)
                 # print("mensaje", mensaje)
 
-                
+            if accion.tipo_solicitud == CATEGORIA_APROBACION_LEGALIZACION_VIAJE:
+                viaje.travel_status_id = 7 if respuesta.mensaje == "RUTA_COMPLETA" else 5 if respuesta.mensaje == "EN_PROCESO" else 6 if respuesta.mensaje == "AJUSTES" else viaje.travel_status_id
 
                 
 
@@ -975,6 +1022,14 @@ def listar_viajes_por_usuario_sp(
         return viajes
     except Exception as e:
         logging.error(f"Failed to list viajes: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+
+def listar_viajes_calendario(db: Session, fecha_desde: date, fecha_hasta: date) -> list[ViajesCalendar]:
+    try:
+        return ViajesRepository.listar_viajes_calendario(db, fecha_desde, fecha_hasta)
+    except Exception as e:
+        logging.error(f"Failed to list viajes calendar: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
 
@@ -1454,10 +1509,107 @@ def lista_generica(db: Session, usuario_guid: str) -> list[Listados]:
         #     )
         # )
 
-       
-
+        responsables_query = db.query(UsersDelegate).filter(UsersDelegate.delegate_id == usuario.id).all()
+        lista_catalogos = []
+        for p in responsables_query:
+            if p.responsable:
+                lista_catalogos.append(
+                    ListaGenerica(
+                        identity=p.responsable.id,
+                        valor=f"{p.responsable.first_name} {p.responsable.last_name}",
+                        idrelacion=None,
+                        valorNumerico=None,
+                        valor_referencia=None
+                    )
+                )
+        listados.append(
+            Listados(
+                id_listado=9,
+                tipo_listado="Responsables",
+                lista_generica=lista_catalogos
+            )
+        )
         
         return listados
     except Exception as e:
         logging.error(f"Failed to list: {str(e)}")
         raise PruebaCreationError(str(e))
+
+
+
+def guardar_legalizacion(viaje: ViajesCreate, db: Session):
+    respuesta = ResponseRequest(solicitud_exitosa=True)
+    try:
+        viajeDb = ViajesRepository.obtener_por_guid(viaje.guid, db)
+
+
+        if viaje.enviar_aprobacion:
+            # viaje.anticipo.valor = 0 if not viaje.anticipo.valor else viaje.anticipo.valor
+            # viaje.anticipo.gastos_bancarios = 0 if not viaje.anticipo.gastos_bancarios else viaje.anticipo.gastos_bancarios
+            # print(viaje.anticipo.valor - viaje.anticipo.gastos_bancarios)
+            # requiere_aprobacion_supervisor = False
+            # requiere_aprobacion_pagos = False
+            # if valor_reintegro > 0 and valor_reintegro > (viaje.anticipo.valor - viaje.anticipo.gastos_bancarios):
+            #     requiere_aprobacion_pagos = True
+            
+            # if viaje.anticipo.valor == 0 and valor_reintegro == 0:
+            #     requiere_aprobacion_supervisor = False
+            # elif (viaje.anticipo.valor - viaje.anticipo.gastos_bancarios == 0 and valor_reintegro > 0) or ((valor_reintegro - viaje.anticipo.valor - viaje.anticipo.gastos_bancarios) / (viaje.anticipo.valor - viaje.anticipo.gastos_bancarios) > 0.3):
+            #     requiere_aprobacion_supervisor = True
+
+                
+            id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(CATEGORIA_APROBACION_LEGALIZACION_VIAJE, db)
+            id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(id_categoria_aprobacion, viajeDb.travel_request_id, viajeDb.traveler_user_id, 
+                                                                                              viajeDb.code, db, viajeDb.supervisor_user_id, viajeDb.program_id)
+            viajeDb.expense_approval_request_id = id_solicitud_aprobacion
+            viajeDb.travel_status_id = 5
+            db.commit()
+
+            # emailUsuariosRuta = SolicitudesAprobacionService.obtener_usuarios_ruta(viajeDb.expense_approval_request_id, db)
+
+            # destinatarios = []
+            # destinatarios.append(viajeDb.usuario.correo)
+
+            # for email in emailUsuariosRuta:
+            #     destinatarios.append(email)
+
+            # facturas = []
+            # facturas = FacturasService.obtener_factura_por_id(viajeDb.guid, 1, db)
+
+
+            # historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viajeDb.id_viaje, 1, db)
+            # historialAprobacionLegalizacion = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viajeDb.id_viaje, 2, db)
+            # to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            # env = Environment(loader=FileSystemLoader(''))
+            # template = env.get_template('templates/notificacion_sv.html')
+
+            
+            
+            # itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viajeDb.id_viaje, db)
+            # hoteles = ViajesHotelRepository.listar_hoteles_por_viaje(viajeDb.id_viaje, db)
+            # # anticipos = AnticiposDetalleRepository.listar_anticipos_por_viaje(viajeDb.id_viaje, db)
+            # anticipo = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viajeDb.id_viaje, False, db)
+            # reintegro = AnticiposReintegrosRepository.obtener_anticipo_reintegro_por_tipo_y_relacion(1, viajeDb.id_viaje, True, db)
+            # viajeDTO = viajeCreateDTO(viajeDb, itinerario, hoteles, anticipo, reintegro, db)
+        
+            # html_out = template.render(**vars(viajeDTO), 
+            #                            historialAprobacionSolicitud=historialAprobacionSolicitud,
+            #                            historialAprobacionLegalizacion=historialAprobacionLegalizacion,
+            #                            facturas=facturas)
+            
+            # print(destinatarios)
+            # NotificacionesService.solicitud_viaje(f"Legalización de viaje {viajeDb.codigo} enviada por aprobación", to_recipients, html_out, "", "", db)
+
+        
+
+        respuesta.identity = viajeDb.travel_request_id
+        respuesta.mensaje = "Información guardada exitosamente"
+        return respuesta
+    except Exception as e:
+        logging.error(f"Failed to create viaje: {str(e)}")
+        return ResponseRequest(
+            solicitud_exitosa=False,
+            mensaje=str(e)
+        )
+
+    

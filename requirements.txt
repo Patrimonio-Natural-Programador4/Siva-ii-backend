@@ -4,6 +4,16 @@ sqlalchemy
 psycopg2-binary
 python-dotenv
 python-multipart
+python-docx
+requests
+msal
+PyJWT
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+python-multipart
 requests
 msal
 PyJWT

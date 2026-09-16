@@ -1,4 +1,5 @@
-from controllers import SolicitudesAprobacionController, ViajesController
+from controllers import SolicitudesAprobacionController, TdrController, ViajesController
+#from controllers import WordParametersController
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -19,7 +20,11 @@ from controllers import CapacityAssessmentsStatesController
 from controllers import DocumentsTypesAgreementsController
 from controllers import CapacityAssessmentsController
 from controllers import PreviousStudiesController
+<<<<<<< HEAD
 from controllers import PreviousStudiesStatesController
+=======
+from controllers import TravelLegalizationsController
+>>>>>>> b0c746601d0777e4f7b32c66178d1bffa4897405
 
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -163,8 +168,10 @@ def register_routes(app: FastAPI):
     app.include_router(ProgramasController.router, dependencies=auth_dependency)
     app.include_router(FlujosAprobacionController.router, dependencies=auth_dependency)
     app.include_router(SolicitudesAprobacionController.router, dependencies=auth_dependency)
+    app.include_router(TravelLegalizationsController.router, dependencies=auth_dependency)
     app.include_router(ViajesController.router, dependencies=auth_dependency)
     app.include_router(DocumentsApprovalController.router, dependencies=auth_dependency)
+    # app.include_router(WordParametersController.router, dependencies=auth_dependency)
     app.include_router(PadsController.router, dependencies=auth_dependency)
     app.include_router(ImplementerTypesController.router, dependencies=auth_dependency)
     app.include_router( ModalitiesController.router  , dependencies=auth_dependency)
@@ -178,6 +185,8 @@ def register_routes(app: FastAPI):
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#18
     app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
     app.include_router( PreviousStudiesStatesController.router , dependencies=auth_dependency)#20
+    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
+    app.include_router(TdrController.router, dependencies=auth_dependency)
     
     
 
