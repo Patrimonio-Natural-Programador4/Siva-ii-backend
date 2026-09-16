@@ -21,3 +21,17 @@
    uvicorn main:app --reload --host 0.0.0.0 --port 8111
 
    ```
+
+4. Para que la visualización pdf funione se deben seguir los siguientes pasos
+
+   ```
+      1. Instalar Gtk3-runtime.  https://github.com/tschoonj/  GTK-for-Windows-Runtime-Environment-Installer/releases
+      2.Configurar variable de entorno:
+             - nombre variable : WEASYPRINT_DLL_DIRECTORIES
+             - Ubicacion ejemplo: C:\Program Files\GTK3-Runtime Win64\bin
+      3. Reiniciar la consola y probar con lo siguiente :
+          - echo %WEASYPRINT_DLL_DIRECTORIES%
+
+      4. Subir back y probar en el sistema
+
+   ```
