@@ -20,11 +20,8 @@ from controllers import CapacityAssessmentsStatesController
 from controllers import DocumentsTypesAgreementsController
 from controllers import CapacityAssessmentsController
 from controllers import PreviousStudiesController
-<<<<<<< HEAD
 from controllers import PreviousStudiesStatesController
-=======
 from controllers import TravelLegalizationsController
->>>>>>> b0c746601d0777e4f7b32c66178d1bffa4897405
 
 
 from fastapi.middleware.cors import CORSMiddleware
