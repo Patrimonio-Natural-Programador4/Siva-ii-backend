@@ -20,6 +20,7 @@ from controllers import CapacityAssessmentsStatesController
 from controllers import DocumentsTypesAgreementsController
 from controllers import CapacityAssessmentsController
 from controllers import PreviousStudiesController
+from controllers import PreviousStudiesStatesController
 from controllers import TravelLegalizationsController
 
 
@@ -176,11 +177,11 @@ def register_routes(app: FastAPI):
     app.include_router( PidsControllerss.router , dependencies=auth_dependency)
     app.include_router(CapacityAssessmentsStatesController.router, dependencies=auth_dependency)
     app.include_router( PersonsController.router , dependencies=auth_dependency)#15
-    
     app.include_router( DocumentsTypesAgreementsController.router , dependencies=auth_dependency)#16
     app.include_router( CapacityAssessmentsStatesController.router, dependencies=auth_dependency)#17
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#18
     app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
+    app.include_router( PreviousStudiesStatesController.router , dependencies=auth_dependency)#20
     
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
     app.include_router(TdrController.router, dependencies=auth_dependency)

@@ -17,6 +17,7 @@ CATEGORIA_APROBACION_CAPACITY_ASSESSMENT = "APP_EC"
 ID_ESTADO_ENVIADO = 2   # Revisión
 ID_ESTADO_AJUSTES = 3   # Solicitud de ajustes
 ID_ESTADO_APROBADO = 5  # Aprobado
+ID_ESTADO_PENDIENTE_ESTUDIOS_PREVIOS = 7  
 
 
 def listar(db: Session) -> list[CapacityAssessmentsBase]:
@@ -175,8 +176,12 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         document_signature_date=c.document_signature_date,
         capacity_assessments_state=c.capacity_assessments_state.state if c.capacity_assessments_state else None,
         implementer=c.implementer.acronym if c.implementer else None,
-        modalitie=c.modalitie.name if c.modalitie else None,
-        person=c.person.email if c.person else None,
+        modalitie=c.modalitie.name if c.modalitie.name else None,
+       # person=c.person.email if c.person else None,
+        person=(
+    " ".join(p for p in [c.person.first_name, c.person.other_name, c.person.last_name, c.person.other_last_name] if p)
+    if c.person else None
+),
         pid=c.pid.name if c.pid else None,
         programa=c.programa.name if c.programa else None,
         aproval_request=c.approval_request.name if c.approval_request else None,
@@ -228,12 +233,17 @@ def procesar_accion_solicitud_aprobacion(
 
         if respuesta.solicitud_exitosa:
             evaluacion_db = CapacityAssessments.obtener_por_id(accion.id_evaluacion, db)
+            
             if respuesta.mensaje == "RUTA_COMPLETA":
-                evaluacion_db.capacity_assessments_states_id = ID_ESTADO_APROBADO
+                evaluacion_db.capacity_assessments_states_id = ID_ESTADO_PENDIENTE_ESTUDIOS_PREVIOS
+            
             elif respuesta.mensaje == "EN_PROCESO":
                 evaluacion_db.capacity_assessments_states_id = ID_ESTADO_ENVIADO
+                
             elif respuesta.mensaje == "AJUSTES":
                 evaluacion_db.capacity_assessments_states_id = ID_ESTADO_AJUSTES
+                
+                
             db.commit()
 
         return respuesta

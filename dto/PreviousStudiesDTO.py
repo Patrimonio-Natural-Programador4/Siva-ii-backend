@@ -23,14 +23,20 @@ class PreviousStudiesBase(BaseModel):
     contributions_ei: Optional[int] = None
     total_value_executes_fpn: Optional[int] = None
     total_value_executes_ei: Optional[int] = None
-    cap_assessments_state: Optional[str] = None
+    #cap_assessments_state: Optional[str] = None
+    previous_studies_states_id:Optional[int] = None   
+    prev_studies_state : Optional[str] = None
     app_request: Optional[str] = None
+    implementer_id: Optional[int] = None   
     implementers: Optional[str] = None
     persons: Optional[str] = None
+    persons_id: Optional[int] = None   
     capacity_assessment: Optional[str] = None
+    capacity_assessment_id:Optional[int] = None   
     contributions_fpn: Optional[int] = None
     estimated_term: Optional[str] = None
     programs:Optional[str] = None
+    program_id: Optional[int] = None   
     code:Optional[str]=None
 
 
@@ -51,10 +57,14 @@ class PreviousStudiesCreate(BaseModel):
      contributions_ei: Optional[int] = None
      total_value_executes_fpn: Optional[int] = None
      total_value_executes_ei: Optional[int] = None
-     capacity_assessments_states_id: Optional[int] = None
+     #capacity_assessments_states_id: Optional[int] = None
+     previous_studies_states_id: Optional[int] = None
      implementer_id: Optional[int] = None
+     persons:Optional[str] = None
      persons_id: Optional[int] = None
      capacity_assessment_id: Optional[int] = None
+     capacity_assessment: Optional[str] = None
+     aproval_request: Optional[str] = None
      approval_request_id: Optional[int] = None
      contributions_fpn: Optional[int] = None
      estimated_term: Optional[str] = None
@@ -78,10 +88,16 @@ class PreviousStudiesListDTO(BaseModel):
     contributions_ei: Optional[int] = None
     total_value_executes_fpn: Optional[int] = None
     total_value_executes_ei: Optional[int] = None
-    cap_assessments_state: Optional[int] = None
+    #cap_assessments_state: Optional[int] = None
+    prev_studies_state: Optional[int] = None
+    previous_studies_states_id: Optional[int] = None
     implementer_id: Optional[int] = None
+    implementer: Optional[str] = None
+    persons:Optional[str] = None
     persons_id: Optional[int] = None
-    capacity_assessment: Optional[int] = None
+    capacity_assessment_id: Optional[int] = None
+    capacity_assessment: Optional[str] = None
+    aproval_request: Optional[str] = None
     approval_request_id: Optional[int] = None
     contributions_fpn: Optional[int] = None
     estimated_term: Optional[str] = None

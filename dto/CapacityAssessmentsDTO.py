@@ -29,7 +29,8 @@ class CapacityAssessmentsBase(BaseModel):
     persons_id: Optional[int] = None          
     capacity_assessments_state: Optional[str] = None
     capacity_assessments_states_id: Optional[int] = None  
-    modality_id: Optional[int] = None        
+    modality_id: Optional[int] = None  
+    modalitie:Optional[str] = None  
 
     class Config:
         from_attributes = True
@@ -93,8 +94,23 @@ class CapacityAssessmentListSP(BaseModel):
     guid: Optional[UUID] = None
     codigo: Optional[str] = None
     name: Optional[str] = None
+    observation: Optional[str] = None
+    approximate_value: Optional[int] = None
     implementer_id: Optional[int] = None
     implementer_name: Optional[str] = None
+    policy_approval_date: Optional[date] = None
+    document_signature_date: Optional[date] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    program_id: Optional[int] = None
+    program_name: Optional[str] = None
+    pid_id: Optional[int] = None
+    pad_name: Optional[str] = None
+    persons_id: Optional[int] = None
+    persons_name: Optional[str] = None
+    capacity_assessments_states_id: Optional[int] = None
+    modality_id: Optional[int] = None
+    modality_name: Optional[str] = None
     pending_my_approval: Optional[bool] = None
     capacity_assessments_id: Optional[int] = None
     approval_request_id: Optional[int] = None
