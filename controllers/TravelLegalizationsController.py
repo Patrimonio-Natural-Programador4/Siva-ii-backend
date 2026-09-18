@@ -12,17 +12,17 @@ router = APIRouter(
 )
 
 @router.post("", response_model=ResponseRequest)
-@router.post("/Legalizacion", response_model=ResponseRequest, include_in_schema=False)
-def crear_legalizacion(
+@router.post("/factura", response_model=ResponseRequest, include_in_schema=False)
+def crear_factura(
     legalizacion: TravelLegalizationCreate,
     db: DbSession,
     user_oid: str = Depends(get_current_user_oid)
 ):
     try:
-        nuevo = TravelLegalizationsService.crear_legalizacion(db, legalizacion)
+        nuevo = TravelLegalizationsService.crear_factura(db, legalizacion)
         return ResponseRequest(
             solicitud_exitosa=True,
-            mensaje="Legalización creada exitosamente",
+            mensaje="Factura creada exitosamente",
             identity=nuevo.legalization_id
         )
     except ValueError as ve:

@@ -65,3 +65,10 @@ class ApprovalFlowStep(Base):
         "ApprovalRole",
         back_populates="steps"
     )
+    approved_label: Mapped[Optional[str]] = mapped_column(Text)
+    adjustment_label: Mapped[Optional[str]] = mapped_column(Text)
+    assign_reviewer: Mapped[Optional[bool]] = mapped_column(
+        Boolean,
+        server_default=text('false')
+    )
+    pending_label: Mapped[Optional[str]] = mapped_column(Text)

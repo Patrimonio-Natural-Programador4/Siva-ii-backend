@@ -3,8 +3,8 @@ from dto.TravelLegalizationsDto import TravelLegalizationCreate, TravelLegalizat
 from repository import TravelLegalizationsRepository
 from decimal import Decimal
 
-def crear_legalizacion(db: Session, legalizacion: TravelLegalizationCreate):
-    return TravelLegalizationsRepository.crear_legalizacion(db, legalizacion)
+def crear_factura(db: Session, legalizacion: TravelLegalizationCreate):
+    return TravelLegalizationsRepository.crear_factura(db, legalizacion)
 
 def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int):
     return TravelLegalizationsRepository.obtener_legalizaciones_por_viaje(db, travel_request_id)
