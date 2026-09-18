@@ -235,4 +235,3 @@ def configure_fake_data():
     # except:
     #     print("NOTICE: Add default data not supported on this system (usually under uvicorn on linux)")
 
-
