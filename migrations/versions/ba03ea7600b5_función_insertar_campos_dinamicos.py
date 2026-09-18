@@ -148,11 +148,11 @@ def upgrade():
 
                     AND v_columns ~
                         format(
-                            r'(^|,\s*)"?%s"?(\s*,|$)',
+                            '(^|,\\s*)"?%s"?(\\s*,|$)',
                             regexp_replace(
                                 v_column.column_name,
-                                r'([\.^$|()\[\]{}*+?])',
-                                r'\\\1',
+                                '([\\.^$|()\\[\\]{}*+?])',
+                                '\\\\\\1',
                                 'g'
                             )
                         )
