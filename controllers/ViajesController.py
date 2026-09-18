@@ -12,7 +12,7 @@ from dependencies.auth_dependency import get_current_user_oid
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ResponseRequest import ResponseRequest
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
-from dto.ViajesDTO import ViajesCalendar, ViajesCreate
+from dto.ViajesDTO import ViajesCalendar, ViajesCreate, TravelLegalizationCreate, TravelLegalizationUpdate, TravelLegalizationResponse
 from dto.DocumentosAsociadosDTO import DocumentoAsociadoCreate, DocumentoAsociadoResponse
 from services import ViajesService, SolicitudesAprobacionService, SoportesService
 from jinja2 import Environment, FileSystemLoader
@@ -22,7 +22,6 @@ from entity.activities import Activities
 from entity.rubros import Rubros
 from repository.ViajesItinerarioRepository import listar_itinerarios_por_viaje
 from html import escape
-from services import TravelLegalizationsService
 
 router = APIRouter(
     prefix='/viajes',
@@ -580,7 +579,7 @@ def obtener_pdf_legalizacion(guid: str, db: DbSession):
         end_point = f"{os.getenv('url_endpoint')}{os.getenv('endpoint')}"
         id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion("SOL_VIA_ANT", db)
         historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.id_viaje, id_categoria, db)
-        legalizaciones = TravelLegalizationsService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
+        legalizaciones = ViajesService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
         
         from repository import SoportesRepository
         registros_soportes = SoportesRepository.listar_soportes_por_travel_request_id(viaje.id_viaje, db)
@@ -663,3 +662,51 @@ def guardar_legalizacion(viaje: ViajesCreate, db: DbSession, user_oid: str = Dep
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/legalizaciones", response_model=ResponseRequest)
+@router.post("/legalizaciones/factura", response_model=ResponseRequest, include_in_schema=False)
+def crear_factura(
+    legalizacion: TravelLegalizationCreate,
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid)
+):
+    try:
+        nuevo = ViajesService.crear_factura(db, legalizacion)
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje="Factura creada exitosamente",
+            identity=nuevo.legalization_id
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear legalización: {str(e)}")
+
+@router.get("/legalizaciones/{travel_request_id}", response_model=list[TravelLegalizationResponse])
+def obtener_legalizaciones(
+    travel_request_id: int,
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid)
+):
+    return ViajesService.obtener_legalizaciones_por_viaje(db, travel_request_id)
+
+@router.patch("/legalizaciones/{legalization_id}", response_model=ResponseRequest)
+def actualizar_legalizacion(
+    legalization_id: int,
+    legalizacion: TravelLegalizationUpdate,
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid)
+):
+    try:
+        actualizado = ViajesService.actualizar_legalizacion(db, legalization_id, legalizacion)
+        if not actualizado:
+            raise HTTPException(status_code=404, detail="Legalización no encontrada")
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje="Legalización actualizada exitosamente",
+            identity=actualizado.legalization_id
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar legalización: {str(e)}")

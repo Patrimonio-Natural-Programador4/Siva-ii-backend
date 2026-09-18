@@ -20,9 +20,6 @@ from controllers import CapacityAssessmentsStatesController
 from controllers import DocumentsTypesAgreementsController
 from controllers import CapacityAssessmentsController
 from controllers import PreviousStudiesController
-from controllers import TravelLegalizationsController
-
-
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from starlette.staticfiles import StaticFiles
@@ -164,7 +161,6 @@ def register_routes(app: FastAPI):
     app.include_router(ProgramasController.router, dependencies=auth_dependency)
     app.include_router(FlujosAprobacionController.router, dependencies=auth_dependency)
     app.include_router(SolicitudesAprobacionController.router, dependencies=auth_dependency)
-    app.include_router(TravelLegalizationsController.router, dependencies=auth_dependency)
     app.include_router(ViajesController.router, dependencies=auth_dependency)
     app.include_router(DocumentsApprovalController.router, dependencies=auth_dependency)
     # app.include_router(WordParametersController.router, dependencies=auth_dependency)
