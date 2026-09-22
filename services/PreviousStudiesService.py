@@ -59,7 +59,7 @@ def listar(db: Session) -> list[PreviousStudiesBase]:
             capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
             program_id=e.program_id,
             programs =e.programs.description if e.programs else None,
-            code =e.code 
+            codde =e.code 
             
         )
         for e in estudios
@@ -102,7 +102,7 @@ def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | Non
             capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
             program_id=e.program_id,
             programs =e.programs.description if e.programs else None,
-            code =e.code 
+            codde =e.code 
                             
             )   
     
@@ -125,7 +125,7 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.term = previous_studies.term
         nuevo_estudio_previo.obligations = previous_studies.obligations
         nuevo_estudio_previo.supervisor = previous_studies.supervisor
-        nuevo_estudio_previo.user_session = previous_studies.user_session
+        nuevo_estudio_previo.user_session = usuario.id
         nuevo_estudio_previo.create_date = datetime.now().replace(tzinfo=None)
         nuevo_estudio_previo.total_value = previous_studies.total_value
         nuevo_estudio_previo.contributions_ei = previous_studies.contributions_ei
@@ -139,7 +139,7 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.contributions_fpn = previous_studies.contributions_fpn
         nuevo_estudio_previo.estimated_term = previous_studies.estimated_term
         nuevo_estudio_previo.program_id = previous_studies.program_id
-        nuevo_estudio_previo.code = f"EP-{fecha_actual.year}-{estudios_previos+1:02d}"
+        nuevo_estudio_previo.codde = f"EP-{fecha_actual.year}-{estudios_previos+1:02d}"
 
         db.add(nuevo_estudio_previo)
         db.commit()
@@ -218,7 +218,7 @@ def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
        capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
        program_id=e.program_id,
        programs =e.programs.description if e.programs else None,
-       code =e.code
+       codde =e.code
     )
     
 def listar_previous_studies_por_usuario_sp(
@@ -229,6 +229,7 @@ def listar_previous_studies_por_usuario_sp(
     filtro: str,
     programa: int,
 ) -> list[PreviousStudiesListDTO]:
+   
     return PreviousStudiesRepository.listar_previous_studies_por_usuario_sp(
         usuario_guid, db, page, estado, filtro, programa
     )
@@ -238,6 +239,7 @@ def procesar_accion_solicitud_aprobacion(
     usuario_guid: str,
     id_categoria: int,
     db: Session,
+    # agregar aqui  background_tasks: BackgroundTasks,
 ) -> ResponseRequest:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
@@ -265,6 +267,9 @@ def procesar_accion_solicitud_aprobacion(
                 estudio_db.previous_studies_states_id = ID_ESTADO_AJUSTES
 
             db.commit()
+            
+            
+            # --- Envío de notificación  aquiii---
 
         return respuesta
     except Exception as e:

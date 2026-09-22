@@ -264,7 +264,7 @@ def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSessio
     document_signature_date = evaluacion_db.document_signature_date.strftime("%Y-%m-%d") if evaluacion_db.document_signature_date else ""
 
    # VALOS
-    approximate_value = f"{evaluacion_db.approximate_value:,.0f}" if evaluacion_db.approximate_value else ""
+    approximate_value = f"{evaluacion_db.approximate_value:,.0f}" if evaluacion_db.approximate_value else "0"
     
     # Logo local
     logo_path = Path(__file__).parent.parent.parent / "siva-ii-frontend" / "public" / "images" / "logos" / "logo_patrimonio.png"

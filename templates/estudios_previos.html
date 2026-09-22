@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Evaluación de capacidades</title>
+    <title>Estudios previos</title>
     <style>
       body {
         font-family: "Segoe UI", Arial, sans-serif;
@@ -110,100 +110,105 @@
           {% endif %}
         </td>
         <td class="header-title-cell">
-          FORMATO EVALUACIÓN DE CAPACIDADES<br />
+          FORMATO ESTUDIOS PREVIOS<br />
           PATRIMONIO NATURAL
         </td>
       </tr>
     </table>
 
-    <!-- Section I: INFORMACIÓN GENERAL -->
+    <!-- Sección I: Información general / descripción -->
     <table class="main-table">
       <tr class="section-title-row">
         <td colspan="2">I. INFORMACIÓN GENERAL</td>
       </tr>
       <tr>
-        <td class="label-cell">Evaluación de capacidades:</td>
-        <td class="value-cell">{{ name or '' }}</td>
+        <td class="label-cell">Antecedentes:</td>
+        <td class="value-cell">{{ precedents or '' }}</td>
       </tr>
       <tr>
-        <td class="label-cell">Código:</td>
-        <td class="value-cell">{{ code or '' }}</td>
+        <td class="label-cell">Justificación:</td>
+        <td class="value-cell">{{ justification or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Alcance:</td>
+        <td class="value-cell">{{ scope or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Objetivo general:</td>
+        <td class="value-cell">{{ overall_objective or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Sección II: Plazos y obligaciones -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">II. PLAZOS Y OBLIGACIONES</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Plazo:</td>
+        <td class="value-cell">{{ term or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Plazo estimado:</td>
+        <td class="value-cell">{{ estimated_term or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Obligaciones:</td>
+        <td class="value-cell">{{ obligations or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Funciones supervisor:</td>
+        <td class="value-cell">{{ supervisor or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Estado:</td>
+        <td class="value-cell">{{ previous_studies_state_name or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Sección III: Información financiera -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">III. INFORMACIÓN FINANCIERA</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor total:</td>
+        <td class="value-cell">{{ total_value or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Aportes EI:</td>
+        <td class="value-cell">{{ contributions_ei or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor total que ejecuta EI:</td>
+        <td class="value-cell">{{ total_value_executes_ei or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Aportes FPN:</td>
+        <td class="value-cell">{{ contributions_fpn or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor total que ejecuta FPN:</td>
+        <td class="value-cell">{{ total_value_executes_fpn or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Sección IV: Responsables y programa -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">IV. RESPONSABLES Y PROGRAMA</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Implementadora:</td>
+        <td class="value-cell">{{ implementer or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Líder del pilar:</td>
+        <td class="value-cell">{{ leader_name or '' }}</td>
       </tr>
       <tr>
         <td class="label-cell">Programa:</td>
         <td class="value-cell">{{ programa or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">PID:</td>
-        <td class="value-cell">{{ pid or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Modalidad:</td>
-        <td class="value-cell">{{ modalidad or '' }}</td>
-      </tr>
-    </table>
-
-    <!-- Section II: PARTICIPANTES -->
-    <table class="main-table">
-      <tr class="section-title-row">
-        <td colspan="2">II. PARTICIPANTES</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Entidad implementadora:</td>
-        <td class="value-cell">{{ implementer or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Responsable:</td>
-        <td class="value-cell">{{ person or '' }}</td>
-      </tr>
-    </table>
-
-    <!-- Section III: DETALLES ADMINISTRATIVOS -->
-    <table class="main-table">
-      <tr class="section-title-row">
-        <td colspan="2">III. DETALLES ADMINISTRATIVOS</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Estado de la solicitud:</td>
-        <td class="value-cell">{{ capacity_assessments_state or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Observación:</td>
-        <td class="value-cell">{{ observation or '' }}</td>
-      </tr>
-    </table>
-
-    <!-- Section IV: FECHAS CLAVE -->
-    <table class="main-table">
-      <tr class="section-title-row">
-        <td colspan="2">IV. FECHAS CLAVE</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Fecha inicial:</td>
-        <td class="value-cell">{{ start_date or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Fecha final:</td>
-        <td class="value-cell">{{ end_date or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Fecha aprobación evaluación:</td>
-        <td class="value-cell">{{ policy_approval_date or '' }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Fecha firma documento:</td>
-        <td class="value-cell">{{ document_signature_date or '' }}</td>
-      </tr>
-    </table>
-
-    <!-- Section V: VALORES ECONÓMICOS -->
-    <table class="main-table">
-      <tr class="section-title-row">
-        <td colspan="2">V. VALORES ECONÓMICOS</td>
-      </tr>
-      <tr>
-        <td class="label-cell">Valor aproximado:</td>
-        <td class="value-cell">{{ approximate_value or '' }}</td>
       </tr>
     </table>
   </body>

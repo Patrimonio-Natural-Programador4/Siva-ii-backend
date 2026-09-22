@@ -24,8 +24,8 @@ class PreviousStudiesBase(BaseModel):
     total_value_executes_fpn: Optional[int] = None
     total_value_executes_ei: Optional[int] = None
     #cap_assessments_state: Optional[str] = None
+    prev_studies_state: Optional[str] = None
     previous_studies_states_id:Optional[int] = None   
-    prev_studies_state : Optional[str] = None
     app_request: Optional[str] = None
     implementer_id: Optional[int] = None   
     implementers: Optional[str] = None
@@ -37,7 +37,7 @@ class PreviousStudiesBase(BaseModel):
     estimated_term: Optional[str] = None
     programs:Optional[str] = None
     program_id: Optional[int] = None   
-    code:Optional[str]=None
+    codde:Optional[str]=None
     approval_request_id: Optional[int] = None   
     guid: Optional[UUID] = None  
     
@@ -93,7 +93,7 @@ class PreviousStudiesListDTO(BaseModel):
     contributions_ei: Optional[int] = None
     total_value_executes_fpn: Optional[int] = None
     total_value_executes_ei: Optional[int] = None
-    prev_studies_state: Optional[int] = None
+    prev_studies_state: Optional[str] = None
     previous_studies_states_id: Optional[int] = None
     implementer_id: Optional[int] = None
     implementer: Optional[str] = None
@@ -108,7 +108,7 @@ class PreviousStudiesListDTO(BaseModel):
     estimated_term: Optional[str] = None
     program_id: Optional[int] = None
     program_name: Optional[str] = None                   
-    code: Optional[str] = None
+    codde: Optional[str] = None
     guid: Optional[UUID] = None
     pending_my_approval: Optional[bool] = None            
     user_id: Optional[int] = None                         

@@ -103,6 +103,7 @@ def listar_previous_studies_por_usuario_sp(
         ).fetchall()
 
         return [
+            
             PreviousStudiesListDTO(
                 precedents=row[0],
                 justification=row[1],
@@ -128,17 +129,19 @@ def listar_previous_studies_por_usuario_sp(
                 contributions_fpn=row[21],
                 estimated_term=row[22],
                 code=row[23],
-                pending_my_approval=row[24],
-                approval_request_id=row[25],
-                user_id=row[26],
-                guid_msft=row[27],
-                step_order_actual_request=row[28],
-                guid_msft_adjustment=row[29],
-                total_records=row[30],
+                prev_studies_state=row[24],
+                pending_my_approval=row[25],
+                approval_request_id=row[26],
+                user_id=row[27],
+                guid_msft=row[28],
+                step_order_actual_request=row[29],
+                guid_msft_adjustment=row[30],
+                total_records=row[31],
                 persons=" ".join(
-                    part.strip() for part in [row[31], row[32] or '', row[33], row[34] or '']
+                    part.strip() for part in [row[32], row[33] or '', row[34], row[35] or '']
                     if part and part.strip()
                 ),
+                
             )
             for row in result
         ]
