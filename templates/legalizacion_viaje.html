@@ -177,8 +177,9 @@
             <td class="table-header-cell">Valor Cancelado</td>
             <td class="table-header-cell">Observaciones</td>
         </tr>
+        {% set totales = namespace(subtotal=0, iva=0, retention=0, amount_paid=0) %}
+        {% set v_anticipo = valor_anticipo or 0 %}
         {% if legalizaciones and legalizaciones|length > 0 %}
-            {% set totales = namespace(subtotal=0, iva=0, retention=0, amount_paid=0) %}
             {% for leg in legalizaciones %}
             {% set totales.subtotal = totales.subtotal + (leg.subtotal or 0) %}
             {% set totales.iva = totales.iva + (leg.iva or 0) %}
@@ -238,21 +239,52 @@
         <tr>
             <td class="table-data-cell">{{ '{:,.2f}'.format(totales.amount_paid or 0) }}</td>
             <td class="table-data-cell">{{ '{:,.2f}'.format(totales.retention or 0) }}</td>
-            <td class="table-data-cell">{{ '{:,.2f}'.format(totales.retention + totales.amount_paid or 0) }}</td>
-            <td class="table-data-cell">{{ '{:,.2f}'.format((valor_anticipo or 0) - (totales.amount_paid or 0)) }}</td>
+            <td class="table-data-cell">{{ '{:,.2f}'.format((totales.retention or 0) + (totales.amount_paid or 0)) }}</td>
+            <td class="table-data-cell">{{ '{:,.2f}'.format(v_anticipo - (totales.amount_paid or 0)) }}</td>
             <td class="table-data-cell">
-                {% if ((totales.amount_paid or 0) + (totales.retention or 0)) > (valor_anticipo or 0) %}
-                    {{ '{:,.2f}'.format((totales.amount_paid or 0) - (totales.retention or 0) - (valor_anticipo or 0)) }}
+                {% if ((totales.amount_paid or 0) + (totales.retention or 0)) > v_anticipo %}
+                    {{ '{:,.2f}'.format((totales.amount_paid or 0) - (totales.retention or 0) - v_anticipo) }}
                 {% endif %}
             </td>
         </tr>
     </table>
 
+    <!-- DOCUMENTOS ADJUNTOS -->
+    <table class="main-table" style="table-layout: fixed; width: 100%;">
+        <colgroup>
+            <col style="width: 40%;">
+            <col style="width: 10%;">
+            <col style="width: 50%;">
+        </colgroup>
+        <tr class="section-title-row">
+            <td colspan="3">IV. DOCUMENTOS ADJUNTOS</td>
+        </tr>
+        <tr>
+            <td class="table-header-cell">NOMBRE DEL ARCHIVO</td>
+            <td class="table-header-cell">TIPO DOCUMENTO</td>
+            <td class="table-header-cell">OBSERVACIONES</td>
+        </tr>
+        {% if documentos_asociados and documentos_asociados|length > 0 %}
+            {% for doc in documentos_asociados %}
+            <tr>
+                <td class="table-data-cell left-align" style="word-wrap: break-word; word-break: break-all; overflow-wrap: break-word;">
+                    <a href="{{ doc.url_descarga }}" class="email-link" target="_blank">{{ doc.attachment_name }}</a>
+                </td>
+                <td class="table-data-cell" style="text-align: center;">{{ doc.tipo_archivo }}</td>
+                <td class="table-data-cell left-align" style="word-wrap: break-word; word-break: break-all; overflow-wrap: break-word;">{{ doc.observaciones or '' }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="3" class="table-data-cell" style="color: #999;">No se registraron documentos adjuntos.</td>
+            </tr>
+        {% endif %}
+    </table>
 
     <!-- Section IV: FLUJO DE APROBACIÓN -->
     <table class="main-table" style="margin-bottom: 0px;">
         <tr class="section-title-row">
-            <td colspan="7">IV. FLUJO DE APROBACIÓN</td>
+            <td colspan="7">V. FLUJO DE APROBACIÓN</td>
         </tr>
     </table>
     <table class="main-table">

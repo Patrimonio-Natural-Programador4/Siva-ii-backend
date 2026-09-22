@@ -363,14 +363,15 @@ def calcular_totales_legalizacion(legalizaciones) -> SimpleNamespace:
         amount_paid=sum((legalizacion.amount_paid or 0) for legalizacion in legalizaciones),
     )
 
-def plantilla_pdf_legalizacion_html(viaje, historial_aprobacion_solicitud, end_point: str, legalizaciones) -> str:
+def plantilla_pdf_legalizacion_html(viaje, historial_aprobacion_solicitud, end_point: str, legalizaciones, documentos_asociados=None) -> str:
     template = env.get_template('legalizacion_viaje.html')
     return template.render(
         **vars(viaje),
         historialAprobacionSolicitud=historial_aprobacion_solicitud,
         end_point=end_point,
         legalizaciones=legalizaciones,
-        totales=calcular_totales_legalizacion(legalizaciones)
+        totales=calcular_totales_legalizacion(legalizaciones),
+        documentos_asociados=documentos_asociados
     )
 
 def cargar_clases_weasyprint():
@@ -379,14 +380,12 @@ def cargar_clases_weasyprint():
     try:
         from weasyprint import CSS, HTML
     except OSError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "WeasyPrint no pudo cargar las librerias nativas requeridas. "
-                "Configure WEASYPRINT_DLL_DIR apuntando a una carpeta que contenga GTK/Pango, "
-                "por ejemplo C:\\Program Files\\Tesseract-OCR."
-            )
-        ) from exc
+        detail_msg = (
+            "WeasyPrint no pudo cargar las librerias nativas requeridas. "
+            "En macOS asegúrese de tener Pango instalado ('brew install pango gdk-pixbuf libffi'). "
+            "En Windows configure WEASYPRINT_DLL_DIR apuntando a una carpeta con GTK/Pango."
+        )
+        raise HTTPException(status_code=500, detail=detail_msg) from exc
 
     return CSS, HTML
 
@@ -396,6 +395,13 @@ def verificar_entorno_weasyprint() -> None:
 
     if _weasyprint_runtime_initialized:
         return
+
+    if sys.platform == "darwin":
+        homebrew_lib_paths = ["/opt/homebrew/lib", "/usr/local/lib"]
+        current_dyld = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", "")
+        new_paths = [p for p in homebrew_lib_paths if os.path.isdir(p) and p not in current_dyld]
+        if new_paths:
+            os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = ":".join(new_paths) + (f":{current_dyld}" if current_dyld else "")
 
     if os.name == "nt" and hasattr(os, "add_dll_directory"):
         seen_paths = set()
@@ -644,11 +650,24 @@ def descargar_archivo_asociado(guid: str, attachment_id: int, db: DbSession):
             AttachmentTravelTp.travel_request_id == viaje_db.travel_request_id
         ).first()
         
-        if not registro or not registro.path_document or not os.path.exists(registro.path_document):
-            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+        if not registro or not registro.attachment_name:
+            raise HTTPException(status_code=404, detail="Archivo no encontrado en BD")
             
+        # Intentar con la ruta almacenada o reconstruirla si el entorno cambió
+        import os
+        from services.SoportesService import SOPORTES_DIR
+        
+        path_to_use = registro.path_document
+        if not path_to_use or not os.path.exists(path_to_use):
+            codigo_sanitizado = viaje_db.code
+            ruta_esperada = SOPORTES_DIR / codigo_sanitizado / registro.attachment_name
+            if os.path.exists(ruta_esperada):
+                path_to_use = str(ruta_esperada)
+            else:
+                raise HTTPException(status_code=404, detail="Archivo no encontrado")
+                
         return FileResponse(
-            path=registro.path_document,
+            path=path_to_use,
             filename=registro.attachment_name
         )
     except HTTPException as e:
@@ -667,11 +686,27 @@ def obtener_pdf_legalizacion(guid: str, db: DbSession):
         id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion("SOL_VIA_ANT", db)
         historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(viaje.id_viaje, id_categoria, db)
         legalizaciones = TravelLegalizationsService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
+        
+        from repository import SoportesRepository
+        registros_soportes = SoportesRepository.listar_soportes_por_travel_request_id(viaje.id_viaje, db)
+        documentos_asociados = []
+        for r in registros_soportes:
+            if r.document_type_id in [1, 2]:
+                tipo_archivo = "FACTURA" if r.document_type_id == 1 else ("DOCUMENTO RELACIONADO" if r.document_type_id == 2 else "DESCONOCIDO")
+                documentos_asociados.append({
+                    "id": r.id,
+                    "attachment_name": r.attachment_name,
+                    "tipo_archivo": tipo_archivo,
+                    "observaciones": r.observations,
+                    "url_descarga": f"{end_point}/viajes/{guid}/archivo/{r.id}"
+                })
+
         html_out = plantilla_pdf_legalizacion_html(
             viaje,
             historialAprobacionSolicitud,
             end_point,
-            legalizaciones
+            legalizaciones,
+            documentos_asociados
         )
                 
         pdf_bytes = generar_pdf_legalizacion(viaje.codigo, html_out)
