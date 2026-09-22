@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import status
 from jinja2 import Environment, FileSystemLoader
@@ -62,9 +62,9 @@ def obtener_estudio_por_id(id: int, db: DbSession, user_oid: str = Depends(get_c
     return estudio
 
 @router.post('', response_model=ResponseRequest)
-def crear_estudio(payload: PreviousStudiesCreate, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+def crear_estudio(payload: PreviousStudiesCreate, db: DbSession,background_tasks: BackgroundTasks, user_oid: str = Depends(get_current_user_oid)):
     try:
-        response_request = PreviousStudiesService.crearEstudioPrevio(payload, db, user_oid)
+        response_request = PreviousStudiesService.crearEstudioPrevio(payload, db, user_oid, background_tasks)
 
         if response_request.solicitud_exitosa:
             return JSONResponse(
@@ -114,6 +114,7 @@ def accion_solicitud_aprobacion(
     guid: str,
     accion: AccionSolicitudAprobacion,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     user_oid: str = Depends(get_current_user_oid),
 ):
     try:
@@ -130,7 +131,7 @@ def accion_solicitud_aprobacion(
 
         id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(CATEGORIA_APROBACION, db)
         respuesta = PreviousStudiesService.procesar_accion_solicitud_aprobacion(
-            accion, user_oid, id_categoria, db
+            accion, user_oid, id_categoria, db, background_tasks
         )
         return JSONResponse(
             content=respuesta.model_dump(),
@@ -143,12 +144,12 @@ def accion_solicitud_aprobacion(
     
     
 @router.put('/{guid}', response_model=ResponseRequest)
-def actualizar_estudio(guid: str, payload: PreviousStudiesCreate, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+def actualizar_estudio(guid: str, payload: PreviousStudiesCreate, db: DbSession,background_tasks: BackgroundTasks, user_oid: str = Depends(get_current_user_oid)):
     try:
         estudio_db = PreviousStudiesRepository.obtener_por_guid(guid, db)
         if not estudio_db:
             raise HTTPException(status_code=404, detail='Estudio previo no encontrado')
-        response_request = PreviousStudiesService.actualizar(estudio_db.id, payload, db)
+        response_request = PreviousStudiesService.actualizar(estudio_db.id, payload, db, user_oid, background_tasks)
         return JSONResponse(
             content=response_request.model_dump(),
             status_code=status.HTTP_200_OK if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST

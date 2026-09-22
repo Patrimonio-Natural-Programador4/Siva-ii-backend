@@ -10,11 +10,19 @@ from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.PreviousStudiesDTO import PreviousStudiesBase, PreviousStudiesCreate, PreviousStudiesListDTO
 from dto.ResponseRequest import ResponseRequest
 from entity.implementers import Implementers
+from entity.persons import Persons
 from entity.previous_studies import PreviousStudies as PreviousStudiesEntity 
 from exceptions import PruebaNotFoundError
 from repository import PreviousStudiesRepository, UsuariosRepository
 from services import PreviousStudiesService
 from services import SolicitudesAprobacionService
+#NOTIFUCACIONES
+from fastapi import BackgroundTasks
+from jinja2 import Environment, FileSystemLoader
+from entity.users import Users
+from services import NotificacionesService
+
+
 
 
 CATEGORIA_APROBACION_previous_studies = "APP_EP"  #APP_EP
@@ -108,7 +116,7 @@ def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | Non
     
 
 
-def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usuario_guid: str) -> ResponseRequest:
+def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest: # background_tasks
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
@@ -139,7 +147,7 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.contributions_fpn = previous_studies.contributions_fpn
         nuevo_estudio_previo.estimated_term = previous_studies.estimated_term
         nuevo_estudio_previo.program_id = previous_studies.program_id
-        nuevo_estudio_previo.codde = f"EP-{fecha_actual.year}-{estudios_previos+1:02d}"
+        nuevo_estudio_previo.code = f"EP-{fecha_actual.year}-{estudios_previos+1:02d}"
 
         db.add(nuevo_estudio_previo)
         db.commit()
@@ -165,7 +173,64 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.approval_request_id = id_solicitud_aprobacion
         db.commit()
         db.refresh(nuevo_estudio_previo)
-
+        
+        
+        # INICIO NOTIFICACION 
+        
+        template_data={
+             "capacity_assessment": nuevo_estudio_previo.capacity_assessment.name if nuevo_estudio_previo.capacity_assessment else nuevo_estudio_previo.code,
+            "estado": "Enviado a aprobación",
+            "persons": (
+                " ".join(p for p in [nuevo_estudio_previo.persons.first_name, nuevo_estudio_previo.persons.other_name, nuevo_estudio_previo.persons.last_name, nuevo_estudio_previo.persons.other_last_name] if p)
+                if nuevo_estudio_previo.persons else None
+            ),
+            "implementers": nuevo_estudio_previo.implementers.acronym if nuevo_estudio_previo.implementers else None,
+            "programs": nuevo_estudio_previo.programs.description if nuevo_estudio_previo.programs else None,
+            "precedents": nuevo_estudio_previo.precedents,
+            "justification": nuevo_estudio_previo.justification,
+            "scope": nuevo_estudio_previo.scope,
+            "overall_objective": nuevo_estudio_previo.overall_objective,
+            "obligations": nuevo_estudio_previo.obligations,
+            "term": nuevo_estudio_previo.term,
+            "estimated_term": nuevo_estudio_previo.estimated_term,
+            "supervisor": nuevo_estudio_previo.supervisor,
+            "contributions_fpn": nuevo_estudio_previo.contributions_fpn,
+            "contributions_ei": nuevo_estudio_previo.contributions_ei,
+            "total_value_executes_fpn": nuevo_estudio_previo.total_value_executes_fpn,
+            "total_value_executes_ei": nuevo_estudio_previo.total_value_executes_ei,
+            "total_value": nuevo_estudio_previo.total_value,
+            "comentarios": "",  
+            
+        }
+        
+        env = Environment(loader=FileSystemLoader(''))
+        template = env.get_template('templates/notificacion_est_previos.html')
+        html_out = template.render(**template_data)
+        
+        # Obtener destinatarios de correo
+        destinatarios = []
+        if nuevo_estudio_previo.persons_id:
+            persona = db.query(Persons).filter(Persons.id == nuevo_estudio_previo.persons_id).first()
+            if persona and persona.email:
+                destinatarios.append(persona.email)
+        
+            
+        if usuario.email and usuario.email  not in destinatarios:
+            destinatarios.append(usuario.email)
+            
+        to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            
+        if to_recipients:
+                        background_tasks.add_task(
+                            NotificacionesService.solicitud_viaje,
+                            f"Solicitud de estudio previo {nuevo_estudio_previo.code} enviada por aprobación",
+                            to_recipients,
+                            html_out,
+                            "",
+                            "",
+                            db
+                        )   
+        # FIN NOTIFICACION 
         respuesta.identity = nuevo_estudio_previo.id
         respuesta.mensaje = "Estudio previo creado exitosamente"
         return respuesta
@@ -239,7 +304,8 @@ def procesar_accion_solicitud_aprobacion(
     usuario_guid: str,
     id_categoria: int,
     db: Session,
-    # agregar aqui  background_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks,
+    
 ) -> ResponseRequest:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
@@ -267,10 +333,72 @@ def procesar_accion_solicitud_aprobacion(
                 estudio_db.previous_studies_states_id = ID_ESTADO_AJUSTES
 
             db.commit()
+            db.refresh(estudio_db)   
             
-            
-            # --- Envío de notificación  aquiii---
+           # INCIO notificacion 
+           
+            nombres_estado = {
+                ID_ESTADO_APROBADO: "Aprobado",
+                ID_ESTADO_REVISION: "En revision",
+                ID_ESTADO_AJUSTES: "Solicitud de ajustes",
+            }
+            estado_nombre = nombres_estado.get(
+                estudio_db.previous_studies_states_id, ""
+            )
 
+            template_data = {
+                "capacity_assessment": estudio_db.capacity_assessment.name if estudio_db.capacity_assessment else estudio_db.code,
+                "estado": estado_nombre,
+                "persons": (
+                    " ".join(p for p in [estudio_db.persons.first_name, estudio_db.persons.other_name, estudio_db.persons.last_name, estudio_db.persons.other_last_name] if p)
+                    if estudio_db.persons else None
+                ),
+                "implementers": estudio_db.implementers.acronym if estudio_db.implementers else None,
+                "programs": estudio_db.programs.description if estudio_db.programs else None,
+                "precedents": estudio_db.precedents,
+                "justification": estudio_db.justification,
+                "scope": estudio_db.scope,
+                "overall_objective": estudio_db.overall_objective,
+                "obligations": estudio_db.obligations,
+                "term": estudio_db.term,
+                "estimated_term": estudio_db.estimated_term,
+                "supervisor": estudio_db.supervisor,
+                "contributions_fpn": estudio_db.contributions_fpn,
+                "contributions_ei": estudio_db.contributions_ei,
+                "total_value_executes_fpn": estudio_db.total_value_executes_fpn,
+                "total_value_executes_ei": estudio_db.total_value_executes_ei,
+                "total_value": estudio_db.total_value,
+                "comentarios": getattr(accion, "comentarios", ""),
+            }
+
+            env = Environment(loader=FileSystemLoader(''))
+            template = env.get_template('templates/notificacion_est_previos.html')
+            html_out = template.render(**template_data)
+
+            destinatarios = []
+            if estudio_db.persons_id:
+                persona = db.query(Persons).filter(Persons.id == estudio_db.persons_id).first()
+                if persona and persona.email:
+                    destinatarios.append(persona.email)
+
+            if usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
+
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Estudio previo {estudio_db.code} - {estado_nombre}",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
+        
+        # FIN  notificacion
+   
         return respuesta
     except Exception as e:
         logging.error(f"Error al procesar acción de aprobación de estudio previo: {e}")
@@ -289,8 +417,12 @@ def obtener_por_guid_id_solicitud_aprobacion(guid: str, id_solicitud_aprobacion:
         raise PruebaNotFoundError(str(e))    
     
     
-def actualizar(id: int, payload: PreviousStudiesCreate, db: Session) -> ResponseRequest:
+def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
     try:
+        usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        if not usuario:
+            raise PruebaNotFoundError("Usuario no encontrado")
+
         registro = PreviousStudiesRepository.obtener_por_id(id, db)
         if not registro:
             return ResponseRequest(solicitud_exitosa=False, mensaje='Estudio previo no encontrado')
@@ -315,6 +447,85 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session) -> Response
         registro.program_id = payload.program_id
 
         db.commit()
+        db.refresh(registro)
+
+        if payload.enviar_aprobacion:
+            id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(
+                CATEGORIA_APROBACION_previous_studies, db
+            )
+            if not id_categoria_aprobacion:
+                raise Exception(
+                    f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_previous_studies}"
+                )
+
+            id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
+                id_categoria_aprobacion,
+                registro.id,
+                usuario.id,
+                registro.code,
+                db,
+                id_programa=registro.program_id
+            )
+
+            registro.approval_request_id = id_solicitud_aprobacion
+            db.commit()
+            db.refresh(registro)
+
+            # INICIO NOTIFICACION
+
+            template_data = {
+                "capacity_assessment": registro.capacity_assessment.name if registro.capacity_assessment else registro.code,
+                "estado": "Enviado a aprobación",
+                "persons": (
+                    " ".join(p for p in [registro.persons.first_name, registro.persons.other_name, registro.persons.last_name, registro.persons.other_last_name] if p)
+                    if registro.persons else None
+                ),
+                "implementers": registro.implementers.acronym if registro.implementers else None,
+                "programs": registro.programs.description if registro.programs else None,
+                "precedents": registro.precedents,
+                "justification": registro.justification,
+                "scope": registro.scope,
+                "overall_objective": registro.overall_objective,
+                "obligations": registro.obligations,
+                "term": registro.term,
+                "estimated_term": registro.estimated_term,
+                "supervisor": registro.supervisor,
+                "contributions_fpn": registro.contributions_fpn,
+                "contributions_ei": registro.contributions_ei,
+                "total_value_executes_fpn": registro.total_value_executes_fpn,
+                "total_value_executes_ei": registro.total_value_executes_ei,
+                "total_value": registro.total_value,
+                "comentarios": "",
+            }
+
+            env = Environment(loader=FileSystemLoader(''))
+            template = env.get_template('templates/notificacion_est_previos.html')
+            html_out = template.render(**template_data)
+
+            destinatarios = []
+            if registro.persons_id:
+                persona = db.query(Persons).filter(Persons.id == registro.persons_id).first()
+                if persona and persona.email:
+                    destinatarios.append(persona.email)
+
+            if usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
+
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Estudio previo {registro.code} enviado por aprobación",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
+
+            # FIN NOTIFICACION
+
         return ResponseRequest(solicitud_exitosa=True, mensaje='Estudio previo actualizado exitosamente', identity=registro.id)
     except Exception as e:
         db.rollback()

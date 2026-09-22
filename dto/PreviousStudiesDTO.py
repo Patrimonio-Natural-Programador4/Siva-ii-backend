@@ -75,6 +75,7 @@ class PreviousStudiesCreate(BaseModel):
      program_id: Optional[int]=None
      guid: Optional[UUID] = None  
     # code:Optional[str]=None
+     enviar_aprobacion: Optional[bool] = False 
      
     
 
