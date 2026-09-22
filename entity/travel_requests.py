@@ -23,7 +23,8 @@ class TravelRequests(Base):
         ForeignKeyConstraint(['traveler_user_id'], ['users.id'], name='travel_requests_traveler_user_id_fkey'),
         ForeignKeyConstraint(['travel_status_id'], ['travel_status.status_id'], name='travel_requests_travel_status_id_fkey'),
         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='travel_requests_activities_fkey'),
-        ForeignKeyConstraint(['rubro_id'], ['rubros.id'], name='travel_requests_rubros_fkey')
+        ForeignKeyConstraint(['rubro_id'], ['rubros.id'], name='travel_requests_rubros_fkey'),
+        {'info': {'managed_by_alembic': True}}
     )
 
     travel_request_id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -99,6 +100,7 @@ class TravelRequests(Base):
     emergency_contact: Mapped[Optional[str]] = mapped_column(Text)
     emergency_phone: Mapped[Optional[str]] = mapped_column(Text)
     emergency_relationship: Mapped[Optional[str]] = mapped_column(Text)
+    includes_food: Mapped[Optional[bool]] = mapped_column(Boolean)
     
 
     user: Mapped[Optional[Users]] = relationship('Users')

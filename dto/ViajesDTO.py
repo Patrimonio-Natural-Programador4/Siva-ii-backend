@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.AnticiposReintegroDTO import AnticiposReintegrosBase
 from datetime import date
 import decimal
+from decimal import Decimal
 
 class ViajesBase(BaseModel):
     guid_usr: Optional[uuid.UUID] = None
@@ -200,5 +201,42 @@ class ViajesCalendar(BaseModel):
     title: Optional[str] = None
     start: Optional[datetime] = None
     end: Optional[datetime] = None
+    class Config:
+        from_attributes = True
+
+class TravelLegalizationCreate(BaseModel):
+    travel_request_id: int
+    check_date: date
+    check_number: Optional[str] = None
+    beneficiary: str
+    nit_beneficiary: str
+    observations_outlay: Optional[str] = None
+    regimen_type_id: int
+    subtotal: Decimal = Field(..., max_digits=12, decimal_places=2)
+    iva: Decimal = Field(..., max_digits=12, decimal_places=2)
+    retention_porcentage: Decimal = Field(..., max_digits=5, decimal_places=2)
+    retention: Decimal = Field(..., max_digits=12, decimal_places=2)
+    amount_paid: Decimal = Field(..., max_digits=12, decimal_places=2)
+    observations: Optional[str] = None
+
+class TravelLegalizationUpdate(BaseModel):
+    check_date: Optional[date] = None
+    check_number: Optional[str] = None
+    beneficiary: Optional[str] = None
+    nit_beneficiary: Optional[str] = None
+    observations_outlay: Optional[str] = None
+    regimen_type_id: Optional[int] = None
+    subtotal: Optional[Decimal] = Field(None, max_digits=12, decimal_places=2)
+    iva: Optional[Decimal] = Field(None, max_digits=12, decimal_places=2)
+    retention_porcentage: Optional[Decimal] = Field(None, max_digits=5, decimal_places=2)
+    retention: Optional[Decimal] = Field(None, max_digits=12, decimal_places=2)
+    amount_paid: Optional[Decimal] = Field(None, max_digits=12, decimal_places=2)
+    observations: Optional[str] = None
+
+class TravelLegalizationResponse(TravelLegalizationCreate):
+    legalization_id: int
+    regimen_name: Optional[str] = None
+    created_at: date
+
     class Config:
         from_attributes = True
