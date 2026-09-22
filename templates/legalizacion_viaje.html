@@ -239,10 +239,10 @@
             <td class="table-data-cell">{{ '{:,.2f}'.format(totales.amount_paid or 0) }}</td>
             <td class="table-data-cell">{{ '{:,.2f}'.format(totales.retention or 0) }}</td>
             <td class="table-data-cell">{{ '{:,.2f}'.format(totales.retention + totales.amount_paid or 0) }}</td>
-            <td class="table-data-cell">{{ '{:,.2f}'.format(valor_anticipo - totales.amount_paid or 0) }}</td>
+            <td class="table-data-cell">{{ '{:,.2f}'.format((valor_anticipo or 0) - (totales.amount_paid or 0)) }}</td>
             <td class="table-data-cell">
-                {% if (totales.amount_paid + totales.retention) > valor_anticipo %}
-                    {{ '{:,.2f}'.format(totales.amount_paid - totales.retention - valor_anticipo or 0) }}
+                {% if ((totales.amount_paid or 0) + (totales.retention or 0)) > (valor_anticipo or 0) %}
+                    {{ '{:,.2f}'.format((totales.amount_paid or 0) - (totales.retention or 0) - (valor_anticipo or 0)) }}
                 {% endif %}
             </td>
         </tr>

@@ -23,6 +23,8 @@ from entity.rubros import Rubros
 from repository.ViajesItinerarioRepository import listar_itinerarios_por_viaje
 from html import escape
 from services import TravelLegalizationsService
+from copy import copy
+from types import SimpleNamespace
 
 router = APIRouter(
     prefix='/viajes',
@@ -353,13 +355,22 @@ def plantilla_pdf_solicitud_html(viaje, historial_aprobacion_solicitud, end_poin
         end_point=end_point
     )
 
+def calcular_totales_legalizacion(legalizaciones) -> SimpleNamespace:
+    return SimpleNamespace(
+        subtotal=sum((legalizacion.subtotal or 0) for legalizacion in legalizaciones),
+        iva=sum((legalizacion.iva or 0) for legalizacion in legalizaciones),
+        retention=sum((legalizacion.retention or 0) for legalizacion in legalizaciones),
+        amount_paid=sum((legalizacion.amount_paid or 0) for legalizacion in legalizaciones),
+    )
+
 def plantilla_pdf_legalizacion_html(viaje, historial_aprobacion_solicitud, end_point: str, legalizaciones) -> str:
     template = env.get_template('legalizacion_viaje.html')
     return template.render(
         **vars(viaje),
         historialAprobacionSolicitud=historial_aprobacion_solicitud,
         end_point=end_point,
-        legalizaciones=legalizaciones
+        legalizaciones=legalizaciones,
+        totales=calcular_totales_legalizacion(legalizaciones)
     )
 
 def cargar_clases_weasyprint():
@@ -437,6 +448,100 @@ def generar_pdf(codigo: str, html_out: str) -> bytes:
     return HTML(string=html_with_pdf_header, base_url=str(TEMPLATE_DIR)).write_pdf(
         stylesheets=[css]
     )
+
+def obtener_valor_numerico(valor) -> float:
+    return float(valor or 0)
+
+def aplicar_estilo_fila(ws, fila_origen: int, fila_destino: int, columna_inicio: int = 1, columna_fin: int = 12) -> None:
+    for col in range(columna_inicio, columna_fin + 1):
+        origen = ws.cell(row=fila_origen, column=col)
+        destino = ws.cell(row=fila_destino, column=col)
+        if origen.has_style:
+            destino._style = copy(origen._style)
+        if origen.number_format:
+            destino.number_format = origen.number_format
+        if origen.alignment:
+            destino.alignment = copy(origen.alignment)
+
+def agregar_fila_resumen_excel(ws, fila: int, etiqueta: str, valor, fill) -> None:
+    ws.merge_cells(start_row=fila, start_column=1, end_row=fila, end_column=6)
+    ws.cell(row=fila, column=1, value=etiqueta)
+    ws.cell(row=fila, column=7, value=valor)
+    for columna in range(1, 13):
+        ws.cell(row=fila, column=columna).fill = copy(fill)
+
+def generar_excel_facturas_legalizacion(viaje, legalizaciones) -> bytes:
+    try:
+        from openpyxl import load_workbook
+        from openpyxl.styles import PatternFill
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="La dependencia openpyxl no esta instalada en el backend."
+        ) from exc
+
+    plantilla_path = Path(__file__).parent.parent / "static" / "administrativo" / "viajes" / "formato legalizacion.xlsx"
+    if not plantilla_path.is_file():
+        raise HTTPException(status_code=404, detail="Formato de legalizacion no encontrado")
+
+    wb = load_workbook(plantilla_path)
+    ws = wb.active
+    fila_encabezado = 6
+    fila_inicio = fila_encabezado + 1
+    fondo_resumen = PatternFill(fill_type="solid", fgColor="EAF2F8")
+
+    ws["D2"] = viaje.codigo
+    ws["D3"] = obtener_valor_numerico(viaje.valor_anticipo) if getattr(viaje, "requiere_anticipo", False) else 0
+
+    for indice, legalizacion in enumerate(legalizaciones):
+        fila = fila_inicio + indice
+        aplicar_estilo_fila(ws, fila_inicio, fila)
+
+        ws.cell(row=fila, column=1, value=legalizacion.check_date)
+        ws.cell(row=fila, column=2, value=legalizacion.check_number)
+        ws.cell(row=fila, column=3, value=legalizacion.beneficiary)
+        ws.cell(row=fila, column=4, value=legalizacion.nit_beneficiary)
+        ws.cell(row=fila, column=5, value=legalizacion.observations_outlay)
+        ws.cell(row=fila, column=6, value=legalizacion.regimen_name)
+        ws.cell(row=fila, column=7, value=obtener_valor_numerico(legalizacion.subtotal))
+        ws.cell(row=fila, column=8, value=obtener_valor_numerico(legalizacion.iva))
+        ws.cell(row=fila, column=9, value=obtener_valor_numerico(legalizacion.retention_porcentage))
+        ws.cell(row=fila, column=10, value=obtener_valor_numerico(legalizacion.retention))
+        ws.cell(row=fila, column=11, value=obtener_valor_numerico(legalizacion.amount_paid))
+        ws.cell(row=fila, column=12, value=legalizacion.observations)
+
+    fila_total = fila_inicio + len(legalizaciones)
+    aplicar_estilo_fila(ws, fila_inicio, fila_total)
+    formula_subtotal = f"=SUM(G{fila_inicio}:G{fila_total - 1})" if legalizaciones else "=0"
+    formula_retencion = f"=SUM(J{fila_inicio}:J{fila_total - 1})" if legalizaciones else "=0"
+    formula_cancelado = f"=SUM(K{fila_inicio}:K{fila_total - 1})" if legalizaciones else "=0"
+    agregar_fila_resumen_excel(ws, fila_total, "TOTAL", formula_subtotal, fondo_resumen)
+    ws.cell(row=fila_total, column=10, value=formula_retencion)
+    ws.cell(row=fila_total, column=11, value=formula_cancelado)
+
+    filas_resumen = [
+        ("TOTAL DINERO CANCELADO", f"=K{fila_total}"),
+        ("RETEFUENTE PRACTICADA", f"=J{fila_total}"),
+        ("TOTAL GASTO EJECUTADO", None),
+        ("TOTAL DINERO CONSIGNADO", None),
+        ("PENDIENTE POR REINTEGRAR AL SOLICITANTE", None),
+    ]
+
+    for indice, (etiqueta, valor) in enumerate(filas_resumen, start=1):
+        fila = fila_total + indice
+        aplicar_estilo_fila(ws, fila_inicio, fila)
+        if etiqueta == "TOTAL GASTO EJECUTADO":
+            valor = f"=G{fila_total + 1}+G{fila_total + 2}"
+        elif etiqueta == "TOTAL DINERO CONSIGNADO":
+            valor = f"=D3+G{fila_total + 1}"
+        elif etiqueta == "PENDIENTE POR REINTEGRAR AL SOLICITANTE":
+            valor = f"=IF((G{fila_total + 1}+G{fila_total + 2})>D3,G{fila_total + 1}-G{fila_total + 2}-D3,0)"
+        agregar_fila_resumen_excel(ws, fila, etiqueta, valor, fondo_resumen)
+
+    archivo = io.BytesIO()
+    wb.save(archivo)
+    archivo.seek(0)
+    return archivo.getvalue()
 
 @router.get("/{guid}/pdf_solicitud/documento")
 def obtener_pdf_solicitud(guid: str, db: DbSession):
@@ -576,6 +681,29 @@ def obtener_pdf_legalizacion(guid: str, db: DbSession):
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": f"inline; filename={filename}"}
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{guid}/excel_facturas/documento")
+def obtener_excel_facturas_legalizacion(guid: str, db: DbSession):
+    try:
+        viaje = ViajesService.obtener_viaje_por_id(guid, db)
+        if not viaje:
+            raise HTTPException(status_code=404, detail="Viaje no encontrado")
+
+        legalizaciones = TravelLegalizationsService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
+        excel_bytes = generar_excel_facturas_legalizacion(viaje, legalizaciones)
+        filename = f"facturas_legalizacion_{viaje.codigo or viaje.id_viaje}.xlsx"
+
+        return StreamingResponse(
+            io.BytesIO(excel_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except HTTPException as e:
         raise e
