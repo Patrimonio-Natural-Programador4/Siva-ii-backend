@@ -1,4 +1,4 @@
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
@@ -23,6 +23,13 @@ from jinja2 import Environment, FileSystemLoader
 from services import SolicitudesAprobacionService, NotificacionesService, SoportesService
 from entity.users import Users
 from entity.users_delegate import UsersDelegate
+
+from enum import Enum
+
+class TipoViajero(str, Enum):
+    FUNCIONARIO = 'FUNCIONARIO'
+    INVITADO = 'INVITADO'
+    USUARIO_ACTUAL = 'USUARIO_ACTUAL'
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
 CATEGORIA_APROBACION_LEGALIZACION_VIAJE = "LEG_VIA_ANT"
@@ -1642,3 +1649,57 @@ def actualizar_legalizacion(db: Session, legalization_id: int, legalizacion: Tra
         datos_actualizar['amount_paid'] = Decimal(subtotal) + Decimal(iva) - Decimal(retention)
 
     return ViajesRepository.actualizar_legalizacion(db, legalization_id, datos_actualizar)
+
+
+def obtener_contacto_viajero(db: Session, tipo: str, identificador: str, user_oid: str) -> dict:
+    if not identificador or not identificador.strip():
+        if tipo != TipoViajero.USUARIO_ACTUAL:
+            return {}
+
+    query = db.query(TravelRequests)
+    usuario_base = None
+
+    if tipo == TipoViajero.FUNCIONARIO:
+        try:
+            user_id = int(identificador)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="El identificador debe ser numérico para funcionarios")
+            
+        query = query.filter(TravelRequests.traveler_user_id == user_id, TravelRequests.is_guest.isnot(True))
+        usuario_base = db.query(Users).filter(Users.id == user_id).first()
+        
+    elif tipo == TipoViajero.INVITADO:
+        query = query.filter(TravelRequests.is_guest == True, TravelRequests.guest_name == identificador)
+        
+    elif tipo == TipoViajero.USUARIO_ACTUAL:
+        usuario_base = UsuariosRepository.obtener_por_guid_msft(user_oid, db)
+        if not usuario_base:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        query = query.filter(TravelRequests.traveler_user_id == usuario_base.id, TravelRequests.is_guest.isnot(True))
+        
+    else:
+        raise HTTPException(status_code=400, detail="Tipo de viajero inválido")
+
+    last_viaje = query.order_by(TravelRequests.created_at.desc()).first()
+    
+    if last_viaje:
+        return {
+            "fecha_nacimiento": last_viaje.traveler_birth_date.strftime("%Y-%m-%d") if last_viaje.traveler_birth_date else None,
+            "celular": last_viaje.guest_phone,
+            "correo": last_viaje.guest_email,
+            "contacto_emergencia": last_viaje.emergency_contact,
+            "celular_emergencia": last_viaje.emergency_phone,
+            "parentesco_emergencia": last_viaje.emergency_relationship
+        }
+        
+    if usuario_base:
+        return {
+            "fecha_nacimiento": None,
+            "celular": usuario_base.mobile_phone,
+            "correo": usuario_base.email,
+            "contacto_emergencia": None,
+            "celular_emergencia": None,
+            "parentesco_emergencia": None
+        }
+
+    return {}

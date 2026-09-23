@@ -22,7 +22,6 @@ from entity.activities import Activities
 from entity.rubros import Rubros
 from repository.ViajesItinerarioRepository import listar_itinerarios_por_viaje
 from html import escape
-from services import TravelLegalizationsService
 from copy import copy
 from types import SimpleNamespace
 
@@ -118,6 +117,16 @@ def listar_viajes_calendario(
     user_oid: str = Depends(get_current_user_oid)
 ) -> list[ViajesCalendar]:
     return ViajesService.listar_viajes_calendario(db, fechaDesde, fechaHasta)
+
+
+@router.get("/contacto-viajero")
+def obtener_contacto_viajero(
+    db: DbSession,
+    tipo: str = Query(...),
+    identificador: str = Query(...),
+    user_oid: str = Depends(get_current_user_oid)
+):
+    return ViajesService.obtener_contacto_viajero(db, tipo, identificador, user_oid)
 
 
 @router.get("/{guid}/detalle", response_model=ViajesCreate)
@@ -731,7 +740,7 @@ def obtener_excel_facturas_legalizacion(guid: str, db: DbSession):
         if not viaje:
             raise HTTPException(status_code=404, detail="Viaje no encontrado")
 
-        legalizaciones = TravelLegalizationsService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
+        legalizaciones = ViajesService.obtener_legalizaciones_por_viaje(db, viaje.id_viaje)
         excel_bytes = generar_excel_facturas_legalizacion(viaje, legalizaciones)
         filename = f"facturas_legalizacion_{viaje.codigo or viaje.id_viaje}.xlsx"
 
