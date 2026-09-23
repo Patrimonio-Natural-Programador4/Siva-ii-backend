@@ -66,6 +66,8 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.country = viaje.pais
         nuevo_viaje.is_guest = viaje.es_invitado
         nuevo_viaje.guest_name = viaje.persona_invitada
+        nuevo_viaje.invited_traveler_document = viaje.invited_traveler_document
+        nuevo_viaje.invited_traveler_document_type_id = viaje.invited_traveler_document_type_id
         nuevo_viaje.guest_document = viaje.documento_persona_invitada if viaje.es_invitado else usuario.identification_number
         nuevo_viaje.guest_phone = viaje.telefono_persona_invitada
         nuevo_viaje.guest_email = viaje.correo_persona_invitada if viaje.es_invitado else usuario.email
@@ -198,6 +200,8 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "es_invitado": nuevo_viaje.is_guest,
                 "persona_invitada": nuevo_viaje.guest_name,
                 "documento_persona_invitada": nuevo_viaje.guest_document,
+                "invited_traveler_document": nuevo_viaje.invited_traveler_document,
+                "invited_traveler_document_type_id": nuevo_viaje.invited_traveler_document_type_id,
                 "telefono_persona_invitada": nuevo_viaje.guest_phone,
                 "correo_persona_invitada": nuevo_viaje.guest_email,
                 "fecha_nacimiento_viajero": nuevo_viaje.traveler_birth_date,
@@ -291,6 +295,8 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         viajeDb.country = viaje.pais
         viajeDb.is_guest = viaje.es_invitado
         viajeDb.guest_name = viaje.persona_invitada
+        viajeDb.invited_traveler_document = viaje.invited_traveler_document
+        viajeDb.invited_traveler_document_type_id = viaje.invited_traveler_document_type_id
         viajeDb.guest_document = viaje.documento_persona_invitada
         viajeDb.guest_phone = viaje.telefono_persona_invitada
         viajeDb.guest_email = viaje.correo_persona_invitada
@@ -415,6 +421,8 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
                 "es_invitado": viajeDb.is_guest,
                 "persona_invitada": viajeDb.guest_name,
                 "documento_persona_invitada": viajeDb.guest_document,
+                "invited_traveler_document": viajeDb.invited_traveler_document,
+                "invited_traveler_document_type_id": viajeDb.invited_traveler_document_type_id,
                 "telefono_persona_invitada": viajeDb.guest_phone,
                 "correo_persona_invitada": viajeDb.guest_email,
                 "fecha_nacimiento_viajero": viajeDb.traveler_birth_date,
@@ -650,6 +658,8 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         if (viajeDb.created_by_user_id and viajeDb.created_by_user_id != viajeDb.traveler_user_id) else None,
         persona_invitada=viajeDb.guest_name,
         documento_persona_invitada=viajeDb.guest_document,
+        invited_traveler_document=viajeDb.invited_traveler_document,
+        invited_traveler_document_type_id=viajeDb.invited_traveler_document_type_id,
         telefono_persona_invitada=viajeDb.guest_phone,
         correo_persona_invitada=viajeDb.guest_email if viajeDb.is_guest else viajeDb.user.email if viajeDb.user else None,
         id_solicitud_aprobacion_legalizacion=viajeDb.expense_approval_request_id,
@@ -1669,7 +1679,7 @@ def obtener_contacto_viajero(db: Session, tipo: str, identificador: str, user_oi
         usuario_base = db.query(Users).filter(Users.id == user_id).first()
         
     elif tipo == TipoViajero.INVITADO:
-        query = query.filter(TravelRequests.is_guest == True, TravelRequests.guest_name == identificador)
+        query = query.filter(TravelRequests.is_guest == True, TravelRequests.invited_traveler_document == identificador)
         
     elif tipo == TipoViajero.USUARIO_ACTUAL:
         usuario_base = UsuariosRepository.obtener_por_guid_msft(user_oid, db)
@@ -1684,6 +1694,7 @@ def obtener_contacto_viajero(db: Session, tipo: str, identificador: str, user_oi
     
     if last_viaje:
         return {
+            "persona_invitada": last_viaje.guest_name,
             "fecha_nacimiento": last_viaje.traveler_birth_date.strftime("%Y-%m-%d") if last_viaje.traveler_birth_date else None,
             "celular": last_viaje.guest_phone,
             "correo": last_viaje.guest_email,

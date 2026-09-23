@@ -24,6 +24,7 @@ class TravelRequests(Base):
         ForeignKeyConstraint(['travel_status_id'], ['travel_status.status_id'], name='travel_requests_travel_status_id_fkey'),
         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='travel_requests_activities_fkey'),
         ForeignKeyConstraint(['rubro_id'], ['rubros.id'], name='travel_requests_rubros_fkey'),
+        ForeignKeyConstraint(['invited_traveler_document_type_id'], ['document_types.id'], name='travel_requests_invited_traveler_document_type_id_fkey'),
         {'info': {'managed_by_alembic': True}}
     )
 
@@ -66,6 +67,8 @@ class TravelRequests(Base):
     guest_document: Mapped[Optional[str]] = mapped_column(Text)
     guest_phone: Mapped[Optional[str]] = mapped_column(Text)
     guest_email: Mapped[Optional[str]] = mapped_column(Text)
+    invited_traveler_document: Mapped[Optional[str]] = mapped_column(Text)
+    invited_traveler_document_type_id: Mapped[Optional[int]] = mapped_column(Integer)
     expense_approval_request_id: Mapped[Optional[int]] = mapped_column(Integer)
     requires_tickets: Mapped[Optional[bool]] = mapped_column(Boolean)
     is_international: Mapped[Optional[bool]] = mapped_column(Boolean)

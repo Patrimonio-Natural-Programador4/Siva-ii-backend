@@ -31,6 +31,8 @@ class ViajesBase(BaseModel):
     es_invitado: Optional[bool] = None
     persona_invitada: Optional[str] = None
     documento_persona_invitada: Optional[str] = None
+    invited_traveler_document: Optional[str] = None
+    invited_traveler_document_type_id: Optional[int] = None
     telefono_persona_invitada: Optional[str] = None
     correo_persona_invitada: Optional[str] = None
     tipo_solicitud_aprobacion: Optional[str] = None
@@ -104,6 +106,8 @@ class ViajesCreate(BaseModel):
     id_funcionario_responsable: Optional[int] = None
     persona_invitada: Optional[str] = None
     documento_persona_invitada: Optional[str] = None
+    invited_traveler_document: Optional[str] = None
+    invited_traveler_document_type_id: Optional[int] = None
     telefono_persona_invitada: Optional[str] = None
     correo_persona_invitada: Optional[str] = None
     informe_lugar: Optional[str] = None
