@@ -2,7 +2,7 @@ import io
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException,Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException,Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import status
 from typing import Optional
@@ -27,6 +27,7 @@ from dto.CapacityAssessmentsDTO import CapacityAssessmentListSP
 from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacionCapacidad
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.CapacityAssessmentsDTO import UrlSharepointUpdate
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
 CATEGORIA_APROBACION = "APP_EC"
 
@@ -54,7 +55,7 @@ def listar_capacity_assessments_filtro(
         return CapacityAssessments.listar_capacity_assessments_por_usuario_sp(
             db, user_oid, page, estado, filtro, programa
         )
-        #return "me ve"
+       
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
      
@@ -84,9 +85,9 @@ def obtener_por_id(id: int, db: DbSession, user_oid: str = Depends(get_current_u
 
 
 @router.post('', response_model=ResponseRequest)
-def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession,background_tasks: BackgroundTasks,  user_oid: str = Depends(get_current_user_oid)):
     try:      
-        response_request = CapacityAssessments.crear(payload, db, user_oid)
+        response_request = CapacityAssessments.crear(payload, db, user_oid,background_tasks)
         if response_request.solicitud_exitosa:
             return JSONResponse(
                 content=response_request.model_dump(),
@@ -105,12 +106,12 @@ def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession, user_oid: 
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put('/{guid}', response_model=ResponseRequest)
-def actualizar(guid: str, payload: CapacityAssessmentsCreate, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+def actualizar(guid: str, payload: CapacityAssessmentsCreate, db: DbSession,background_tasks: BackgroundTasks,  user_oid: str = Depends(get_current_user_oid)):
     try:
         evaluacion_db = CapacityAssessments.obtener_por_guid(guid, db)
         if not evaluacion_db:
             raise HTTPException(status_code=404, detail='Evaluación de capacidades no encontrada')
-        response_request = CapacityAssessments.actualizar(evaluacion_db.id, payload, db)
+        response_request = CapacityAssessments.actualizar(evaluacion_db.id, payload, db, user_oid,background_tasks)
         return JSONResponse(
             content=response_request.dict(),
             status_code=status.HTTP_200_OK if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
@@ -153,6 +154,7 @@ def accion_solicitud_aprobacion(
     guid: str,
     accion: AccionSolicitudAprobacionCapacidad,
     db: DbSession,
+    background_tasks: BackgroundTasks, 
     user_oid: str = Depends(get_current_user_oid),
     
 ):
@@ -175,7 +177,7 @@ def accion_solicitud_aprobacion(
         )
 
         respuesta = CapacityAssessments.procesar_accion_solicitud_aprobacion(
-            accion, user_oid, id_categoria, db
+            accion, user_oid, id_categoria, db, background_tasks
         )
 
         return JSONResponse(
@@ -198,7 +200,7 @@ def accion_solicitud_aprobacion(
  
     
 def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSession) -> bytes:
-    # Cargar DLLs de WeasyPrint en Windows si es necesario
+ 
     if os.name == "nt" and hasattr(os, "add_dll_directory"):
         tesseract_path = r"C:\Program Files\Tesseract-OCR"
         if os.path.isdir(tesseract_path):
@@ -209,7 +211,7 @@ def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSessio
 
     from weasyprint import HTML
 
-    # Cargar nombres/descripciones relacionadas
+    
     
     # PROGRAMA
     programa_name = "N/A"

@@ -6,12 +6,21 @@ from dto.CapacityAssessmentsDTO import CapacityAssessmentsBase,CapacityAssessmen
 from dto.ResponseRequest import ResponseRequest
 from entity.implementers import Implementers
 from entity.capacity_assessments import CapacityAssessments as CapacityAssessmentsEntity  
+from entity.modalities import Modalities
+from entity.pads import Pads
+from entity.persons import Persons
+from entity.programs import Programs
 from repository import CapacityAssessments  
 from repository import UsuariosRepository
 from services import SolicitudesAprobacionService
 from repository import CapacityAssessments  as repo
 from exceptions import PruebaCreationError, PruebaNotFoundError
 from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacionCapacidad
+#NOTIFUCACIONES
+from fastapi import BackgroundTasks
+from jinja2 import Environment, FileSystemLoader
+from entity.users import Users        
+from services import NotificacionesService
 
 CATEGORIA_APROBACION_CAPACITY_ASSESSMENT = "APP_EC"
 ID_ESTADO_ENVIADO = 2   # Revisión
@@ -88,7 +97,7 @@ def obtener_por_id(id: int, db: Session) -> CapacityAssessmentsBase | None:
                 approval_request_id=c.approval_request_id,   
             )
 
-def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_guid: str) -> ResponseRequest:
+def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
@@ -143,6 +152,54 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         nueva_capacidad.approval_request_id = id_solicitud_aprobacion
         db.commit()
         db.refresh(nueva_capacidad)
+        
+        template_data = {
+            "codigo": nueva_capacidad.code,
+            "name": nueva_capacidad.name,
+            "estado": "Enviado a aprobación",
+            "person": (
+                " ".join(p for p in [nueva_capacidad.person.first_name, nueva_capacidad.person.other_name, nueva_capacidad.person.last_name, nueva_capacidad.person.other_last_name] if p)
+                if nueva_capacidad.person else None
+            ),
+            "implementer": nueva_capacidad.implementer.acronym if nueva_capacidad.implementer else None,
+            "programa": nueva_capacidad.programa.name if nueva_capacidad.programa else None,
+            "pid": nueva_capacidad.pid.name if nueva_capacidad.pid else None,
+            "modalitie": nueva_capacidad.modalitie.name if nueva_capacidad.modalitie else None,
+            "approximate_value": nueva_capacidad.approximate_value,
+            "policy_approval_date": nueva_capacidad.policy_approval_date,
+            "document_signature_date": nueva_capacidad.document_signature_date,
+            "start_date": nueva_capacidad.start_date,
+            "end_date": nueva_capacidad.end_date,
+            "observation": nueva_capacidad.observation,
+            "url_sharepoint_ec": nueva_capacidad.url_sharepoint_ec,
+            "comentarios": "",
+        }
+
+        env = Environment(loader=FileSystemLoader(''))
+        template = env.get_template('templates/notificacion_eva_capacidades.html')
+        html_out = template.render(**template_data)
+
+        destinatarios = []
+        if nueva_capacidad.persons_id:
+            persona = db.query(Persons).filter(Persons.id == nueva_capacidad.persons_id).first()
+            if persona and persona.email:
+                destinatarios.append(persona.email)
+        if usuario.email and usuario.email not in destinatarios:
+            destinatarios.append(usuario.email)
+
+        to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+        if to_recipients:
+            background_tasks.add_task(
+                NotificacionesService.solicitud_viaje,
+                f"Solicitud de evaluación de capacidades {nueva_capacidad.code} enviada por aprobación",
+                to_recipients,
+                html_out,
+                "",
+                "",
+                db
+            )
+    
 
         respuesta.identity = nueva_capacidad.id
         respuesta.mensaje = "Evaluación de capacidades creado exitosamente"
@@ -221,6 +278,7 @@ def procesar_accion_solicitud_aprobacion(
     usuario_guid: str,
     id_categoria: int,
     db: Session,
+    background_tasks: BackgroundTasks, 
 ) -> ResponseRequest:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
@@ -247,6 +305,64 @@ def procesar_accion_solicitud_aprobacion(
                 
                 
             db.commit()
+            db.refresh(evaluacion_db)  
+
+            
+            nombres_estado = {
+                ID_ESTADO_PENDIENTE_ESTUDIOS_PREVIOS: "Aprobado - Pendiente estudios previos",
+                ID_ESTADO_ENVIADO: "En revisión",
+                ID_ESTADO_AJUSTES: "Solicitud de ajustes",
+            }
+            estado_nombre = nombres_estado.get(evaluacion_db.capacity_assessments_states_id, "")
+
+            template_data = {
+                "codigo": evaluacion_db.code,
+                "name": evaluacion_db.name,
+                "estado": estado_nombre,
+                "person": (
+                    " ".join(p for p in [evaluacion_db.person.first_name, evaluacion_db.person.other_name, evaluacion_db.person.last_name, evaluacion_db.person.other_last_name] if p)
+                    if evaluacion_db.person else None
+                ),
+                "implementer": evaluacion_db.implementer.acronym if evaluacion_db.implementer else None,
+                "programa": evaluacion_db.programa.name if evaluacion_db.programa else None,
+                "pid": evaluacion_db.pid.name if evaluacion_db.pid else None,
+                "modalitie": evaluacion_db.modalitie.name if evaluacion_db.modalitie else None,
+                "approximate_value": evaluacion_db.approximate_value,
+                "policy_approval_date": evaluacion_db.policy_approval_date,
+                "document_signature_date": evaluacion_db.document_signature_date,
+                "start_date": evaluacion_db.start_date,
+                "end_date": evaluacion_db.end_date,
+                "observation": evaluacion_db.observation,
+                "url_sharepoint_ec": evaluacion_db.url_sharepoint_ec,
+                "comentarios": getattr(accion, "comentarios", ""),
+            }
+
+            env = Environment(loader=FileSystemLoader(''))
+            template = env.get_template('templates/notificacion_eva_capacidades.html')
+            html_out = template.render(**template_data)
+
+            destinatarios = []
+            if evaluacion_db.persons_id:
+                persona = db.query(Persons).filter(Persons.id == evaluacion_db.persons_id).first()
+                if persona and persona.email:
+                    destinatarios.append(persona.email)
+            if usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
+
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Evaluación de capacidades {evaluacion_db.code} - {estado_nombre}",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
+            
+            
 
         return respuesta
     except Exception as e:
@@ -255,14 +371,18 @@ def procesar_accion_solicitud_aprobacion(
     
     
     
-def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session) -> ResponseRequest:
+def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
     try:
-        registro = CapacityAssessments.obtener_por_id(id, db)
+        usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        if not usuario:
+            raise Exception("Usuario no encontrado")
+
+        registro = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.id == id).first()
         if not registro:
-            return ResponseRequest(solicitud_exitosa=False, mensaje='Evaluación no encontrada')
+            return ResponseRequest(solicitud_exitosa=False, mensaje='Evaluación de capacidades no encontrada')
 
         registro.name = payload.name
-        registro.code = payload.code
+        registro.code = payload.code  
         registro.observation = payload.observation
         registro.approximate_value = payload.approximate_value
         registro.policy_approval_date = payload.policy_approval_date
@@ -277,11 +397,86 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session) -> Resp
         registro.modality_id = payload.modality_id
 
         db.commit()
-        return ResponseRequest(solicitud_exitosa=True, mensaje='Evaluación actualizada exitosamente', identity=registro.id)
+        db.refresh(registro)
+
+        if payload.enviar_aprobacion:
+            registro.capacity_assessments_states_id = ID_ESTADO_ENVIADO 
+            id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(
+                CATEGORIA_APROBACION_CAPACITY_ASSESSMENT, db
+            )
+            if not id_categoria_aprobacion:
+                raise Exception(
+                    f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_CAPACITY_ASSESSMENT}"
+                )
+
+            id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
+                id_categoria_aprobacion,
+                registro.id,
+                usuario.id,
+                registro.code,
+                db,
+                id_programa=registro.program_id
+            )
+
+            registro.approval_request_id = id_solicitud_aprobacion
+            db.commit()
+            db.refresh(registro)
+
+            
+            programa = db.query(Programs).filter(Programs.id == registro.program_id).first() if registro.program_id else None
+            pad = db.query(Pads).filter(Pads.id == registro.pid_id).first() if registro.pid_id else None
+            implementadora = db.query(Implementers).filter(Implementers.id == registro.implementer_id).first() if registro.implementer_id else None
+            modalidad = db.query(Modalities).filter(Modalities.id == registro.modality_id).first() if registro.modality_id else None
+            persona = db.query(Persons).filter(Persons.id == registro.persons_id).first() if registro.persons_id else None
+
+            template_data = {
+                "codigo": registro.code,
+                "name": registro.name,
+                "estado": "Enviado a aprobación",
+                "person": " ".join(p for p in [persona.first_name, persona.other_name, persona.last_name, persona.other_last_name] if p) if persona else None,
+                "implementer": implementadora.acronym if implementadora else None,
+                "programa": programa.name if programa else None,
+                "pid": pad.name if pad else None,
+                "modalitie": modalidad.name if modalidad else None,
+                "approximate_value": registro.approximate_value,
+                "policy_approval_date": registro.policy_approval_date,
+                "document_signature_date": registro.document_signature_date,
+                "start_date": registro.start_date,
+                "end_date": registro.end_date,
+                "observation": registro.observation,
+                "url_sharepoint_ec": registro.url_sharepoint_ec,
+                "comentarios": "",
+            }
+
+            env = Environment(loader=FileSystemLoader(''))
+            template = env.get_template('templates/notificacion_eva_capacidades.html')
+            html_out = template.render(**template_data)
+
+            destinatarios = []
+            if persona and persona.email:
+                destinatarios.append(persona.email)
+            if usuario.email and usuario.email not in destinatarios:
+                destinatarios.append(usuario.email)
+
+            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+
+            if to_recipients:
+                background_tasks.add_task(
+                    NotificacionesService.solicitud_viaje,
+                    f"Evaluación de capacidades {registro.code} enviada por aprobación",
+                    to_recipients,
+                    html_out,
+                    "",
+                    "",
+                    db
+                )
+          
+
+        return ResponseRequest(solicitud_exitosa=True, mensaje='Evaluación de capacidades actualizada exitosamente', identity=registro.id)
     except Exception as e:
         db.rollback()
-        logging.error(f"Error al actualizar capacity assessment: {e}")
-        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))   
+        logging.error(f"Error al actualizar evaluación de capacidades: {e}")
+        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e)) 
     
     
     

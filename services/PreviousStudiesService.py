@@ -122,6 +122,16 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
             raise Exception("Usuario no encontrado")
+        
+        if previous_studies.capacity_assessment_id:
+            existe_estudio = db.query(PreviousStudiesEntity).filter(
+                PreviousStudiesEntity.capacity_assessment_id == previous_studies.capacity_assessment_id
+            ).first()
+            if existe_estudio:
+                return ResponseRequest(
+                    solicitud_exitosa=False,
+                    mensaje=f"Esta evaluación de capacidades ya tiene un estudio previo ({existe_estudio.code})"
+                )
         fecha_actual = date.today()
         estudios_previos=PreviousStudiesRepository.numero_estudios_previos(db)
         

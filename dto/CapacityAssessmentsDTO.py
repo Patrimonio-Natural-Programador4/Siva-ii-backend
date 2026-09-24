@@ -39,8 +39,6 @@ class CapacityAssessmentsBase(BaseModel):
 
 
 
- #guid, 
- #user_session, 
 
 class CapacityAssessmentsCreate(BaseModel):
     name: Optional[str] = None
@@ -60,6 +58,7 @@ class CapacityAssessmentsCreate(BaseModel):
     capacity_assessments_states_id: Optional[int] = None
     modality_id: Optional[int] = None
     approval_request_id:  Optional[int] = None
+    enviar_aprobacion: Optional[bool] = False 
 
     class Config:
         from_attributes = True
