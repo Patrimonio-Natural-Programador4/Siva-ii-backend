@@ -26,6 +26,7 @@ from services import SolicitudesAprobacionService
 from dto.CapacityAssessmentsDTO import CapacityAssessmentListSP
 from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacionCapacidad
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
+from dto.CapacityAssessmentsDTO import UrlSharepointUpdate
 
 CATEGORIA_APROBACION = "APP_EC"
 
@@ -319,3 +320,21 @@ def obtener_pdf_solicitud(guid: str, db: DbSession):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))    
+    
+
+
+@router.patch("/{guid}/url-sharepoint", response_model=ResponseRequest)
+def actualizar_url_sharepoint(
+    guid: str,
+    payload: UrlSharepointUpdate,
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid),
+):
+    response_request = CapacityAssessments.actualizar_url_sharepoint(
+        guid, payload.url_sharepoint_ec, db
+    )
+    return JSONResponse(
+        content=response_request.dict(),
+        status_code=status.HTTP_200_OK if response_request.solicitud_exitosa
+        else status.HTTP_400_BAD_REQUEST,
+    )

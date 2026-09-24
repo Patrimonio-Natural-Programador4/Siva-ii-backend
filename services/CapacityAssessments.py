@@ -51,6 +51,7 @@ def listar(db: Session) -> list[CapacityAssessmentsBase]:
             persons_id=c.persons_id,
             capacity_assessments_states_id=c.capacity_assessments_states_id,
             modality_id=c.modality_id,
+            url_sharepoint_ec=c.url_sharepoint_ec,
         )
         for c in capacidades
     ]
@@ -192,6 +193,7 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         persons_id=c.persons_id,
         capacity_assessments_states_id=c.capacity_assessments_states_id,
         modality_id=c.modality_id,
+        url_sharepoint_ec=c.url_sharepoint_ec,
     )    
     
 
@@ -279,4 +281,20 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session) -> Resp
     except Exception as e:
         db.rollback()
         logging.error(f"Error al actualizar capacity assessment: {e}")
-        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))    
+        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))   
+    
+    
+    
+def actualizar_url_sharepoint(guid: str, url: str | None, db: Session) -> ResponseRequest:
+    try:
+        registro = CapacityAssessments.obtener_por_guid(guid, db)
+        if not registro:
+            return ResponseRequest(solicitud_exitosa=False, mensaje='Evaluación no encontrada')
+
+        registro.url_sharepoint_ec = url.strip() if url and url.strip() else None
+        db.commit()
+        return ResponseRequest(solicitud_exitosa=True, mensaje='URL actualizada', identity=registro.id)
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error al actualizar URL SharePoint: {e}")
+        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))

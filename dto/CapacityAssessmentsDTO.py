@@ -4,6 +4,7 @@ from datetime import datetime, date
 from decimal import Decimal
 from uuid import UUID
 
+
 class CapacityAssessmentsBase(BaseModel):
     id: Optional[int] = None
     name: Optional[str] = None
@@ -31,6 +32,7 @@ class CapacityAssessmentsBase(BaseModel):
     capacity_assessments_states_id: Optional[int] = None  
     modality_id: Optional[int] = None  
     modalitie:Optional[str] = None  
+    url_sharepoint_ec:Optional[str] =None
 
     class Config:
         from_attributes = True
@@ -101,3 +103,5 @@ class CapacityAssessmentListSP(BaseModel):
         
         
         
+class UrlSharepointUpdate(BaseModel):
+    url_sharepoint_ec: Optional[str] = None
