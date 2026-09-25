@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EVALUACION DE CAPACIDADES - SIVA-II</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        margin: 0;
+        padding: 0 15mm;
+        width: 90%;
+        color: #333333;
+        line-height: 1.6;
+      }
+
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #0f3d5c;
+        padding-bottom: 12px;
+        margin-bottom: 8px;
+      }
+
+      .header-left img {
+        height: 60px;
+        margin-right: 10px;
+      }
+
+      .codigo {
+        font-weight: bold;
+        color: #0f3d5c;
+      }
+
+      .section {
+        margin: 22px 0;
+      }
+
+      .section h2 {
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+        color: #0f3d5c;
+        text-align: center;
+      }
+
+      .info p {
+        margin: 5px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+        font-size: 13px;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f9fafb;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #6b7280;
+        font-weight: bold;
+      }
+
+      .estado-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 12px;
+        background-color: #eef2f6;
+        border: 1px solid #d7dee6;
+        color: #0f3d5c;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 20px;
+      }
+
+      .valor-total {
+        font-weight: bold;
+        color: #0f3d5c;
+      }
+
+      .btn-link {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #0f3d5c;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+
+      .comentarios {
+        background-color: #f9fafb;
+        border-left: 3px solid #0f3d5c;
+        padding: 10px 12px;
+      }
+
+      .footer-note {
+        font-size: 10px;
+        color: #9ca3af;
+        margin-top: 15px;
+      }
+
+      .section p {
+        text-align: justify;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ENCABEZADO -->
+    <div class="header-container">
+      <div
+        class="header-left"
+        style="width: 60%; display: inline-block; text-align: left"
+      >
+        <img src="cid:logo" alt="Patrimonio Natural" width="180" />
+      </div>
+      <div
+        style="
+          width: 38%;
+          display: inline-block;
+          text-align: right;
+          font-size: 14px;
+        "
+      >
+        Evaluación de capacidades:
+        <span class="name">{{ name or 'Sin código' }}</span>
+      </div>
+    </div>
+
+    <!-- NOMBRE -->
+    <div class="section">
+      <h2>{{ name or 'Evaluación de capacidades' }}</h2>
+    </div>
+
+    <!-- INFORMACIÓN GENERAL -->
+    <div class="section info">
+      <h2>Información general</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Líder del pilar</th>
+            <th>Implementadora</th>
+            <th>Programa</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ person or 'No registra' }}</td>
+            <td>{{ implementer or 'No registra' }}</td>
+            <td>{{ programa or 'No registra' }}</td>
+            <td><span class="estado-badge">{{ estado }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead>
+          <tr>
+            <th>PID</th>
+            <th>Modalidad</th>
+            <th>Valor aproximado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ pid or 'No registra' }}</td>
+            <td>{{ modalitie or 'No registra' }}</td>
+            <td class="valor-total">
+              {{ '${:,.0f}'.format(approximate_value) if approximate_value else
+              '0' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FECHAS -->
+    <div class="section info">
+      <h2>Fechas</h2>
+      <table>
+        <tbody>
+          <tr>
+            <th>Fecha aprobación de política</th>
+            <td>
+              {{ policy_approval_date.strftime('%d/%m/%Y') if
+              policy_approval_date else 'No registra' }}
+            </td>
+          </tr>
+          <tr>
+            <th>Fecha firma del documento</th>
+            <td>
+              {{ document_signature_date.strftime('%d/%m/%Y') if
+              document_signature_date else 'No registra' }}
+            </td>
+          </tr>
+          <tr>
+            <th>Fecha de inicio</th>
+            <td>
+              {{ start_date.strftime('%d/%m/%Y') if start_date else 'No
+              registra' }}
+            </td>
+          </tr>
+          <tr>
+            <th>Fecha de finalización</th>
+            <td>
+              {{ end_date.strftime('%d/%m/%Y') if end_date else 'No registra' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- OBSERVACIÓN -->
+    <div class="section">
+      <h2>Observación</h2>
+      <p>{{ observation if observation else 'No registra observación.' }}</p>
+    </div>
+
+    <!-- COMENTARIOS DE LA ACCIÓN  -->
+    {% if comentarios %}
+    <div class="section">
+      <h2>Comentarios de la aprobación</h2>
+      <p class="comentarios">{{ comentarios }}</p>
+    </div>
+    {% endif %}
+
+    <hr />
+    <p class="footer-note">
+      Este es un mensaje automático generado por SIVA-II para notificar cambios
+      de estado en la solicitud de evaluación de capacidades.
+    </p>
+  </body>
+</html>
