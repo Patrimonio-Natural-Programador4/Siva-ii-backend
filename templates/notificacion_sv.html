@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Solicitud de Viaje - SIVA-II</title>
+    <style>
+        .section {
+            margin: 20px 0;
+        }
+
+        .section h2 {
+            font-size: 14px;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .info p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #999;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0 15mm;
+            width: 100%;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        .header-left img {
+            height: 70px;
+            margin-right: 10px;
+        }
+        .codigo {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-container">
+        <div class="header" style="width: 100%;">
+            <div class="header-left" style="width: 70%; display: inline-block; text-align: left;">
+                <img src="cid:logo" alt="Patrimonio Natural" width="180" />
+            </div>
+            <div style="width: 28%; display: inline-block; text-align: right; font-size: 14px; font-weight: bold;">
+                Solicitud de viaje: {{ codigo }}
+            </div>
+        </div>
+    </div>
+
+    <div class="section info">
+        <h2>Información general</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre del Viajero</th>
+                    <th>Identificación</th>
+                    <th>Fecha de Solicitud</th>
+                    <th>Categoría de viaje</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ usuario }}</td>
+                    <td>{{ identificacion }}</td>
+                    <td>{{ fecha_solicitud }}</td>
+                    <td>{{ categoria }}</td>
+                </tr>
+                <tr>
+                    <th>Fecha y hora Inicio del Viaje</th>
+                    <th>Fecha y hora Fin del Viaje</th>
+                    <th>Número de horas</th>
+                    <th>Número de días</th>
+                </tr>
+                <tr>
+                    <td>{{ fecha_inicio_viaje }} : {{ hora_inicio }}</td>
+                    <td>{{ fecha_fin_viaje }} : {{ hora_fin }}</td>
+                    <td>{{ nro_horas }}</td>
+                    <td>{{ nro_dias }}</td>
+                </tr>
+                <tr>
+                    <th>La solicitud de viaje es para un invitado</th>
+                    <td>
+                        {% if es_invitado %}
+                        Sí
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
+                    <th>Información de la persona invitada</th>
+                    <td>
+                        {% if es_invitado %}
+                            <b>Nombre:</b> {{ persona_invitada }}<br>
+                            <b>Número de Identificación:</b> {{ documento_persona_invitada }}<br>
+                        {% else %}
+                            No aplica
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Información complementaria del viajero</th>
+                    <td>
+                        <b>Teléfono:</b> {{ telefono_persona_invitada }}<br>
+                        <b>Correo Electrónico:</b> {{ correo_persona_invitada }}<br>
+                        <b>Fecha de nacimiento:</b> {{ fecha_nacimiento_viajero }}<br>
+                    </td>
+                    <th>Es un viaje internacional</th>
+                    <td>
+                        {{ 'Sí' if viaje_internacional else 'No' }}<br>
+                        <b>País / Ciudad:</b> {{ pais if viaje_internacional else 'No aplica' }}<br>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Viaje asociado a un taller</th>
+                    <td>
+                        {% if asociado_taller %}
+                        Sí
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
+                    <th>Requiere anticipo</th>
+                    <td>
+                        {% if requiere_anticipo %}
+                        Sí
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td colspan="2">
+                        {% if asociado_taller %}
+                        <b>Nombre del taller:</b> {{ taller }}<br>
+                        <b>Fecha de inicio:</b> {{ fecha_inicio_taller }}<br>
+                        <b>Fecha de finalización:</b> {{ fecha_fin_taller }}<br>
+                        {% endif %}
+                    </td>
+                    <td colspan="2">
+                        {% if requiere_anticipo %}
+                        <b>Tipo de cuenta:</b> {{ tipo_cuenta }}<br>
+                        <b>Entidad bancaria:</b> {{ entidad_bancaria }}<br>
+                        <b>Número de cuenta:</b> {{ numero_cuenta }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Objetivo del viaje</th>
+                    <td colspan="3">{{ objetivo_actividad }}</td>
+                </tr>
+                <tr>
+                    <th>Observaciones adicionales</th>
+                    <td colspan="3">{{ observaciones_adicionales if observaciones_adicionales else '' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Requerimiento de transporte y tiquetes aéreos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Fecha y Hora</th>
+                    <th>Requiere tiquetes aéreos</th>
+                    <th>Destino zona rural</th>
+                    <th>Observaciones zona rural</th>
+                    <th>Observaciones adicionales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in itinerario %}
+                <tr>
+                    <td>{{ item.departamento_origen }} - {{ item.municipio_origen }}</td>
+                    <td>{{ item.departamento_destino }} - {{ item.municipio_destino }}</td>
+                    <td>{{ item.fecha }} {{ item.hora }}</td>
+                    <td>{{ 'Sí' if item.requiere_tiquetes_aereos else 'No' }}</td>
+                    <td>
+                        {% if item.es_zona_rural %}
+                            Sí
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+                    <td>{{ item.observaciones_zona_rural if item.observaciones_zona_rural else ''}}</td>
+                    <td>{{ item.observaciones }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Requerimientos de Hotel</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ciudad</th>
+                    <th>Fecha de llegada</th>
+                    <th>Fecha de salida</th>
+                    <th>Observaciones</th>
+                    <th>Tipo de alojamiento</th>
+                    <th>El pago del hotel lo gestiona</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in hotel %}
+                <tr>
+                    <td>{{ item.departamento }} - {{ item.municipio }}</td>
+                    <td>{{ item.fecha_llegada }}</td>
+                    <td>{{ item.fecha_salida }}</td>
+                    <td>{{ item.observaciones }}</td>
+                    <td>
+                        {% if item.tipo_alojamiento == 'ZR' %}
+                            Zona Rural
+                        {% elif item.tipo_alojamiento == 'C' %}
+                            Ciudad
+                        {% endif %} 
+                    </td>
+                    <td>
+                        {{ 'Patrimonio Natural' if item.pago_gestiona_fundacion else 'Gestión propia' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if requiere_anticipo %}
+    <div class="section">
+        <h2>Requerimiento de anticipo</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Valor</th>
+                    <th>Observaciones</th>
+                    <th>Proyecto</th>
+                    <th>Rubro</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ant in anticipo.detalle %}
+                <tr>
+                    <td>{{ ant.concepto }}</td>
+                    <td>{{ '{:,.2f}'.format(ant.valor_anticipo or 0) }}</td>
+                    <td>{{ ant.observaciones if ant.observaciones else '' }}</td>
+                    <td>{{ ant.proyecto if ant.proyecto else '' }}</td>
+                    <td>{{ ant.rubro if ant.rubro else '' }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <th>Gastos bancarios</th>
+                    <th colspan="4">{{ '{:,.2f}'.format(anticipo.gastos_bancarios or 0) }}</th>
+                </tr>
+                <tr>
+                    <th>Total Anticipo Solicitado</th>
+                    <th colspan="4">{{ '{:,.2f}'.format(anticipo.valor or 0) }}</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+     
+    <div class="section info">
+        <h2>Ruta de aprobación de la solicitud de viaje</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rol</th>
+                    <th>Usuario aprobó</th>
+                    <th>Fecha de requerimiento</th>
+                    <th>Fecha de aprobación</th>
+                    <th>Estado</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ruta in historialAprobacionSolicitud %}
+                <tr>
+                    <td>{{ ruta.rol }}</td>
+                    <td>{{ ruta.usuario if ruta.usuario else '' }}</td>
+                    <td>{{ ruta.fecha_crea if ruta.fecha_crea else '' }}</td>
+                    <td>{{ ruta.fecha_aprobacion if ruta.fecha_aprobacion else '' }}</td>
+                    <td>{{ ruta.estado_aprobacion_ruta if ruta.estado_aprobacion_ruta else '' }}</td>
+                    <td>{{ ruta.observaciones if ruta.observaciones else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

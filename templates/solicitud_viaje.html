@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Viaje</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            font-size: 11px;
+            color: #333333;
+        }
+        
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        .main-table td, .main-table th {
+            border: 1px solid #7f7f7f;
+            padding: 6px 10px;
+            vertical-align: middle;
+        }
+
+        .header-logo-cell {
+            width: 40%;
+            text-align: center;
+            padding: 10px !important;
+        }
+        
+        .header-logo {
+            max-height: 45px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+        
+        .header-title-cell {
+            width: 60%;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            color: #000000;
+        }
+
+        .section-title-row td {
+            background-color: #D9D9D9;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11px;
+            color: #000000;
+            padding: 5px !important;
+            text-transform: uppercase;
+        }
+
+        .label-cell {
+            background-color: #F2F2F2;
+            font-weight: bold;
+            text-align: center;
+            width: 35%;
+            color: #000000;
+        }
+
+        .value-cell {
+            background-color: #FFFFFF;
+            text-align: left;
+            width: 65%;
+        }
+
+        /* Column Headers for Table */
+        .table-header-cell {
+            background-color: #B4C6E7;
+            font-weight: bold;
+            text-align: center;
+            color: #000000;
+            font-size: 10px;
+            padding: 5px !important;
+        }
+
+        .table-data-cell {
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .table-data-cell.left-align {
+            text-align: left;
+        }
+
+        .email-link {
+            color: #0563C1;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <table class="main-table">
+        <tr>
+            <td class="header-logo-cell">
+                {% if logo_path %}
+                <img src="{{ logo_path }}" alt="Patrimonio Natural Logo" class="header-logo">
+                {% else %}
+                <span style="font-weight: bold;">PATRIMONIO NATURAL</span>
+                {% endif %}
+            </td>
+            <td class="header-title-cell">
+                FORMATO SOLICITUD DE TIQUETES<br>
+                PATRIMONIO NATURAL
+            </td>
+        </tr>
+    </table>
+
+    <!-- Section I: INFORMACIÓN GENERAL -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="2">I. INFORMACIÓN GENERAL</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Fecha de Solicitud:</td>
+            <td class="value-cell">{{ fecha_solicitud or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Proyecto:</td>
+            <td class="value-cell">{{ proyecto_name or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Categoria de Gasto (Actividad):</td>
+            <td class="value-cell">{{ actividad_name or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Cod. Rubro presupuestal:</td>
+            <td class="value-cell">{{ rubro_code or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Nombre del Solicitante - Cargo:</td>
+            <td class="value-cell">{{ solicitante_cargo or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Lugar de Ejecución:</td>
+            <td class="value-cell">{{ lugar_ejecucion or '' }}</td>
+        </tr>
+    </table>
+
+    <!-- Section II: INFORMACIÓN SOBRE EL EVENTO/TALLER O REUNIÓN -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="2">II. INFORMACIÓN SOBRE EL EVENTO/TALLER O REUNIÓN</td>
+        </tr>
+        <tr>
+            <td class="label-cell" style="width: 30%;">NOMBRE DEL TALLER O EVENTO</td>
+            <td class="value-cell" style="width: 70%;">{{ objetivo or '' }}</td>
+        </tr>
+    </table>
+
+    <!-- Section III: RESERVAS AÉREAS -->
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="7">III. RESERVAS AÉREAS</td>
+        </tr>
+        <tr>
+            <td class="table-header-cell">NOMBRE DEL VIAJERO</td>
+            <td class="table-header-cell">CEDULA DEL VIAJERO</td>
+            <td class="table-header-cell">CIUDAD SALIDA</td>
+            <td class="table-header-cell">CIUDAD DESTINO</td>
+            <td class="table-header-cell">FECHA</td>
+            <td class="table-header-cell">HORA APROX.</td>
+            <td class="table-header-cell">OBSERVACIONES</td>
+        </tr>
+        {% if itinerario and itinerario|length > 0 %}
+            {% for leg in itinerario %}
+            <tr>
+                <td class="table-data-cell left-align">{{ traveler_name or '' }}</td>
+                <td class="table-data-cell">{{ traveler_id or '' }}</td>
+                <td class="table-data-cell">{{ leg.municipio_origen or '' }}</td>
+                <td class="table-data-cell">{{ leg.municipio_destino or '' }}</td>
+                <td class="table-data-cell">{{ leg.fecha or '' }}</td>
+                <td class="table-data-cell">{{ leg.hora or '' }}</td>
+                <td class="table-data-cell left-align">{{ leg.observaciones or '' }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="7" class="table-data-cell" style="color: #999;">No se registraron itinerarios de vuelo.</td>
+            </tr>
+        {% endif %}
+    </table>
+
+    <!-- Passenger Details Section -->
+    <table class="main-table">
+        <tr>
+            <td class="label-cell" style="width: 40%;">PASAJERO</td>
+            <td class="value-cell" style="width: 60%;">{{ traveler_name or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">IDENTIFICACION:</td>
+            <td class="value-cell">{{ traveler_id_formatted or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">FECHA DE NACIMIENTO</td>
+            <td class="value-cell">{{ traveler_birth_date or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">CELULAR:</td>
+            <td class="value-cell">{{ traveler_phone or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">E-MAIL AL QUE SE ENVIA LA INFORMACION:</td>
+            <td class="value-cell">
+                {% if traveler_email %}
+                <span class="email-link">{{ traveler_email }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell">CONTACTO DE EMERGENCIA</td>
+            <td class="value-cell">{{ emergency_name or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">CELULAR DEL CONTACTO</td>
+            <td class="value-cell">{{ emergency_phone or '' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">PARENTESCO</td>
+            <td class="value-cell">{{ emergency_relation or '' }}</td>
+        </tr>
+    </table>
+
+</body>
+</html>

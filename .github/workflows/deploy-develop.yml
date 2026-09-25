@@ -1,0 +1,83 @@
+name: Deploy Backend - Developp
+
+on:
+  push:
+    branches:
+      - developp
+
+jobs:
+  deploy:
+    name: Deploy Backend to Development
+    runs-on: [self-hosted, Linux, X64, siva-ii-backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify runner
+        run: |
+          echo "Runner: $RUNNER_NAME"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          whoami
+          pwd
+
+      - name: Sync backend to development server
+        run: |
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='.env' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            ./ /opt/apps/devsiva2/back/
+
+      - name: Verify deployed files
+        run: |
+          cd /opt/apps/devsiva2/back
+
+          echo "Contenido desplegado:"
+          ls -la
+
+          echo "Dockerfile:"
+          ls -l Dockerfile
+
+          echo "Alembic:"
+          ls -l alembic.ini
+          test -d migrations
+
+          echo "Variables de entorno:"
+          test -f .env
+
+      - name: Build backend Docker image
+        run: |
+          cd /opt/apps/devsiva2
+          docker compose build --no-cache back
+
+      - name: Verify database connectivity
+        run: |
+          cd /opt/apps/devsiva2
+
+          docker compose run --rm back python -c "
+          import socket
+          host = 'host.docker.internal'
+          port = 5432
+          ip = socket.gethostbyname(host)
+          socket.create_connection((host, port), 5)
+          "
+
+      - name: Run database migrations
+        run: |
+          cd /opt/apps/devsiva2
+          docker compose run --rm back alembic upgrade head
+
+      - name: Restart backend container
+        run: |
+          cd /opt/apps/devsiva2
+          docker compose up -d --force-recreate back
+
+      - name: Verify backend container
+        run: |
+          docker ps --filter "name=devapi-back"
+
+          echo "Últimos logs:"
+          docker logs --tail 50 devapi-back
+

@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+python-multipart
+requests
+msal
+PyJWT
+python-jose[cryptography]
+fastapi-microsoft-identity
+jinja2
+alembic
+bcrypt
+weasyprint
