@@ -182,7 +182,6 @@ def register_routes(app: FastAPI):
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#18
     app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
     app.include_router( PreviousStudiesStatesController.router , dependencies=auth_dependency)#20
-    
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
     app.include_router(TdrController.router, dependencies=auth_dependency)
     

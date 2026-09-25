@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ESTUDIOS PREVIOS - SIVA-II</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        margin: 0;
+        padding: 0 15mm;
+        width: 90%;
+        color: #333333;
+        line-height: 1.6;
+      }
+
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #0f3d5c;
+        padding-bottom: 12px;
+        margin-bottom: 8px;
+      }
+
+      .header-left img {
+        height: 60px;
+        margin-right: 10px;
+      }
+
+      .codigo {
+        font-weight: bold;
+        color: #0f3d5c;
+      }
+
+      .section {
+        margin: 22px 0;
+      }
+
+      .section h2 {
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+        color: #0f3d5c;
+        text-align: center;
+      }
+
+      .info p {
+        margin: 5px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+        font-size: 13px;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f9fafb;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #6b7280;
+        font-weight: bold;
+      }
+
+      .estado-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 12px;
+        background-color: #eef2f6;
+        border: 1px solid #d7dee6;
+        color: #0f3d5c;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 20px;
+      }
+
+      .valor-total {
+        font-weight: bold;
+        color: #0f3d5c;
+      }
+
+      .footer-note {
+        font-size: 10px;
+        color: #9ca3af;
+        margin-top: 15px;
+      }
+
+      .section p {
+        text-align: justify;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="header-container">
+      <div
+        class="header-left"
+        style="width: 70%; display: inline-block; text-align: left"
+      >
+        <img src="cid:logo" alt="Patrimonio Natural" width="180" />
+      </div>
+      <div
+        style="
+          width: 28%;
+          display: inline-block;
+          text-align: right;
+          font-size: 14px;
+        "
+      >
+        Estudio previo: <span class="codigo">{{ capacity_assessment }}</span>
+      </div>
+    </div>
+
+    <div class="section info">
+      <h2>Información general del estudio previo</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Lider del pilar</th>
+            <th>Implementadora</th>
+            <th>Programa</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="lider">{{ persons }}</td>
+            <td class="implementers">{{ implementers }}</td>
+            <td class="programs">{{ programs }}</td>
+            <td><span class="estado-badge">{{ estado }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Antecedentes</h2>
+      <p>{{ precedents if precedents else 'No registra antecedentes.' }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Justificación</h2>
+      <p>
+        {{ justification if justification else 'No registra justificación.' }}
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Alcance</h2>
+      <p>{{ scope if scope else 'No registra alcance.' }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Objetivo general</h2>
+      <p>
+        {{ overall_objective if overall_objective else 'No registra Objetivo
+        general.' }}
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Obligaciones</h2>
+      <p>{{ obligations if obligations else 'No registra obligaciones.' }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Plazo</h2>
+      <p>{{ term if term else 'No registra plazo.' }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Plazo estimado</h2>
+      <p>
+        {{ estimated_term if estimated_term else 'No registra plazo estimado.'
+        }}
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Funciones supervisor</h2>
+      <p>
+        {{ supervisor if supervisor else 'No registra funciones de supervisor.'
+        }}
+      </p>
+    </div>
+
+    <div class="section info">
+      <h2>Información financiera del estudio previo</h2>
+      <table>
+        <tbody>
+          <tr>
+            <th>Aportes FPN</th>
+            <td>{{ '{:,.2f}'.format(contributions_fpn or 0) }}</td>
+          </tr>
+          <tr>
+            <th>Aportes EI</th>
+            <td>{{ '{:,.2f}'.format(contributions_ei or 0) }}</td>
+          </tr>
+          <tr>
+            <th>Valor ejecutado por FPN</th>
+            <td>{{ '{:,.2f}'.format(total_value_executes_fpn or 0) }}</td>
+          </tr>
+          <tr>
+            <th>Valor ejecutado por EI</th>
+            <td>{{ '{:,.2f}'.format(total_value_executes_ei or 0) }}</td>
+          </tr>
+          <tr>
+            <th>Valor total</th>
+            <td class="valor-total">
+              {{ '{:,.2f}'.format(total_value or 0) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr />
+    <p class="footer-note">
+      Este es un mensaje automático generado por SIVA-II para notificar cambios
+      de estado en la solicitud de estudio previo.
+    </p>
+  </body>
+</html>

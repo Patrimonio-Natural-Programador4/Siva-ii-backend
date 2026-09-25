@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Estudios previos</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        padding: 10px;
+        font-size: 11px;
+        color: #333333;
+      }
+
+      .main-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+      }
+
+      .main-table td,
+      .main-table th {
+        border: 1px solid #7f7f7f;
+        padding: 6px 10px;
+        vertical-align: middle;
+      }
+
+      .header-logo-cell {
+        width: 40%;
+        text-align: center;
+        padding: 10px !important;
+      }
+
+      .header-logo {
+        max-height: 45px;
+        max-width: 100%;
+        object-fit: contain;
+      }
+
+      .header-title-cell {
+        width: 60%;
+        text-align: center;
+        font-weight: bold;
+        font-size: 13px;
+        color: #000000;
+      }
+
+      .section-title-row td {
+        background-color: #d9d9d9;
+        font-weight: bold;
+        text-align: center;
+        font-size: 11px;
+        color: #000000;
+        padding: 5px !important;
+        text-transform: uppercase;
+      }
+
+      .label-cell {
+        background-color: #f2f2f2;
+        font-weight: bold;
+        text-align: center;
+        width: 35%;
+        color: #000000;
+      }
+
+      .value-cell {
+        background-color: #ffffff;
+        text-align: left;
+        width: 65%;
+      }
+
+      /* Column Headers for Table */
+      .table-header-cell {
+        background-color: #b4c6e7;
+        font-weight: bold;
+        text-align: center;
+        color: #000000;
+        font-size: 10px;
+        padding: 5px !important;
+      }
+
+      .table-data-cell {
+        text-align: center;
+        font-size: 10px;
+      }
+
+      .table-data-cell.left-align {
+        text-align: left;
+      }
+
+      .email-link {
+        color: #0563c1;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header Section -->
+    <table class="main-table">
+      <tr>
+        <td class="header-logo-cell">
+          {% if logo_path %}
+          <img
+            src="{{ logo_path }}"
+            alt="Patrimonio Natural Logo"
+            class="header-logo"
+          />
+          {% else %}
+          <span style="font-weight: bold">PATRIMONIO NATURAL</span>
+          {% endif %}
+        </td>
+        <td class="header-title-cell">
+          FORMATO ESTUDIOS PREVIOS<br />
+          PATRIMONIO NATURAL
+        </td>
+      </tr>
+    </table>
+
+    <!-- Sección I: Información general / descripción -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">I. INFORMACIÓN GENERAL</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Antecedentes:</td>
+        <td class="value-cell">{{ precedents or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Justificación:</td>
+        <td class="value-cell">{{ justification or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Alcance:</td>
+        <td class="value-cell">{{ scope or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Objetivo general:</td>
+        <td class="value-cell">{{ overall_objective or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Sección II: Plazos y obligaciones -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">II. PLAZOS Y OBLIGACIONES</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Plazo:</td>
+        <td class="value-cell">{{ term or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Plazo estimado:</td>
+        <td class="value-cell">{{ estimated_term or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Obligaciones:</td>
+        <td class="value-cell">{{ obligations or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Funciones supervisor:</td>
+        <td class="value-cell">{{ supervisor or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Estado:</td>
+        <td class="value-cell">{{ previous_studies_state_name or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Sección III: Información financiera -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">III. INFORMACIÓN FINANCIERA</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor total:</td>
+        <td class="value-cell">{{ total_value or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Aportes EI:</td>
+        <td class="value-cell">{{ contributions_ei or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor total que ejecuta EI:</td>
+        <td class="value-cell">{{ total_value_executes_ei or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Aportes FPN:</td>
+        <td class="value-cell">{{ contributions_fpn or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Valor total que ejecuta FPN:</td>
+        <td class="value-cell">{{ total_value_executes_fpn or '' }}</td>
+      </tr>
+    </table>
+
+    <!-- Sección IV: Responsables y programa -->
+    <table class="main-table">
+      <tr class="section-title-row">
+        <td colspan="2">IV. RESPONSABLES Y PROGRAMA</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Implementadora:</td>
+        <td class="value-cell">{{ implementer or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Líder del pilar:</td>
+        <td class="value-cell">{{ leader_name or '' }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Programa:</td>
+        <td class="value-cell">{{ programa or '' }}</td>
+      </tr>
+    </table>
+  </body>
+</html>

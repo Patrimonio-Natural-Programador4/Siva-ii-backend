@@ -3,6 +3,7 @@ from typing import Optional
 from sqlalchemy.orm import declarative_base
 from database.database import Base 
 import uuid
+from sqlalchemy import Column, Text
 
 from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint,Date, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -56,7 +57,7 @@ class CapacityAssessments(Base):
 
     # Campo adicional
     code: Mapped[Optional[str]] 
-    
+    url_sharepoint_ec: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     #created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     #updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
@@ -77,4 +78,4 @@ class CapacityAssessments(Base):
     
     previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
     
-    
+  
