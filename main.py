@@ -19,7 +19,7 @@ if os.getenv("ENV") != "production":
     load_dotenv()
 
 app = FastAPI(
-    root_path=os.getenv("endpoint")
+    root_path=os.getenv("endpoint") or "/api"
 )
 
 configure(app)
