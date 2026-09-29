@@ -532,7 +532,7 @@ def resolver_destino_ajuste(solicitud: ApprovalRequests, accion: AccionSolicitud
     return paso, id_rol, id_usuario
 
 
-def _orden_paralelo_aprobado(pasos_orden: list[ApprovalFlowStep], historial_orden: list[VWApprovalRequestHistory]) -> bool:
+def orden_paralelo_aprobado(pasos_orden: list[ApprovalFlowStep], historial_orden: list[VWApprovalRequestHistory]) -> bool:
     historial_reciente_por_paso = {}
     for item in historial_orden:
         historial_reciente_por_paso[item.step_id] = item
@@ -709,7 +709,7 @@ def _actualizar_ruta_paralela(
     historial_orden = ApprovalRequestHistoryRepository.obtener_historial_orden(
         solicitud.approval_request_id, orden, db
     )
-    todas_aprobadas = _orden_paralelo_aprobado(pasos_orden, historial_orden)
+    todas_aprobadas = orden_paralelo_aprobado(pasos_orden, historial_orden)
     if not todas_aprobadas:
         solicitud.approval_status_id = ESTADO_APROBACION_PENDIENTE
         db.commit()
