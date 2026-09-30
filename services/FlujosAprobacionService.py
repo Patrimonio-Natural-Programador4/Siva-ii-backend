@@ -500,12 +500,52 @@ def obtener_siguiente_paso_ruta(id_categoria: int, paso_actual: int, id_flujo_ap
     except Exception as e:
         logging.error(f"Failed to list roles: {str(e)}")
         raise PruebaNotFoundError(str(e))
+
+
+def obtener_siguientes_pasos_ruta(id_categoria: int, paso_actual: int, id_flujo_aprobacion: int, db: Session) -> list[tuple]:
+    try:
+        flujo = db.query(ApprovalFlow).filter(
+            ApprovalFlow.approval_flow_id == id_flujo_aprobacion
+        ).first()
+        if not flujo:
+            return []
+
+        rutas = db.query(VWApprovalFlows).filter(
+            VWApprovalFlows.category_id == id_categoria,
+            VWApprovalFlows.flow_active == True,
+            VWApprovalFlows.user_role_active == True,
+            VWApprovalFlows.step_active == True,
+            VWApprovalFlows.role_active == True,
+            VWApprovalFlows.step_order == paso_actual + 1,
+            VWApprovalFlows.approval_flow_id == id_flujo_aprobacion
+        ).order_by(VWApprovalFlows.step_id.asc()).all()
+
+        rutas_por_id = {}
+        for ruta in rutas:
+            rutas_por_id.setdefault(ruta.step_id, (
+                ruta.approval_role_id,
+                ruta.step_id,
+                ruta.is_supervisor,
+                ruta.approved_label,
+                ruta.adjustment_label,
+                ruta.pending_label,
+            ))
+
+        resultados = list(rutas_por_id.values())
+        return resultados if flujo.is_parallel_approval else resultados[:1]
+    except Exception as e:
+        logging.error(f"Failed to list siguiente grupo de aprobación: {str(e)}")
+        raise PruebaNotFoundError(str(e))
     
 def obtener_flujo_aprobacion_ruta_orden(id_categoria: int, id_usuario: int, orden: int, id_flujo_aprobacion: int, db: Session) -> VWApprovalFlows:
+    rutas = obtener_flujos_aprobacion_ruta_orden(
+        id_categoria, id_usuario, orden, id_flujo_aprobacion, db
+    )
+    return rutas[0] if rutas else None
+
+
+def obtener_flujos_aprobacion_ruta_orden(id_categoria: int, id_usuario: int, orden: int, id_flujo_aprobacion: int, db: Session) -> list[VWApprovalFlows]:
     try:
-        print("id_usuario -> ", id_usuario)
-        print("orden -> ", orden)
-        print("id_flujo_aprobacion -> ", id_flujo_aprobacion)
         flujos_aprobacionDB = db.query(VWApprovalFlows).filter(
             VWApprovalFlows.category_id == id_categoria,
             VWApprovalFlows.flow_active == True,
@@ -519,11 +559,8 @@ def obtener_flujo_aprobacion_ruta_orden(id_categoria: int, id_usuario: int, orde
             VWApprovalFlows.role_active == True,
             VWApprovalFlows.step_order == orden,
             VWApprovalFlows.approval_flow_id == id_flujo_aprobacion
-        ).first()
-        if not flujos_aprobacionDB:
-            return None
-        else:
-            return flujos_aprobacionDB
+        ).order_by(VWApprovalFlows.step_id.asc()).all()
+        return flujos_aprobacionDB
 
     except Exception as e:
         logging.error(f"Failed to list obtener_flujo_aprobacion_ruta_orden: {str(e)}")

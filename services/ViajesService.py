@@ -1,10 +1,10 @@
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
-from dto.ViajesDTO import ViajesCalendar, ViajesCreate, ViajesListSP
+from dto.ViajesDTO import ViajesCalendar, ViajesCreate, ViajesListSP, TravelLegalizationCreate, TravelLegalizationUpdate
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
@@ -18,10 +18,18 @@ from repository import ConceptoAnticiposRepository, EntidadBancariaRepository, R
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from datetime import date, datetime, time
+from decimal import Decimal
 from jinja2 import Environment, FileSystemLoader
 from services import SolicitudesAprobacionService, NotificacionesService, SoportesService
 from entity.users import Users
 from entity.users_delegate import UsersDelegate
+
+from enum import Enum
+
+class TipoViajero(str, Enum):
+    FUNCIONARIO = 'FUNCIONARIO'
+    INVITADO = 'INVITADO'
+    USUARIO_ACTUAL = 'USUARIO_ACTUAL'
 
 CATEGORIA_APROBACION_SOLICITUD_VIAJE = "SOL_VIA_ANT"
 CATEGORIA_APROBACION_LEGALIZACION_VIAJE = "LEG_VIA_ANT"
@@ -58,6 +66,8 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.country = viaje.pais
         nuevo_viaje.is_guest = viaje.es_invitado
         nuevo_viaje.guest_name = viaje.persona_invitada
+        nuevo_viaje.invited_traveler_document = viaje.invited_traveler_document
+        nuevo_viaje.invited_traveler_document_type_id = viaje.invited_traveler_document_type_id
         nuevo_viaje.guest_document = viaje.documento_persona_invitada if viaje.es_invitado else usuario.identification_number
         nuevo_viaje.guest_phone = viaje.telefono_persona_invitada
         nuevo_viaje.guest_email = viaje.correo_persona_invitada if viaje.es_invitado else usuario.email
@@ -190,6 +200,8 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
                 "es_invitado": nuevo_viaje.is_guest,
                 "persona_invitada": nuevo_viaje.guest_name,
                 "documento_persona_invitada": nuevo_viaje.guest_document,
+                "invited_traveler_document": nuevo_viaje.invited_traveler_document,
+                "invited_traveler_document_type_id": nuevo_viaje.invited_traveler_document_type_id,
                 "telefono_persona_invitada": nuevo_viaje.guest_phone,
                 "correo_persona_invitada": nuevo_viaje.guest_email,
                 "fecha_nacimiento_viajero": nuevo_viaje.traveler_birth_date,
@@ -283,6 +295,8 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         viajeDb.country = viaje.pais
         viajeDb.is_guest = viaje.es_invitado
         viajeDb.guest_name = viaje.persona_invitada
+        viajeDb.invited_traveler_document = viaje.invited_traveler_document
+        viajeDb.invited_traveler_document_type_id = viaje.invited_traveler_document_type_id
         viajeDb.guest_document = viaje.documento_persona_invitada
         viajeDb.guest_phone = viaje.telefono_persona_invitada
         viajeDb.guest_email = viaje.correo_persona_invitada
@@ -407,6 +421,8 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
                 "es_invitado": viajeDb.is_guest,
                 "persona_invitada": viajeDb.guest_name,
                 "documento_persona_invitada": viajeDb.guest_document,
+                "invited_traveler_document": viajeDb.invited_traveler_document,
+                "invited_traveler_document_type_id": viajeDb.invited_traveler_document_type_id,
                 "telefono_persona_invitada": viajeDb.guest_phone,
                 "correo_persona_invitada": viajeDb.guest_email,
                 "fecha_nacimiento_viajero": viajeDb.traveler_birth_date,
@@ -642,6 +658,8 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         if (viajeDb.created_by_user_id and viajeDb.created_by_user_id != viajeDb.traveler_user_id) else None,
         persona_invitada=viajeDb.guest_name,
         documento_persona_invitada=viajeDb.guest_document,
+        invited_traveler_document=viajeDb.invited_traveler_document,
+        invited_traveler_document_type_id=viajeDb.invited_traveler_document_type_id,
         telefono_persona_invitada=viajeDb.guest_phone,
         correo_persona_invitada=viajeDb.guest_email if viajeDb.is_guest else viajeDb.user.email if viajeDb.user else None,
         id_solicitud_aprobacion_legalizacion=viajeDb.expense_approval_request_id,
@@ -1612,4 +1630,87 @@ def guardar_legalizacion(viaje: ViajesCreate, db: Session):
             mensaje=str(e)
         )
 
+def crear_factura(db: Session, legalizacion: TravelLegalizationCreate):
+    return ViajesRepository.crear_factura(db, legalizacion)
+
+def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int):
+    return ViajesRepository.obtener_legalizaciones_por_viaje(db, travel_request_id)
+
+def obtener_legalizacion_por_viaje(db: Session, travel_request_id: int):
+    return ViajesRepository.obtener_legalizacion_por_viaje(db, travel_request_id)
+
+def actualizar_legalizacion(db: Session, legalization_id: int, legalizacion: TravelLegalizationUpdate):
+    existente = ViajesRepository.obtener_legalizacion_por_id(db, legalization_id)
+    if not existente:
+        raise ValueError("No se encontró la legalización especificada.")
+
+    datos_actualizar = legalizacion.dict(exclude_unset=True)
+
+    subtotal = datos_actualizar.get('subtotal', existente.subtotal)
+    iva = datos_actualizar.get('iva', existente.iva)
+    retention_porcentage = datos_actualizar.get('retention_porcentage', existente.retention_porcentage)
+
+    if 'retention' not in datos_actualizar and ('subtotal' in datos_actualizar or 'retention_porcentage' in datos_actualizar):
+        datos_actualizar['retention'] = (Decimal(subtotal) * Decimal(retention_porcentage)) / Decimal(100)
+
+    retention = datos_actualizar.get('retention', existente.retention)
+
+    if 'amount_paid' not in datos_actualizar and ('subtotal' in datos_actualizar or 'iva' in datos_actualizar or 'retention' in datos_actualizar):
+        datos_actualizar['amount_paid'] = Decimal(subtotal) + Decimal(iva) - Decimal(retention)
+
+    return ViajesRepository.actualizar_legalizacion(db, legalization_id, datos_actualizar)
+
+
+def obtener_contacto_viajero(db: Session, tipo: str, identificador: str, user_oid: str) -> dict:
+    if not identificador or not identificador.strip():
+        if tipo != TipoViajero.USUARIO_ACTUAL:
+            return {}
+
+    query = db.query(TravelRequests)
+    usuario_base = None
+
+    if tipo == TipoViajero.FUNCIONARIO:
+        try:
+            user_id = int(identificador)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="El identificador debe ser numérico para funcionarios")
+            
+        query = query.filter(TravelRequests.traveler_user_id == user_id, TravelRequests.is_guest.isnot(True))
+        usuario_base = db.query(Users).filter(Users.id == user_id).first()
+        
+    elif tipo == TipoViajero.INVITADO:
+        query = query.filter(TravelRequests.is_guest == True, TravelRequests.invited_traveler_document == identificador)
+        
+    elif tipo == TipoViajero.USUARIO_ACTUAL:
+        usuario_base = UsuariosRepository.obtener_por_guid_msft(user_oid, db)
+        if not usuario_base:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        query = query.filter(TravelRequests.traveler_user_id == usuario_base.id, TravelRequests.is_guest.isnot(True))
+        
+    else:
+        raise HTTPException(status_code=400, detail="Tipo de viajero inválido")
+
+    last_viaje = query.order_by(TravelRequests.created_at.desc()).first()
     
+    if last_viaje:
+        return {
+            "persona_invitada": last_viaje.guest_name,
+            "fecha_nacimiento": last_viaje.traveler_birth_date.strftime("%Y-%m-%d") if last_viaje.traveler_birth_date else None,
+            "celular": last_viaje.guest_phone,
+            "correo": last_viaje.guest_email,
+            "contacto_emergencia": last_viaje.emergency_contact,
+            "celular_emergencia": last_viaje.emergency_phone,
+            "parentesco_emergencia": last_viaje.emergency_relationship
+        }
+        
+    if usuario_base:
+        return {
+            "fecha_nacimiento": None,
+            "celular": usuario_base.mobile_phone,
+            "correo": usuario_base.email,
+            "contacto_emergencia": None,
+            "celular_emergencia": None,
+            "parentesco_emergencia": None
+        }
+
+    return {}

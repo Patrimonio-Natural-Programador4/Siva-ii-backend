@@ -7,7 +7,7 @@ from dto.ListadosDTO import Listados
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
 from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase, UsuariosEdicionBase, UsuariosUpdateBase
-from repository import DocumentypesRepository, UsersProgramsRepository, UsuariosRepository
+from repository import DocumentypesRepository, UsersProgramsRepository, UsuariosRepository, ProgramsRepository
 from dto.ResponseRequest import ResponseRequest
 from pathlib import Path
 import json
@@ -634,21 +634,20 @@ def programs_user ( guid: str, db: Session ) :
 
 def lista_generica(guid: str, db: Session, user_oid: str):
     respuesta = ResponseRequest(solicitud_exitosa=False)
-    usuario = UsuariosRepository.obtener_por_guid(guid, db)    
     try:
-        programs = UsersProgramsRepository.listado_programas_por_usuario(usuario.id,db)
+        programs = ProgramsRepository.listar(db)
         roles = RolesService.listar_roles(db)
         tipos_documentos =  DocumentypesRepository.listar(db)
 
         listados = []
         lista_catalogos = []
     
-        #Listado de departamentos
+        #Listado de programas
         for p in programs:
             lista_catalogos.append(
                 ListaGenerica(
-                    identity=p["id_programa"],
-                    valor=p["name"]
+                    identity=p.id,
+                    valor=p.name
                 )
             )
         

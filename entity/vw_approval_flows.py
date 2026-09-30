@@ -51,6 +51,7 @@ class VWApprovalFlows(Base):
     approved_label = Column(Text)
     adjustment_label = Column(Text)
     pending_label = Column(Text)
+    assign_reviewer = Column(Boolean)
 
     __mapper_args__ = {
         'primary_key': [unique_id]  # Usar la columna artificial como clave primaria

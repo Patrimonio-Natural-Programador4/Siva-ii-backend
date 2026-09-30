@@ -1,6 +1,7 @@
 import os
 import random
 import string
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi_microsoft_identity import requires_auth, AuthError, validate_scope, auth_service
 from dependencies.auth_dependency import get_current_user_oid
@@ -366,17 +367,17 @@ def validar_usuario_corporativo(guid: str, datos_validacion: dict, db: DbSession
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{guid}")
-def obtener_usuario_para_edicion(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
-    usuario = UsuariosService.obtener_usuario_para_edicion(guid, db)
+@router.get("/{guid:uuid}")
+def obtener_usuario_para_edicion(guid: UUID, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    usuario = UsuariosService.obtener_usuario_para_edicion(str(guid), db)
     if not usuario:
         raise HTTPException(status_code=404, detail='Usuario no encontrado')
     return usuario
 
 
-@router.put("/{guid}")
-def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
-    response_request = UsuariosService.actualizar_usuario(guid, payload, db)
+@router.put("/{guid:uuid}")
+def actualizar_usuario(guid: UUID, payload: UsuariosUpdateBase, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    response_request = UsuariosService.actualizar_usuario(str(guid), payload, db)
 
     if response_request.solicitud_exitosa:
         return JSONResponse(content=response_request.dict(), status_code=status.HTTP_200_OK)

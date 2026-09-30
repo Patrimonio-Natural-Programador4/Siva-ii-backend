@@ -1,16 +1,41 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 
 from database.database import DbSession
 from dependencies.auth_dependency import get_current_user_oid
 from dto.FlujosAprobacionDTO import DelegacionRolesUsuariosBase, FlujosAprobacionBase, RolesAprobacionBase
-from services import FlujosAprobacionService
+from dto.AsignarResponsableAprobacionDTO import AsignarResponsableAprobacionDTO
+from services import FlujosAprobacionService, SolicitudesAprobacionService
 
 
 router = APIRouter(
     prefix='/flujos-aprobacion',
     tags=['FlujosAprobacion']
 )
+
+
+@router.get('/asignar-responsable/usuarios')
+def obtener_usuarios_asignables(
+    db: DbSession,
+    approval_request_id: int = Query(...),
+    user_oid: str = Depends(get_current_user_oid),
+):
+    return SolicitudesAprobacionService.obtener_asignaciones_responsable(
+        approval_request_id, user_oid, db
+    )
+
+
+@router.post('/asignar-responsable')
+def asignar_responsable(
+    payload: AsignarResponsableAprobacionDTO,
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid),
+):
+    response = SolicitudesAprobacionService.asignar_responsable_aprobacion(
+        payload.history_id, payload.user_id, user_oid, db
+    )
+    http_status = status.HTTP_200_OK if response.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
+    return JSONResponse(content=response.model_dump(), status_code=http_status)
 
 
 @router.get('/roles')

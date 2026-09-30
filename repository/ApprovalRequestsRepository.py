@@ -14,3 +14,12 @@ def obtener_solicitud(id_solicitud_aprobacion: int, db: Session) -> ApprovalRequ
     return db.query(ApprovalRequests).filter(
                 ApprovalRequests.approval_request_id == id_solicitud_aprobacion
             ).first()
+
+
+def obtener_solicitud_bloqueada(id_solicitud_aprobacion: int, db: Session) -> ApprovalRequests | None:
+    return (
+        db.query(ApprovalRequests)
+        .filter(ApprovalRequests.approval_request_id == id_solicitud_aprobacion)
+        .with_for_update()
+        .first()
+    )

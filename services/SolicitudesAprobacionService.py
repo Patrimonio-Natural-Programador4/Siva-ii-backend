@@ -7,7 +7,6 @@ from entity.approval_flow_steps import ApprovalFlowStep
 from entity.users import Users
 from entity.approval_request_history import ApprovalRequestHistory
 from entity.approval_requests import ApprovalRequests
-from entity.approval_role_users import ApprovalRoleUser
 from entity.travel_requests import TravelRequests
 from repository import ApprovalCategoryRepository, ApprovalFlowRepository, ApprovalRequestHistoryRepository, ApprovalRequestsRepository, SolicitudesAprobacionRepository, UsuariosRepository
 from sqlalchemy.orm import Session
@@ -123,21 +122,32 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
         )
 
 
-        id_rol_aprobacion, id_ruta, es_supervisor, label_aprobacion, label_ajuste, label_pendiente = FlujosAprobacionService.obtener_siguiente_paso_ruta(
-            id_categoria_aprobacion, 1, id_flujo_aprobacion,  db
-        )
-
-        # print("Validando siguiente paso en la cadena de aprobación...")
-        # print(id_rol_aprobacion, id_ruta)
-
-        asignar_siguiente_paso(
-            nueva_solicitud.approval_request_id,
-            id_rol_aprobacion,
-            id_ruta,
-            db,
-            id_supervisor,
-            label_pendiente
-        )
+        flujo_aprobacion = ApprovalFlowRepository.obtener_flujo(id_flujo_aprobacion, db)
+        if flujo_aprobacion and flujo_aprobacion.is_parallel_approval:
+            siguientes_pasos = FlujosAprobacionService.obtener_siguientes_pasos_ruta(
+                id_categoria_aprobacion, 1, id_flujo_aprobacion, db
+            )
+            for id_rol_aprobacion, id_ruta, es_supervisor, _, _, label_pendiente in siguientes_pasos:
+                asignar_siguiente_paso(
+                    nueva_solicitud.approval_request_id,
+                    id_rol_aprobacion,
+                    id_ruta,
+                    db,
+                    id_supervisor if es_supervisor else None,
+                    label_pendiente,
+                )
+        else:
+            id_rol_aprobacion, id_ruta, es_supervisor, _, _, label_pendiente = FlujosAprobacionService.obtener_siguiente_paso_ruta(
+                id_categoria_aprobacion, 1, id_flujo_aprobacion, db
+            )
+            asignar_siguiente_paso(
+                nueva_solicitud.approval_request_id,
+                id_rol_aprobacion,
+                id_ruta,
+                db,
+                id_supervisor if es_supervisor else None,
+                label_pendiente,
+            )
 
 
         return nueva_solicitud.approval_request_id
@@ -246,13 +256,87 @@ def validar_habilitar_acciones_solicitud_aprobacion(id_registro_asociado: int, i
         respuesta = ResponseRequest(solicitud_exitosa=False, mensaje=json.dumps(content))
         return respuesta
 
+    flujo_aprobacion = ApprovalFlowRepository.obtener_flujo(
+        solicitudHistorial.approval_workflow_id, db
+    )
+    if flujo_aprobacion and flujo_aprobacion.is_parallel_approval:
+        historial_pendiente = None
+        flujo_ruta = None
+        for pendiente in ApprovalRequestHistoryRepository.obtener_historiales_pendientes(
+            solicitudHistorial.approval_request_id, db
+        ):
+            rutas_usuario = FlujosAprobacionService.obtener_flujos_aprobacion_ruta_orden(
+                id_categoria,
+                usuario_actual.id,
+                pendiente.step_order,
+                solicitudHistorial.approval_workflow_id,
+                db,
+            )
+            ruta_usuario = next(
+                (ruta for ruta in rutas_usuario if ruta.step_id == pendiente.step_id),
+                None,
+            )
+            if not ruta_usuario and pendiente.user_id == usuario_actual.id:
+                ruta_usuario = ApprovalFlowRepository.obtener_paso(
+                    pendiente.step_id, db, solo_activo=True
+                )
+            if ruta_usuario and (
+                pendiente.user_id == usuario_actual.id
+                or not getattr(ruta_usuario, "is_supervisor", False)
+            ):
+                historial_pendiente = pendiente
+                flujo_ruta = ruta_usuario
+                break
+
+        if not historial_pendiente:
+            content = {
+                "mensaje": "No se encontró una asignación pendiente para el usuario.",
+                "usuario_solicito": False,
+            }
+            return ResponseRequest(solicitud_exitosa=False, mensaje=json.dumps(content))
+
+        usuarios_disponibles_ajustes = []
+        validaciones = validar_aprobaciones_anteriores(
+            historial_pendiente.approval_request_id,
+            historial_pendiente.step_order,
+            db,
+        )
+        for aprobacion in validaciones:
+            if not any(
+                usuario["id_rol_aprobacion_ajuste"] == aprobacion.approval_role_id
+                for usuario in usuarios_disponibles_ajustes
+            ):
+                usuarios_disponibles_ajustes.append({
+                    "id_rol_aprobacion_ajuste": aprobacion.approval_role_id,
+                    "usuario": f"{aprobacion.rol} ({aprobacion.user})",
+                    "id_usuario_ajuste": aprobacion.user_id,
+                })
+
+        usuario_solicito = (
+            flujo_ruta.step_order == 1
+            and str(user_oid).strip() == str(guid_solicitante).strip()
+        )
+        content = {
+            "usuario_solicito": usuario_solicito,
+            "orden_actual": historial_pendiente.step_order,
+            "id_estado_aprobacion_ruta": historial_pendiente.approval_status_step_id,
+            "usuarios_disponibles_ajustes": usuarios_disponibles_ajustes,
+            "habilitar_solicitar_ajustes": bool(usuarios_disponibles_ajustes),
+            "id_estado_solicitud": historial_pendiente.approval_status_id,
+        }
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje=json.dumps(content),
+            identity=solicitud.approval_request_id,
+        )
+
     flujoRuta = FlujosAprobacionService.obtener_flujo_aprobacion_ruta_orden(
         id_categoria, usuario_actual.id, solicitudHistorial.step_order, solicitudHistorial.approval_workflow_id, db
     )
 
     # paso_actual = _obtener_paso_actual(solicitud, db)
     # historial_pendiente = _obtener_historial_pendiente(solicitud, paso_actual, db)
-    # usuarios_disponibles_ajustes = obtener_usuarios_disponibles_ajuste(solicitud, db)
+    # usuarios_disponibles_ajuste = obtener_usuarios_disponibles_ajuste(solicitud, db)
     # puede_actuar = _usuario_puede_actuar(usuario_actual, paso_actual, historial_pendiente, db)
 
     # acciones = {
@@ -269,9 +353,9 @@ def validar_habilitar_acciones_solicitud_aprobacion(id_registro_asociado: int, i
     #     "habilitar_pago": paso_actual.enable_payment if paso_actual else False,
     #     "orden_actual": solicitud.current_step,
     #     "id_estado_aprobacion_ruta": historial_pendiente.approval_status_id if historial_pendiente else None,
-    #     "usuarios_disponibles_ajustes": usuarios_disponibles_ajustes,
+    #     "usuarios_disponibles_ajustes": usuarios_disponibles_ajuste,
     #     "usuario_solicito": str(guid_solicitante) == str(user_oid) if guid_solicitante else False,
-    #     "habilitar_solicitar_ajustes": len(usuarios_disponibles_ajustes) > 0,
+    #     "habilitar_solicitar_ajustes": len(usuarios_disponibles_ajuste) > 0,
     #     "id_estado_solicitud": solicitud.approval_status_id,
     # }
 
@@ -332,6 +416,92 @@ def validar_habilitar_acciones_solicitud_aprobacion(id_registro_asociado: int, i
 
     return respuesta
 
+
+def obtener_asignaciones_responsable(id_solicitud_aprobacion: int, user_oid: str, db: Session) -> list[dict]:
+    usuario_actual = UsuariosRepository.obtener_por_guid_msft(user_oid, db)
+    if not usuario_actual:
+        return []
+
+    solicitud = ApprovalRequestsRepository.obtener_solicitud(id_solicitud_aprobacion, db)
+    if not solicitud:
+        return []
+
+    pendientes = ApprovalRequestHistoryRepository.obtener_asignaciones_revisor(
+        id_solicitud_aprobacion, solicitud.approval_workflow_id, db
+    )
+
+    asignaciones = []
+    for historial, paso, rol in pendientes:
+        es_miembro = ApprovalRequestHistoryRepository.usuario_es_miembro_rol(
+            rol.approval_role_id, usuario_actual.id, db
+        )
+        if not es_miembro:
+            continue
+
+        usuarios_rol = ApprovalRequestHistoryRepository.listar_usuarios_activos_rol(
+            rol.approval_role_id, db
+        )
+        asignaciones.append({
+            "history_id": historial.history_id,
+            "approval_role_id": rol.approval_role_id,
+            "role_name": rol.name,
+            "step_order": paso.step_order,
+            "assigned_user_id": historial.user_id,
+            "users": [
+                {
+                    "user_id": usuario.id,
+                    "name": " ".join(
+                        part for part in [usuario.first_name, usuario.other_name, usuario.last_name, usuario.other_last_name]
+                        if part
+                    ),
+                    "email": usuario.email,
+                }
+                for usuario in usuarios_rol
+            ],
+        })
+    return asignaciones
+
+
+def asignar_responsable_aprobacion(history_id: int, user_id: int, user_oid: str, db: Session) -> ResponseRequest:
+    usuario_actual = UsuariosRepository.obtener_por_guid_msft(user_oid, db)
+    if not usuario_actual:
+        return ResponseRequest(solicitud_exitosa=False, mensaje="Usuario autenticado no encontrado.")
+
+    historial = ApprovalRequestHistoryRepository.obtener_historial_por_id(
+        history_id, db, bloquear=True
+    )
+    if not historial or historial.approval_status_id != ESTADO_APROBACION_PENDIENTE:
+        return ResponseRequest(solicitud_exitosa=False, mensaje="La aprobación ya no está pendiente.")
+
+    paso = ApprovalRequestHistoryRepository.obtener_paso_revisor(historial.step_id, db)
+    if not paso:
+        return ResponseRequest(solicitud_exitosa=False, mensaje="Este paso no permite asignar responsable.")
+
+    miembro_rol = ApprovalRequestHistoryRepository.usuario_es_miembro_rol(
+        historial.approval_role_id, usuario_actual.id, db
+    )
+    if not miembro_rol:
+        return ResponseRequest(solicitud_exitosa=False, mensaje="No pertenece al rol de aprobación pendiente.")
+
+    usuario_asignado = ApprovalRequestHistoryRepository.usuario_asignable_rol(
+        historial.approval_role_id, user_id, db
+    )
+    if not usuario_asignado:
+        return ResponseRequest(solicitud_exitosa=False, mensaje="El usuario seleccionado no pertenece al rol activo.")
+
+    historial.user_id = usuario_asignado.id
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return ResponseRequest(
+        solicitud_exitosa=True,
+        mensaje="Responsable asignado correctamente.",
+        identity=historial.history_id,
+    )
+
 def validar_aprobaciones_anteriores(id_solicitud_aprobacion: int, orden: int, db: Session) -> list[VWApprovalRequestHistory]:
     try:
         aprobaciones_anteriores = ApprovalRequestHistoryRepository.obtener_historial_aprovaciones_previas_pendientes(id_solicitud_aprobacion, orden, [ESTADO_APROBACION_PENDIENTE, ESTADO_APROBACION_AJUSTES], db)
@@ -362,6 +532,222 @@ def resolver_destino_ajuste(solicitud: ApprovalRequests, accion: AccionSolicitud
     return paso, id_rol, id_usuario
 
 
+def orden_paralelo_aprobado(pasos_orden: list[ApprovalFlowStep], historial_orden: list[VWApprovalRequestHistory]) -> bool:
+    historial_reciente_por_paso = {}
+    for item in historial_orden:
+        historial_reciente_por_paso[item.step_id] = item
+
+    return bool(pasos_orden) and all(
+        historial_reciente_por_paso.get(paso.step_id)
+        and historial_reciente_por_paso[paso.step_id].approval_status_step_id in {
+            ESTADO_APROBACION_APROBADO,
+            ESTADO_APROBACION_FINALIZADO,
+        }
+        for paso in pasos_orden
+    )
+
+
+def _obtener_asignacion_pendiente_usuario(
+    id_solicitud: int,
+    id_categoria: int,
+    id_usuario: int,
+    orden: int,
+    id_flujo: int,
+    db: Session,
+):
+    asignaciones = ApprovalRequestHistoryRepository.obtener_ruta_pendiente_usuario(
+        id_solicitud, id_categoria, id_usuario, orden, id_flujo, db
+    )
+    if not asignaciones:
+        return None, None
+    return asignaciones[0]
+
+
+def _actualizar_ruta_paralela(
+    accion: AccionSolicitudAprobacion,
+    id_categoria: int,
+    id_usuario: int,
+    db: Session,
+    identity: int | None,
+    solicitud_historial,
+    flujo_ruta,
+    id_supervisor: int | None,
+) -> ResponseRequest:
+    respuesta = ResponseRequest(solicitud_exitosa=False)
+    solicitud = ApprovalRequestsRepository.obtener_solicitud_bloqueada(
+        accion.id_solicitud_aprobacion, db
+    )
+    if not solicitud:
+        respuesta.mensaje = "No se encontró la solicitud de aprobación."
+        return respuesta
+
+    orden_solicitado = accion.orden_actual or solicitud.current_step
+    flujo_ruta, ruta_pendiente = _obtener_asignacion_pendiente_usuario(
+        solicitud.approval_request_id,
+        id_categoria,
+        id_usuario,
+        orden_solicitado,
+        solicitud.approval_workflow_id,
+        db,
+    )
+    if not flujo_ruta:
+        respuesta.mensaje = "No se encontró una ruta activa para el usuario y orden indicados."
+        return respuesta
+
+    orden = flujo_ruta.step_order
+    if not ruta_pendiente:
+        respuesta.mensaje = "La asignación de aprobación ya fue procesada."
+        return respuesta
+    if ruta_pendiente.user_id is not None and ruta_pendiente.user_id != id_usuario:
+        respuesta.mensaje = "La asignación pendiente no corresponde al usuario."
+        return respuesta
+
+    now = datetime.now()
+    if accion.tipo_accion == "SOLICITUD_AJUSTADA":
+        solicitud_historiales = ApprovalRequestHistoryRepository.obtener_historial_por_solicitud(
+            solicitud.approval_request_id, db
+        )
+        solicitudes_ajuste = [
+            item for item in solicitud_historiales
+            if item.approval_status_id == ESTADO_APROBACION_AJUSTES
+            and item.step_order is not None
+            and item.step_order > orden
+        ]
+        if not solicitudes_ajuste:
+            respuesta.mensaje = "No existe una solicitud de ajustes pendiente para este orden."
+            return respuesta
+
+        ajuste = solicitudes_ajuste[-1]
+        solicitud_ajuste_db = ApprovalRequestHistoryRepository.obtener_historial_por_id(
+            ajuste.history_id, db
+        )
+        if not solicitud_ajuste_db:
+            respuesta.mensaje = "No se encontró el historial que solicitó los ajustes."
+            return respuesta
+
+        ruta_pendiente.approval_status_id = ESTADO_APROBACION_AJUSTES_REALIZADOS
+        ruta_pendiente.approved_at = now
+        ruta_pendiente.comments = accion.comentarios
+        ruta_pendiente.approver_user_id = id_usuario
+        ruta_pendiente.approved_by_user = obtener_usuario_aprobo(id_usuario, db)
+
+        paso_revision = ApprovalFlowRepository.obtener_paso(
+            solicitud_ajuste_db.step_id, db
+        )
+        if not paso_revision:
+            respuesta.mensaje = "No se encontró el paso de aprobación que solicitó los ajustes."
+            db.rollback()
+            return respuesta
+
+        solicitud_ajuste_db.approval_status_id = ESTADO_APROBACION_AJUSTES_REALIZADOS
+        db.add(ApprovalRequestHistory(
+            approval_request_id=solicitud.approval_request_id,
+            approval_role_id=paso_revision.approval_role_id,
+            approval_status_id=ESTADO_APROBACION_PENDIENTE,
+            user_id=ajuste.user_id,
+            created_at=now,
+            received_at=now,
+            step_id=paso_revision.step_id,
+            state_label=paso_revision.pending_label,
+        ))
+        solicitud.current_step = orden
+        solicitud.approval_status_id = ESTADO_APROBACION_PENDIENTE
+        db.commit()
+        respuesta.solicitud_exitosa = True
+        respuesta.mensaje = "EN_PROCESO"
+        return respuesta
+
+    if accion.tipo_accion == "AJUSTAR":
+        ruta_pendiente.approval_status_id = ESTADO_APROBACION_AJUSTES
+        ruta_pendiente.approved_at = now
+        ruta_pendiente.comments = accion.comentarios
+        ruta_pendiente.approver_user_id = id_usuario
+        ruta_pendiente.approved_by_user = obtener_usuario_aprobo(id_usuario, db)
+        ruta_pendiente.user_id = id_usuario
+
+        paso_ajuste, id_rol_ajuste, id_usuario_ajuste = resolver_destino_ajuste(
+            solicitud, accion, db
+        )
+        if not paso_ajuste or not id_rol_ajuste:
+            db.rollback()
+            respuesta.mensaje = "No se encontró un destinatario válido para los ajustes."
+            return respuesta
+
+        db.add(ApprovalRequestHistory(
+            approval_request_id=solicitud.approval_request_id,
+            approval_role_id=id_rol_ajuste,
+            approval_status_id=ESTADO_APROBACION_PENDIENTE,
+            user_id=id_usuario_ajuste,
+            created_at=now,
+            received_at=now,
+            step_id=paso_ajuste.step_id,
+            state_label="Ajustar solicitud",
+        ))
+        solicitud.current_step = paso_ajuste.step_order
+        solicitud.approval_status_id = ESTADO_APROBACION_AJUSTES
+        db.commit()
+        respuesta.solicitud_exitosa = True
+        respuesta.mensaje = "AJUSTES"
+        return respuesta
+
+    if accion.tipo_accion != "APROBAR":
+        respuesta.mensaje = "La acción de aprobación no es válida."
+        return respuesta
+
+    ruta_pendiente.approval_status_id = ESTADO_APROBACION_APROBADO
+    ruta_pendiente.state_label = flujo_ruta.approved_label
+    ruta_pendiente.approved_at = now
+    ruta_pendiente.comments = accion.comentarios
+    ruta_pendiente.approver_user_id = id_usuario
+    ruta_pendiente.approved_by_user = obtener_usuario_aprobo(id_usuario, db)
+    ruta_pendiente.user_id = id_usuario
+    db.flush()
+
+    pasos_orden = ApprovalRequestHistoryRepository.listar_pasos_aprobables_orden(
+        solicitud.approval_workflow_id, orden, db
+    )
+    historial_orden = ApprovalRequestHistoryRepository.obtener_historial_orden(
+        solicitud.approval_request_id, orden, db
+    )
+    todas_aprobadas = orden_paralelo_aprobado(pasos_orden, historial_orden)
+    if not todas_aprobadas:
+        solicitud.approval_status_id = ESTADO_APROBACION_PENDIENTE
+        db.commit()
+        respuesta.solicitud_exitosa = True
+        respuesta.mensaje = "EN_PROCESO"
+        return respuesta
+
+    pasos_siguientes = FlujosAprobacionService.obtener_siguientes_pasos_ruta(
+        id_categoria, orden, solicitud.approval_workflow_id, db
+    )
+    if not pasos_siguientes:
+        ruta_pendiente.approval_status_id = ESTADO_APROBACION_FINALIZADO
+        solicitud.approval_status_id = ESTADO_APROBACION_FINALIZADO
+        db.commit()
+        respuesta.solicitud_exitosa = True
+        respuesta.mensaje = "RUTA_COMPLETA"
+        return respuesta
+
+    siguiente_orden = orden + 1
+    solicitud.current_step = siguiente_orden
+    solicitud.approval_status_id = ESTADO_APROBACION_PENDIENTE
+    for id_rol, id_ruta, es_supervisor, _, _, label_pendiente in pasos_siguientes:
+        db.add(ApprovalRequestHistory(
+            approval_request_id=solicitud.approval_request_id,
+            approval_role_id=id_rol,
+            approval_status_id=ESTADO_APROBACION_PENDIENTE,
+            created_at=now,
+            received_at=now,
+            step_id=id_ruta,
+            user_id=id_supervisor if es_supervisor else None,
+            state_label=label_pendiente,
+        ))
+    db.commit()
+    respuesta.solicitud_exitosa = True
+    respuesta.mensaje = "EN_PROCESO"
+    return respuesta
+
+
 def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usuario: int, db: Session, id_supervisor: int = None, identity: int = None) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
     id_flujo_aprobacion = 0
@@ -373,6 +759,12 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
             id_categoria, id_usuario, orden, solicitudHistorial.approval_workflow_id, db
         )
         id_flujo_aprobacion = solicitudHistorial.approval_workflow_id
+        flujo_aprobacion = ApprovalFlowRepository.obtener_flujo(id_flujo_aprobacion, db)
+        if flujo_aprobacion and flujo_aprobacion.is_parallel_approval:
+            return _actualizar_ruta_paralela(
+                accion, id_categoria, id_usuario, db, identity, solicitudHistorial,
+                flujoRuta, id_supervisor
+            )
         if not flujoRuta:
             respuesta.solicitud_exitosa = False
             respuesta.mensaje = "No se encontró un flujo de aprobación pendiente para la solicitud y usuario proporcionados."
@@ -441,11 +833,9 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         paso_actual = orden
                         id_usuario_aprobacion = accion.id_usuario_ajuste
                     else:
-                        id_rol_aprobacion, id_ruta, es_supervisor, label_aprobado, label_ajustes, label_pendiente  = FlujosAprobacionService.obtener_siguiente_paso_ruta(
-                            solicitudHistorial.category_id, 0, id_flujo_aprobacion,  db
+                        id_rol_aprobacion, id_ruta, es_supervisor, label_aprobado, label_ajustes, label_pendiente = FlujosAprobacionService.obtener_siguiente_paso_ruta(
+                            solicitudHistorial.category_id, 0, id_flujo_aprobacion, db
                         )
-                        # if es_supervisor == False:
-                        #     id_supervisor = None
                     solicitud.current_step = paso_actual
                     solicitud.approval_status_id = ESTADO_APROBACION_AJUSTES
                     db.commit()
