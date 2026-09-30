@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi import status
+from typing import Optional
 
 from database.database import DbSession
 from dependencies.auth_dependency import get_current_user_oid
@@ -14,8 +15,8 @@ router = APIRouter(
 
 
 @router.get('')
-def listar_tipo_documentos_acuerdos(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
-    return DocumentsTypesAgreementsSevice.listar(db)
+def listar_tipo_documentos_acuerdos(db: DbSession,documents_approval_id: Optional[int]=None, user_oid: str = Depends(get_current_user_oid)):
+    return DocumentsTypesAgreementsSevice.listar(db,documents_approval_id)
 
 
 # crear tipo docu

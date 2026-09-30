@@ -8,24 +8,14 @@ from dto.ResponseRequest import ResponseRequest
 from entity.documents_types_agreements import DocumentsTypesAgreements
 
 
-def listar(db: Session) -> list[DocumentsTypesAgreementsBase]:
-    documentos = DocumentsTypesAgreementsRepository.listar(db)
-
-    return [
-        DocumentsTypesAgreementsBase(
-            id=int(p.id),
-            is_required=p.is_required,
-            description=p.description,
-            number=p.number,
-            code=p.code,
-            template=p.template,
-            template_path=p.template_path,
-            is_active=p.is_active,
-            documents_approval_id=p.documents_approval_id,
-            documents_approval=p.documents_approval.name if p.documents_approval else None,
+def listar(db: Session,documents_approval_id:int |None=None) :
+    query=db.query(DocumentsTypesAgreements)
+    if documents_approval_id is not  None:
+        query = query.filter(
+            DocumentsTypesAgreements.documents_approval_id== documents_approval_id
         )
-        for p in documentos
-    ]
+        
+    return query.order_by(DocumentsTypesAgreements.id).all()
     
     
 def crear_tipo_doc(payload: DocumentsTypesAgreementsBase, db: Session) -> ResponseRequest:
