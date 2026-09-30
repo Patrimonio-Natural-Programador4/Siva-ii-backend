@@ -28,6 +28,12 @@ from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacio
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.CapacityAssessmentsDTO import UrlSharepointUpdate
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from dto.AttachmentAgreementDTO import AttachmentAgreementCreate, AttachmentAgreementResponse
+from services import  AttachmentAgreementService
+from repository import AttachmentAgreementRepository
+from fastapi.responses import FileResponse
+from entity.attachment_agreement import Attachment_Agreement
+
 
 CATEGORIA_APROBACION = "APP_EC"
 
@@ -340,3 +346,93 @@ def actualizar_url_sharepoint(
         status_code=status.HTTP_200_OK if response_request.solicitud_exitosa
         else status.HTTP_400_BAD_REQUEST,
     )
+  
+
+@router.post("/{guid}/documento_asociado", response_model=ResponseRequest)
+def subir_documento_asociado(
+    guid: str,
+    documento: AttachmentAgreementCreate,
+    db: DbSession
+):
+    try:
+        evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        if not evaluacion_capacidad_db:
+            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrado")
+            
+        nombre_archivo = AttachmentAgreementService.guardar_documento_evaluacion_capacidad(
+            codigo_evaluacion_capacidad=evaluacion_capacidad_db.code,
+            base64_data=documento.base64_data,
+            db=db,
+            capacity_assessments_id=evaluacion_capacidad_db.id,
+            nombre_original=documento.attachment_name,
+            documents_types_agreements_id=documento.documents_types_agreements_id,
+            observaciones=documento.observations
+        )
+        
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje="Documento guardado exitosamente",
+            identity=evaluacion_capacidad_db.id
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+    
+@router.get("/{guid}/documentos_asociados", response_model=list[AttachmentAgreementResponse])
+def listar_documentos_asociados(guid: str, db: DbSession):
+    try:
+        #print ('documentos_asociados')
+        evaluacion_capacidades_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        if not evaluacion_capacidades_db:
+            raise HTTPException(status_code=404, detail="Evaluación capacidad no encontrada")
+            
+        
+        registros = AttachmentAgreementRepository.list_attachment_agreement_by_capacity_assessments_id(evaluacion_capacidades_db.id, db)
+        
+        print("total registros  " ,  len(registros))
+        
+        return [
+            AttachmentAgreementResponse(
+                id=r.id,
+                attachment_name=r.attachment_name,
+                documents_types_agreements_id=r.documents_types_agreements_id,
+                observations=r.observations
+            ) for r in registros #if r.documents_types_agreements_id in [1, 2]
+        ]
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+    
+@router.get("/{guid}/archivo/{attachment_id}")
+def descargar_archivo_asociado(guid: str, attachment_id: int, db: DbSession):
+    
+    try:
+        evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        if not evaluacion_capacidad_db:
+            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrado")
+            
+        
+        registro = db.query(Attachment_Agreement).filter(
+            Attachment_Agreement.id == attachment_id,
+            Attachment_Agreement.capacity_assessments_id == evaluacion_capacidad_db.id
+        ).first()
+        
+        if not registro or not registro.path_document or not os.path.exists(registro.path_document):
+            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            
+        return FileResponse(
+            path=registro.path_document,
+            filename=registro.attachment_name
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))   

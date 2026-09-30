@@ -12,6 +12,10 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 from entity.approval_requests import ApprovalRequests 
 #from entity.previous_studies import PreviousStudies 
 
+from entity.approval_requests import ApprovalRequests
+from entity.attachment_agreement import Attachment_Agreement
+
+
 class CapacityAssessments(Base):
     __tablename__ = 'capacity_assessments'
     __table_args__ = (
@@ -77,5 +81,5 @@ class CapacityAssessments(Base):
     programa: Mapped["Programs"] = relationship("Programs", back_populates="capacity_assessments_programa") 
     
     previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
+    AttachmentAgreementCapacityAssessments: Mapped["Attachment_Agreement"] = relationship("Attachment_Agreement", back_populates="capacity_assessments") 
     
-  
