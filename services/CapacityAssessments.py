@@ -21,6 +21,7 @@ from fastapi import BackgroundTasks
 from jinja2 import Environment, FileSystemLoader
 from entity.users import Users        
 from services import NotificacionesService
+from repository import ApprovalRequestHistoryRepository
 
 CATEGORIA_APROBACION_CAPACITY_ASSESSMENT = "APP_EC"
 ID_ESTADO_ENVIADO = 2   # Revisión
@@ -186,6 +187,13 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
                 destinatarios.append(persona.email)
         if usuario.email and usuario.email not in destinatarios:
             destinatarios.append(usuario.email)
+            
+        try:
+            for correo in obtener_correos_siguiente_paso(id_solicitud_aprobacion, db):
+                if correo not in destinatarios:
+                    destinatarios.append(correo)
+        except Exception as e:
+            logging.error(f"Error al obtener correos del siguiente paso: {e}")
 
         to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
 
@@ -234,7 +242,7 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         document_signature_date=c.document_signature_date,
         capacity_assessments_state=c.capacity_assessments_state.state if c.capacity_assessments_state else None,
         implementer=c.implementer.acronym if c.implementer else None,
-        modalitie=c.modalitie.name if c.modalitie.name else None,
+        modalitie=c.modalitie.name if c.modalitie else None,
        # person=c.person.email if c.person else None,
         person=(
     " ".join(p for p in [c.person.first_name, c.person.other_name, c.person.last_name, c.person.other_last_name] if p)
@@ -249,7 +257,7 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         implementer_id=c.implementer_id,
         persons_id=c.persons_id,
         capacity_assessments_states_id=c.capacity_assessments_states_id,
-        modality_id=c.modality_id,
+        modality_id= c.modality_id if c.modality_id else None,     
         url_sharepoint_ec=c.url_sharepoint_ec,
     )    
     
@@ -341,13 +349,28 @@ def procesar_accion_solicitud_aprobacion(
             template = env.get_template('templates/notificacion_eva_capacidades.html')
             html_out = template.render(**template_data)
 
-            destinatarios = []
+            destinatarios: list[str] = []
+
+            # Persona responsable
             if evaluacion_db.persons_id:
                 persona = db.query(Persons).filter(Persons.id == evaluacion_db.persons_id).first()
                 if persona and persona.email:
                     destinatarios.append(persona.email)
-            if usuario.email and usuario.email not in destinatarios:
-                destinatarios.append(usuario.email)
+
+            # Solicitante (quien creó la evaluación)
+            solicitante = UsuariosRepository.obtener_usuario_por_id([evaluacion_db.user_session], db)
+            if solicitante and solicitante[0].email and solicitante[0].email not in destinatarios:
+                destinatarios.append(solicitante[0].email)
+
+            # Siguiente paso: aprobadores pendientes, o destinatario de los ajustes
+                       
+            if respuesta.mensaje in ("EN_PROCESO", "AJUSTES"):
+                try:
+                    for correo in obtener_correos_siguiente_paso(accion.id_solicitud_aprobacion, db):
+                        if correo not in destinatarios:
+                            destinatarios.append(correo)
+                except Exception as e:
+                    logging.error(f"Error al obtener correos del siguiente paso: {e}")
 
             to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
 
@@ -452,11 +475,19 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session, usuario
             template = env.get_template('templates/notificacion_eva_capacidades.html')
             html_out = template.render(**template_data)
 
-            destinatarios = []
+            destinatarios: list[str] = []
             if persona and persona.email:
                 destinatarios.append(persona.email)
             if usuario.email and usuario.email not in destinatarios:
                 destinatarios.append(usuario.email)
+
+            # Primer aprobador del flujo
+            try:
+                for correo in obtener_correos_siguiente_paso(id_solicitud_aprobacion, db):
+                    if correo not in destinatarios:
+                        destinatarios.append(correo)
+            except Exception as e:
+                logging.error(f"Error al obtener correos del siguiente paso: {e}")
 
             to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
 
@@ -493,3 +524,23 @@ def actualizar_url_sharepoint(guid: str, url: str | None, db: Session) -> Respon
         db.rollback()
         logging.error(f"Error al actualizar URL SharePoint: {e}")
         return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))
+    
+    
+
+
+def obtener_correos_siguiente_paso(id_solicitud_aprobacion: int, db: Session) -> list[str]:
+    correos: list[str] = []
+    pendientes = ApprovalRequestHistoryRepository.obtener_historiales_pendientes(
+        id_solicitud_aprobacion, db
+    )
+    for pendiente in pendientes:
+        if pendiente.user_id:
+            usuarios = UsuariosRepository.obtener_usuario_por_id([pendiente.user_id], db)
+        else:
+            usuarios = ApprovalRequestHistoryRepository.listar_usuarios_activos_rol(
+                pendiente.approval_role_id, db
+            )
+        for u in usuarios or []:
+            if u.email and u.email not in correos:
+                correos.append(u.email)
+    return correos

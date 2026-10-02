@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from repository import AttachmentAgreementRepository
 
 from entity.attachment_agreement import Attachment_Agreement
+from entity.documents_types_agreements import DocumentsTypesAgreements
 
 logger = logging.getLogger(__name__)
 
@@ -100,13 +101,17 @@ def guardar_documento_evaluacion_capacidad(
     if extension.lower() not in ALLOWED_EXTENSIONS:
         raise ValueError(f"Extensión de archivo {extension} no permitida")
 
-    prefijo = ""
-    if documents_types_agreements_id == 1:
-        prefijo = "EVA_CAP"  # PREFIJO QUE LLEVARA EL ARCHIVOOOOOOOOOO
-    elif documents_types_agreements_id == 2:
-        prefijo = "DRELACIONADO"
-
-    nombre_archivo = f"{prefijo}{fecha_hora}{extension.lower()}"
+    tipo_documento=(
+        db.query(DocumentsTypesAgreements)
+        .filter(DocumentsTypesAgreements.id == documents_types_agreements_id)
+        .first()
+    )
+    if tipo_documento is None or not tipo_documento.code:
+        raise ValueError(f"Tipo de documento no válido: {documents_types_agreements_id}")
+    
+    prefijo =tipo_documento.code.strip().upper()
+       
+    nombre_archivo = f"{prefijo}_{fecha_hora}{extension.lower()}"
     ruta_archivo = carpeta_evaluacion_capacidad / nombre_archivo
 
     # Escribir archivo en disco
@@ -145,3 +150,116 @@ def listar_nombres_archivos_evaluacion_capacidad(capacity_assessments_id: int, d
     registros = AttachmentAgreementRepository.list_attachment_agreement_by_capacity_assessments_id(capacity_assessments_id, db)
     return [r.attachment_name for r in registros if r.attachment_name]
 
+def actualizar_documento_evaluacion_capacidad(
+    codigo_evaluacion_capacidad: str,
+    capacity_assessments_id: int,
+    id_documento: int,
+    db: Session,
+    attachment_name: str | None = None,
+    base64_data: str | None = None,
+    documents_types_agreements_id: int | None = None,
+    observaciones: str | None = None,
+    campos_enviados: set[str] | None = None,
+) -> Attachment_Agreement:
+    campos_enviados = campos_enviados or set()
+
+    # Buscar el documento a actualizar
+    documento = (
+        db.query(Attachment_Agreement)
+        .filter(
+            Attachment_Agreement.id == id_documento,
+            Attachment_Agreement.capacity_assessments_id == capacity_assessments_id,
+        )
+        .first()
+    )
+    if documento is None:
+        raise ValueError(f"Documento {id_documento} no encontrado para esta evaluación")
+
+    # Actualizar tipo de documento
+    if "documents_types_agreements_id" in campos_enviados and documents_types_agreements_id is not None:
+        tipo_documento = (
+            db.query(DocumentsTypesAgreements)
+            .filter(DocumentsTypesAgreements.id == documents_types_agreements_id)
+            .first()
+        )
+        if tipo_documento is None or not tipo_documento.code:
+            raise ValueError(f"Tipo de documento no válido: {documents_types_agreements_id}")
+        documento.documents_types_agreements_id = documents_types_agreements_id
+
+    # Actualizar observaciones
+    if "observations" in campos_enviados:
+        documento.observations = observaciones
+
+
+    if base64_data:
+        # Decodificar el contenido Base64
+        try:
+            file_bytes = _decodificar_base64(base64_data)
+        except Exception as e:
+            raise ValueError(f"Error al decodificar el archivo Base64: {e}")
+
+        # Validar tamaño del archivo
+        if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+            raise ValueError(
+                f"El archivo excede el tamaño máximo permitido de {MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB"
+            )
+
+        # Validar contenido (magic bytes)
+        if not _validar_contenido(file_bytes):
+            raise ValueError("El archivo no es un archivo PDF válido")
+
+        # Usar la misma carpeta donde se guardó el documento original
+        if documento.path_document:
+            carpeta_evaluacion_capacidad = Path(documento.path_document).parent
+        else:
+            # Si el documento no tiene ruta guardada, se arma igual que al guardar
+            codigo_sanitizado = _sanitizar_codigo_evaluacion(codigo_evaluacion_capacidad)
+            carpeta_evaluacion_capacidad = ASSESSMENTS_DIR / codigo_sanitizado
+
+        # Validar que la ruta resuelta no escape del directorio base (prevención path traversal)
+        carpeta_resuelta = carpeta_evaluacion_capacidad.resolve()
+        evaluacion_capacidad_resuelta = ASSESSMENTS_DIR.resolve()
+        if not str(carpeta_resuelta).startswith(str(evaluacion_capacidad_resuelta) + os.sep):
+            raise ValueError("Ruta de destino inválida")
+
+        # Crear carpeta si no existe
+        carpeta_evaluacion_capacidad.mkdir(parents=True, exist_ok=True)
+
+        
+        fecha_hora = datetime.now().strftime("%Y%m%d%H%M")
+
+        if not attachment_name:
+            extension = ".pdf"
+        else:
+            _, extension = os.path.splitext(attachment_name)
+
+        if extension.lower() not in ALLOWED_EXTENSIONS:
+            raise ValueError(f"Extensión de archivo {extension} no permitida")
+
+        
+        tipo_documento = (
+            db.query(DocumentsTypesAgreements)
+            .filter(DocumentsTypesAgreements.id == documento.documents_types_agreements_id)
+            .first()
+        )
+        if tipo_documento is None or not tipo_documento.code:
+            raise ValueError("El documento no tiene un tipo de documento válido")
+
+        prefijo = tipo_documento.code.strip().upper()
+
+        nombre_archivo = f"{prefijo}_{fecha_hora}{extension.lower()}"
+        ruta_archivo = carpeta_evaluacion_capacidad / nombre_archivo
+
+  
+        ruta_archivo.write_bytes(file_bytes)
+        logger.info(f"Archivo reemplazado: {ruta_archivo}")
+
+        
+        documento.attachment_name = nombre_archivo
+        documento.path_document = str(ruta_archivo)
+
+    db.commit()
+    db.refresh(documento)
+    logger.info(f"Documento {id_documento} actualizado para evaluación {codigo_evaluacion_capacidad}")
+
+    return documento
