@@ -1,4 +1,4 @@
-from controllers import SolicitudesAprobacionController, TdrController, ViajesController
+from controllers import AgreementsController, SolicitudesAprobacionController, TdrController, ViajesController
 #from controllers import WordParametersController
 import os
 
@@ -180,6 +180,7 @@ def register_routes(app: FastAPI):
     app.include_router( PreviousStudiesStatesController.router , dependencies=auth_dependency)#20
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
     app.include_router(TdrController.router, dependencies=auth_dependency)
+    app.include_router( AgreementsController.router , dependencies=auth_dependency)
     
     
 
