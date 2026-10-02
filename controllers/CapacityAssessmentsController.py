@@ -8,9 +8,11 @@ from fastapi import status
 from typing import Optional
 
 from jinja2 import Environment, FileSystemLoader
+from requests import Session
 
-from database.database import DbSession
+from database.database import DbSession, get_db
 from dependencies.auth_dependency import get_current_user_oid
+from dto import DocumentsTypesAgreements
 from dto.CapacityAssessmentsDTO import CapacityAssessmentsBase,CapacityAssessmentsCreate
 from dto.ResponseRequest import ResponseRequest
 from entity.implementers import Implementers
@@ -28,11 +30,13 @@ from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacio
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.CapacityAssessmentsDTO import UrlSharepointUpdate
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from dto.AttachmentAgreementDTO import AttachmentAgreementCreate, AttachmentAgreementResponse
+from dto.AttachmentAgreementDTO import AttachmentAgreementCreate, AttachmentAgreementResponse, AttachmentAgreementUpdate
 from services import  AttachmentAgreementService
 from repository import AttachmentAgreementRepository
 from fastapi.responses import FileResponse
 from entity.attachment_agreement import Attachment_Agreement
+
+
 
 
 CATEGORIA_APROBACION = "APP_EC"
@@ -392,16 +396,21 @@ def listar_documentos_asociados(guid: str, db: DbSession):
             
         
         registros = AttachmentAgreementRepository.list_attachment_agreement_by_capacity_assessments_id(evaluacion_capacidades_db.id, db)
-        
         print("total registros  " ,  len(registros))
+        
+          
         
         return [
             AttachmentAgreementResponse(
                 id=r.id,
                 attachment_name=r.attachment_name,
                 documents_types_agreements_id=r.documents_types_agreements_id,
-                observations=r.observations
-            ) for r in registros #if r.documents_types_agreements_id in [1, 2]
+                document_type_description=(                                   
+                    r.documents_types_agreements.description                  
+                    if r.documents_types_agreements else None                 
+                ),                                                            
+                observations=r.observations    
+            ) for r in registros
         ]
     except Exception as e:
         import traceback
@@ -436,3 +445,42 @@ def descargar_archivo_asociado(guid: str, attachment_id: int, db: DbSession):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))   
+    
+    
+@router.put("/{guid}/documentos/{id_documento}", response_model=ResponseRequest)
+def actualizar_documento(
+    guid: str,
+    id_documento: int,
+    payload: AttachmentAgreementUpdate,
+    db: DbSession
+):
+    try:
+        evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        if not evaluacion_capacidad_db:
+            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrada")
+
+        AttachmentAgreementService.actualizar_documento_evaluacion_capacidad(
+            codigo_evaluacion_capacidad=evaluacion_capacidad_db.code,
+            capacity_assessments_id=evaluacion_capacidad_db.id,
+            id_documento=id_documento,
+            db=db,
+            attachment_name=payload.attachment_name,
+            base64_data=payload.base64_data,
+            documents_types_agreements_id=payload.documents_types_agreements_id,
+            observaciones=payload.observations,
+            campos_enviados=set(payload.model_dump(exclude_unset=True).keys())
+        )
+
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje="Documento actualizado exitosamente",
+            identity=id_documento
+        )
+    except HTTPException:
+        raise
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
