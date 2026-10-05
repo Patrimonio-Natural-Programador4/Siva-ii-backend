@@ -1,6 +1,7 @@
 import io
 import os
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException,Query
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -238,35 +239,35 @@ def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSessio
             pad_name = pid.name
             
     #IMPLEMENTER
-        implementer_name = "N/A"
-        if evaluacion_db.implementer_id:
-            implementer = db.query(Implementers).filter(Implementers.id == evaluacion_db.implementer_id).first()
-            if implementer:
-                implementer_name = implementer.acronym
+    implementer_name = "N/A"
+    if evaluacion_db.implementer_id:
+        implementer = db.query(Implementers).filter(Implementers.id == evaluacion_db.implementer_id).first()
+        if implementer:
+           implementer_name = implementer.acronym
          
     #MODALIDAD
-        modalitie_name = "N/A"
-        if evaluacion_db.modality_id:
-            modalitie = db.query(Modalities).filter(Modalities.id == evaluacion_db.modality_id).first()
-            if modalitie:
-                modalitie_name = modalitie.name
+    modalitie_name = "N/A"
+    if evaluacion_db.modality_id:
+        modalitie = db.query(Modalities).filter(Modalities.id == evaluacion_db.modality_id).first()
+        if modalitie:
+            modalitie_name = modalitie.name
     
     #ESTADO EVALUACION DE CAPACIDAD
-        capacity_assessments_state_name = "N/A"
-        if evaluacion_db.capacity_assessments_states_id:
-            estado_evaluacion = db.query(CapacityAssessmentsStatesEntity).filter(CapacityAssessmentsStatesEntity.id == evaluacion_db.capacity_assessments_states_id).first()
-            if estado_evaluacion:
-                capacity_assessments_state_name = estado_evaluacion.state
+    capacity_assessments_state_name = "N/A"
+    if evaluacion_db.capacity_assessments_states_id:
+        estado_evaluacion = db.query(CapacityAssessmentsStatesEntity).filter(CapacityAssessmentsStatesEntity.id == evaluacion_db.capacity_assessments_states_id).first()
+        if estado_evaluacion:
+            capacity_assessments_state_name = estado_evaluacion.state
 
 
     # RESPONSABLE
     
-        responsable_name = "N/A"
-        if evaluacion_db.persons_id:
-            person = db.query(Persons).filter(Persons.id == evaluacion_db.persons_id).first()
-            if person:
-                 fullname= "{fname}  {lname} {olname}".format(fname = person.first_name, lname =person.last_name, olname =person.other_last_name)
-                 responsable_name = fullname
+    responsable_name = "N/A"
+    if evaluacion_db.persons_id:
+        person = db.query(Persons).filter(Persons.id == evaluacion_db.persons_id).first()
+        if person:
+             fullname= "{fname}  {lname} {olname}".format(fname = person.first_name, lname =person.last_name, olname =person.other_last_name)
+             responsable_name = fullname
     
        
     
@@ -312,26 +313,32 @@ def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSessio
 
 
 @router.get("/{guid}/pdf_solicitud/documento")
-def obtener_pdf_solicitud(guid: str, db: DbSession):
+def obtener_pdf_solicitud(
+    guid: str, 
+    db: DbSession,
+    descargar:bool = Query(False),
+    user_oid: str = Depends(get_current_user_oid),
+    ):
     try:
         evaluacion_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
         if not evaluacion_db:
-            raise HTTPException(status_code=404, detail="Evaluación no encontrado")
-            
+            raise HTTPException(status_code=404, detail="Evaluación no encontrada")
+
         pdf_bytes = generar_pdf_solicitud(evaluacion_db, db)
-        
-        filename = f"solicitud_{evaluacion_db.name or evaluacion_db.CapacityAssessmentsEntity}.pdf"
+
+        filename = f"solicitud_{evaluacion_db.code or guid}.pdf"
+        disposition = "attachment" if descargar else "inline"
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"inline; filename={filename}"}
+            headers={"Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(filename)}"}
         )
     except HTTPException as e:
         raise e
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))
     
 
 
@@ -419,32 +426,38 @@ def listar_documentos_asociados(guid: str, db: DbSession):
 
     
 @router.get("/{guid}/archivo/{attachment_id}")
-def descargar_archivo_asociado(guid: str, attachment_id: int, db: DbSession):
+def descargar_archivo_asociado(
+    guid: str, 
+    attachment_id: int, 
+    db: DbSession,
+    descargar: bool = Query(False),
+    user_oid: str = Depends(get_current_user_oid),
+    ):
     
     try:
         evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
         if not evaluacion_capacidad_db:
-            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrado")
-            
-        
+            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrada")
+
         registro = db.query(Attachment_Agreement).filter(
             Attachment_Agreement.id == attachment_id,
             Attachment_Agreement.capacity_assessments_id == evaluacion_capacidad_db.id
         ).first()
-        
+
         if not registro or not registro.path_document or not os.path.exists(registro.path_document):
             raise HTTPException(status_code=404, detail="Archivo no encontrado")
-            
+
         return FileResponse(
             path=registro.path_document,
-            filename=registro.attachment_name
+            filename=registro.attachment_name,
+            content_disposition_type="attachment" if descargar else "inline",
         )
     except HTTPException as e:
         raise e
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))   
+        raise HTTPException(status_code=500, detail=str(e))
     
     
 @router.put("/{guid}/documentos/{id_documento}", response_model=ResponseRequest)
