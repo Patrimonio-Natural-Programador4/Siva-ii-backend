@@ -247,7 +247,7 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         document_signature_date=c.document_signature_date,
         capacity_assessments_state=c.capacity_assessments_state.state if c.capacity_assessments_state else None,
         implementer=c.implementer.acronym if c.implementer else None,
-        modalitie=c.modalitie.name if c.modalitie else None,
+        implementer_type=c.implementer.implementer_type.name if c.implementer and c.implementer.implementer_type else None,   
        # person=c.person.email if c.person else None,
         person=(
     " ".join(p for p in [c.person.first_name, c.person.other_name, c.person.last_name, c.person.other_last_name] if p)

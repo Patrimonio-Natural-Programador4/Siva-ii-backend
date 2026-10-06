@@ -15,6 +15,7 @@ def listar_implementadoras(db: Session) -> list[ImplementerBase]:
             acronym=p.acronym,
             identification_type=p.identification_type,
             type_id=p.type_id,
+            implementer_type_name=p.implementer_type.name if p.implementer_type else None, 
         )
         for p in implementadoras
     ]
@@ -29,6 +30,7 @@ def obtener_implementadora_por_id(id: int, db: Session) -> ImplementerBase | Non
         acronym=implementadora.acronym,
         identification_type=implementadora.identification_type,
         type_id=implementadora.type_id,
+        implementer_type_name=implementadora.implementer_type.name if implementadora.implementer_type else None,
     )
 
 
