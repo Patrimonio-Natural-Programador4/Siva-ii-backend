@@ -21,6 +21,8 @@ from controllers import DocumentsTypesAgreementsController
 from controllers import CapacityAssessmentsController
 from controllers import PreviousStudiesController
 from controllers import PreviousStudiesStatesController
+from controllers import AgreementOriginsController
+from controllers import AgreementTypesController
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from starlette.staticfiles import StaticFiles
@@ -181,7 +183,8 @@ def register_routes(app: FastAPI):
     app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
     app.include_router(TdrController.router, dependencies=auth_dependency)
     app.include_router( AgreementsController.router , dependencies=auth_dependency)
-    
+    app.include_router( AgreementOriginsController.router , dependencies=auth_dependency)
+    app.include_router( AgreementTypesController.router , dependencies=auth_dependency)
     
 
 def register_middlewares(app: FastAPI):

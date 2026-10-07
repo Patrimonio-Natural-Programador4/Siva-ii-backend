@@ -20,7 +20,7 @@ def crear(modalities: Modalities, db: Session) -> Modalities:
         return modalities
     except Exception as e:
         db.rollback()
-        logging.error(f"Failed to create program: {str(e)}")
+        logging.error(f"Failed to create modalitie: {str(e)}")
         raise PruebaCreationError(str(e))
 
 
@@ -28,5 +28,5 @@ def obtener_por_nombre(nombre: str, db: Session) -> Modalities | None:
     try:
         return db.query(Modalities).filter(Modalities.name.ilike(nombre.strip())).first()
     except Exception as e:
-        logging.error(f"Failed to get program by name: {str(e)}")
+        logging.error(f"Failed to get modalitie by name: {str(e)}")
         raise PruebaNotFoundError(str(e))
