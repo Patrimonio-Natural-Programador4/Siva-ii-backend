@@ -43,9 +43,9 @@ SELECT DISTINCT
     CASE WHEN tr.is_guest = true THEN false ELSE true END AS "is_employee_travel",
     tr.is_guest AS "is_guest_travel", 
     tr.traveler_birth_date AS "birth_date", 
-    tr.mobile_phone AS "mobile_phone", 
-    tr.emergency_contact_name AS "emergency_contact_name", 
-    tr.emergency_contact_phone AS "emergency_contact_phone", 
+    u.mobile_phone AS "mobile_phone", 
+    tr.emergency_contact AS "emergency_contact_name", 
+    tr.emergency_phone AS "emergency_contact_phone", 
     tr.emergency_relationship AS "emergency_relationship", 
     tr.includes_food AS "includes_food"
 FROM public.travel_requests tr
@@ -53,7 +53,7 @@ LEFT JOIN public.users u ON tr.traveler_user_id = u.id
 LEFT JOIN public.travel_status ts ON tr.travel_status_id = ts.status_id
 LEFT JOIN public.rubros rub ON tr.rubro_id = rub.id
 LEFT JOIN public.activities act ON tr.activity_id = act.id
-LEFT JOIN public.users sup ON u.supervisor_user_id = sup.id
+LEFT JOIN public.users sup ON tr.supervisor_user_id = sup.id
 LEFT JOIN public.programs prog ON tr.program_id = prog.id;
     """)
 
