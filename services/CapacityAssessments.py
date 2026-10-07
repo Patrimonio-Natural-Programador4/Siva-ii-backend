@@ -154,6 +154,10 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         db.commit()
         db.refresh(nueva_capacidad)
         
+        historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(
+            nueva_capacidad.id, id_categoria_aprobacion, db
+        )
+        
         template_data = {
             "codigo": nueva_capacidad.code,
             "name": nueva_capacidad.name,
@@ -174,6 +178,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
             "observation": nueva_capacidad.observation,
             "url_sharepoint_ec": nueva_capacidad.url_sharepoint_ec,
             "comentarios": "",
+            "historialAprobacionSolicitud": historialAprobacionSolicitud,
         }
 
         env = Environment(loader=FileSystemLoader(''))
@@ -242,7 +247,7 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         document_signature_date=c.document_signature_date,
         capacity_assessments_state=c.capacity_assessments_state.state if c.capacity_assessments_state else None,
         implementer=c.implementer.acronym if c.implementer else None,
-        modalitie=c.modalitie.name if c.modalitie else None,
+        implementer_type=c.implementer.implementer_type.name if c.implementer and c.implementer.implementer_type else None,   
        # person=c.person.email if c.person else None,
         person=(
     " ".join(p for p in [c.person.first_name, c.person.other_name, c.person.last_name, c.person.other_last_name] if p)
@@ -322,6 +327,11 @@ def procesar_accion_solicitud_aprobacion(
                 ID_ESTADO_AJUSTES: "Solicitud de ajustes",
             }
             estado_nombre = nombres_estado.get(evaluacion_db.capacity_assessments_states_id, "")
+            historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(
+                evaluacion_db.id, id_categoria, db
+            )
+            
+            
 
             template_data = {
                 "codigo": evaluacion_db.code,
@@ -343,6 +353,8 @@ def procesar_accion_solicitud_aprobacion(
                 "observation": evaluacion_db.observation,
                 "url_sharepoint_ec": evaluacion_db.url_sharepoint_ec,
                 "comentarios": getattr(accion, "comentarios", ""),
+                 "historialAprobacionSolicitud": historialAprobacionSolicitud,
+                
             }
 
             env = Environment(loader=FileSystemLoader(''))
@@ -451,6 +463,9 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session, usuario
             implementadora = db.query(Implementers).filter(Implementers.id == registro.implementer_id).first() if registro.implementer_id else None
             modalidad = db.query(Modalities).filter(Modalities.id == registro.modality_id).first() if registro.modality_id else None
             persona = db.query(Persons).filter(Persons.id == registro.persons_id).first() if registro.persons_id else None
+            historialAprobacionSolicitud = SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(
+                registro.id, id_categoria_aprobacion, db
+            )
 
             template_data = {
                 "codigo": registro.code,
@@ -469,6 +484,7 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session, usuario
                 "observation": registro.observation,
                 "url_sharepoint_ec": registro.url_sharepoint_ec,
                 "comentarios": "",
+                "historialAprobacionSolicitud": historialAprobacionSolicitud,
             }
 
             env = Environment(loader=FileSystemLoader(''))
@@ -544,3 +560,17 @@ def obtener_correos_siguiente_paso(id_solicitud_aprobacion: int, db: Session) ->
             if u.email and u.email not in correos:
                 correos.append(u.email)
     return correos
+
+
+def obtener_historial_aprobacion_notificacion(id_evaluacion: int, db: Session) -> list:
+    
+    try:
+        id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(
+            CATEGORIA_APROBACION_CAPACITY_ASSESSMENT, db
+        )
+        return SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(
+            id_evaluacion, id_categoria, db
+        ) or []
+    except Exception as e:
+        logging.error(f"Error al obtener historial de aprobación para notificación: {e}")
+        return []

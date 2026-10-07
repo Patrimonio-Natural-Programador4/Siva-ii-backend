@@ -9,6 +9,7 @@ class ImplementerBase(BaseModel):
      name:Optional[str] = None
      identification_type:Optional[int] = None
      type_id:Optional[int] = None
+     implementer_type_name: Optional[str] = None 
      created_at:Optional[datetime] = None
      updated_at:Optional[datetime] = None
         

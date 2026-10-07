@@ -33,6 +33,9 @@ class CapacityAssessmentsBase(BaseModel):
     modality_id: Optional[int] = None  
     modalitie:Optional[str] = None  
     url_sharepoint_ec:Optional[str] =None
+    implementer: Optional[str] = None
+    implementer_type: Optional[str] = None   
+    
 
     class Config:
         from_attributes = True
