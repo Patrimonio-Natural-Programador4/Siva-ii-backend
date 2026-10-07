@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
-from dto.ViajesDTO import ViajesCalendar, ViajesCreate, ViajesListSP, TravelLegalizationCreate, TravelLegalizationUpdate
+from dto.ViajesDTO import TravelLegalizationResponse, ViajesCalendar, ViajesCreate, ViajesListSP, TravelLegalizationCreate, TravelLegalizationUpdate
 from dto.TravelAdvanceDTO import TravelAdvanceBase
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
@@ -1671,7 +1671,32 @@ def crear_factura(db: Session, legalizacion: TravelLegalizationCreate):
     return ViajesRepository.crear_factura(db, legalizacion)
 
 def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int):
-    return ViajesRepository.obtener_legalizaciones_por_viaje(db, travel_request_id)
+    travel_expense = ViajesRepository.obtener_legalizaciones_por_viaje(db, travel_request_id)
+    travel_expenseDTO = [
+                TravelLegalizationResponse(
+                    travel_request_id=item.travel_request_id,
+                    check_date=item.check_date,
+                    check_number=item.check_number,
+                    beneficiary=item.beneficiary,
+                    nit_beneficiary=item.nit_beneficiary,
+                    concept_id=item.concept_id,
+                    observations_outlay=item.observations_outlay,
+                    regimen_type_id=item.regimen_type_id,
+                    subtotal=item.subtotal,
+                    iva=item.iva,
+                    retention_porcentage=item.retention_porcentage,
+                    retention=item.retention,
+                    amount_paid=item.amount_paid,
+                    observations=item.observations,
+                    legalizacion_id=item.legalization_id,
+                    regimen_name=item.regimen_type.name if item.regimen_type else None,
+                    concept_name=item.concept.concept if item.concept else None,
+                    legalization_id=item.legalization_id,
+
+                )
+                for item in travel_expense
+            ]
+    return travel_expenseDTO
 
 def obtener_legalizacion_por_viaje(db: Session, travel_request_id: int):
     return ViajesRepository.obtener_legalizacion_por_viaje(db, travel_request_id)

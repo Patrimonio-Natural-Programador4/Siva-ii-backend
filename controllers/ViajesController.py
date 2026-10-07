@@ -643,7 +643,7 @@ def listar_documentos_asociados(guid: str, db: DbSession):
                 attachment_name=r.attachment_name,
                 document_type_id=r.document_type_id,
                 observaciones=r.observations
-            ) for r in registros if r.document_type_id in [1, 2]
+            ) for r in registros
         ]
     except Exception as e:
         import traceback

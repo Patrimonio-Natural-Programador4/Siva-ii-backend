@@ -242,7 +242,6 @@ class TravelLegalizationResponse(TravelLegalizationCreate):
     legalization_id: int
     regimen_name: Optional[str] = None
     concept_name: Optional[str] = None
-    created_at: date
 
     class Config:
         from_attributes = True

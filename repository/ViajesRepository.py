@@ -151,10 +151,6 @@ def crear_factura(db: Session, legalizacion: TravelLegalizationCreate) -> Travel
 def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int) -> list[TravelLegalizations]:
     return (
         db.query(TravelLegalizations)
-        .options(
-            joinedload(TravelLegalizations.regimen_type),
-            joinedload(TravelLegalizations.concept),
-        )
         .filter(TravelLegalizations.travel_request_id == travel_request_id)
         .order_by(TravelLegalizations.legalization_id.asc())
         .all()
