@@ -83,7 +83,8 @@ def _is_public_download_request(request: Request) -> bool:
         '/soporte/',
         '/documento',
         '/archivo/',
-        '/facturas/'
+        '/facturas/',
+        '/exportar-excel'
     ]
 
     return any(marker in path for marker in public_download_markers)

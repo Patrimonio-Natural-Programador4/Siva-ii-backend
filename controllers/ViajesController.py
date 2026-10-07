@@ -5,7 +5,7 @@ from pathlib import Path
 import io
 import sys
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from fastapi import status
 from database.database import DbSession
 from dependencies.auth_dependency import get_current_user_oid
@@ -14,7 +14,8 @@ from dto.ResponseRequest import ResponseRequest
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
 from dto.ViajesDTO import ViajesCalendar, ViajesCreate, TravelLegalizationCreate, TravelLegalizationUpdate, TravelLegalizationResponse
 from dto.DocumentosAsociadosDTO import DocumentoAsociadoCreate, DocumentoAsociadoResponse
-from services import ViajesService, SolicitudesAprobacionService, SoportesService
+from services.TravelExportService import build_excel_export
+from services import ViajesService, SolicitudesAprobacionService, SoportesService, DocumentsTypesTravelsService
 from jinja2 import Environment, FileSystemLoader
 from entity.travel_requests import TravelRequests
 from entity.programs import Programs
@@ -38,6 +39,10 @@ def lista_generica(db: DbSession, user_oid: str = Depends(get_current_user_oid))
 def lista_generica(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return ViajesService.lista_generica_lista_viajes(db)
     
+@router.get("/tipos-documentos")
+def get_tipos_documentos_viaje(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    return DocumentsTypesTravelsService.listar_tipos_documentos_viaje(db)
+
 @router.post("", response_model=ResponseRequest)
 def crear_viaje(viaje: ViajesCreate, db: DbSession, background_tasks: BackgroundTasks, user_oid: str = Depends(get_current_user_oid)):
     try:
@@ -848,3 +853,23 @@ def actualizar_legalizacion(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar legalización: {str(e)}")
+
+@router.get("/exportar-excel")
+def export_viajes_excel(
+    background_tasks: BackgroundTasks,
+    db: DbSession
+):
+    try:
+        file_path = build_excel_export(db)
+        
+        #cuando se arma el archivo, posteriormente se borra
+        background_tasks.add_task(os.remove, file_path)
+        
+        return FileResponse(
+            path=file_path,
+            filename=f"LISTADOVIAJES({datetime.datetime.now().strftime('%Y%m%d')}).xlsx",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=LISTADOVIAJES({datetime.datetime.now().strftime('%Y%m%d')}).xlsx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exportando a Excel: {str(e)}")
