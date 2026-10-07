@@ -230,6 +230,32 @@
         </tr>
     </table>
 
+    {% if requiere_anticipo %}
+    <table class="main-table">
+        <tr class="section-title-row">
+            <td colspan="3">REQUERIMIENTO DE ANTICIPO</td>
+        </tr>
+        <tr>
+            <td class="table-header-cell">CONCEPTO</td>
+            <td class="table-header-cell">VALOR DEL ANTICIPO</td>
+            <td class="table-header-cell">OBSERVACIONES</td>
+        </tr>
+        {% if anticipo and anticipo|length > 0 %}
+            {% for item in anticipo %}
+            <tr>
+                <td class="table-data-cell left-align">{{ item.concept or '' }}</td>
+                <td class="table-data-cell">{{ '{:,.2f}'.format(item.amount or 0) }}</td>
+                <td class="table-data-cell left-align">{{ item.observations or '' }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="3" class="table-data-cell" style="color: #999;">No se registraron conceptos de anticipo.</td>
+            </tr>
+        {% endif %}
+    </table>
+    {% endif %}
+
     <!-- Section III: FLUJO DE APROBACIÓN -->
     <table class="main-table">
         <tr class="section-title-row">

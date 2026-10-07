@@ -15,7 +15,7 @@
                 "main:app",
                 "--reload",
                 "--port",
-                "8111"
+                "8112"
             ],
             "jinja": true
         }

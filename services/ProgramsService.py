@@ -15,6 +15,8 @@ def listar_programas(db: Session) -> list[ProgramsBase]:
             name=p.name,
             description=p.description,
             code=p.code,
+            first_alert_approval=p.first_alert_approval,
+            secod_alert_approval=p.secod_alert_approval,
         )
         for p in programas
     ]
@@ -29,6 +31,8 @@ def obtener_programa_por_id(id_programa: int, db: Session) -> ProgramsBase | Non
         name=programa.name,
         description=programa.description,
         code=programa.code,
+        first_alert_approval=programa.first_alert_approval,
+        secod_alert_approval=programa.secod_alert_approval,
     )
 
 
@@ -42,6 +46,8 @@ def crear_programa(payload: ProgramsCreateBase, db: Session) -> ResponseRequest:
             name=(payload.name or '').strip(),
             description=payload.description,
             code=payload.code,
+            first_alert_approval=payload.first_alert_approval,
+            secod_alert_approval=payload.secod_alert_approval,
         )
         creado = ProgramsRepository.crear(nuevo, db)
         return ResponseRequest(mensaje='Programa creado exitosamente', identity=int(creado.id), solicitud_exitosa=True)
@@ -65,6 +71,8 @@ def actualizar_programa(id_programa: int, payload: ProgramsCreateBase, db: Sessi
         programa.name = nombre_nuevo
         programa.description = payload.description
         programa.code = payload.code
+        programa.first_alert_approval = payload.first_alert_approval
+        programa.secod_alert_approval = payload.secod_alert_approval
 
         ProgramsRepository.actualizar(programa, db)
         return ResponseRequest(mensaje='Programa actualizado exitosamente', identity=id_programa, solicitud_exitosa=True)

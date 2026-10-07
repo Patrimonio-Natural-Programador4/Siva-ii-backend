@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session, joinedload
-from entity.travel_legalizations import TravelLegalization
+from entity.travel_legalizations import TravelLegalizations
 import logging
 from datetime import datetime, time
+from decimal import Decimal
 from dto.ViajesDTO import ViajesCalendar, ViajesListSP, TravelLegalizationCreate
 from entity.travel_requests import TravelRequests
+from entity.travel_advances import TravelAdvances
 from entity.users import Users
 from exceptions import PruebaNotFoundError
 from sqlalchemy import and_, func, or_, text
@@ -134,9 +136,9 @@ def listar_viajes_calendario(db: Session, fecha_desde, fecha_hasta) -> list[Viaj
         logging.error(f"Failed to fetch viajes calendar: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
-def crear_factura(db: Session, legalizacion: TravelLegalizationCreate) -> TravelLegalization:
+def crear_factura(db: Session, legalizacion: TravelLegalizationCreate) -> TravelLegalizations:
     try:
-        nuevo_registro = TravelLegalization(**legalizacion.dict())
+        nuevo_registro = TravelLegalizations(**legalizacion.dict())
         db.add(nuevo_registro)
         db.commit()
         db.refresh(nuevo_registro)
@@ -146,37 +148,40 @@ def crear_factura(db: Session, legalizacion: TravelLegalizationCreate) -> Travel
         logging.error(f"Error al crear factura: {str(e)}")
         raise e
 
-def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int) -> list[TravelLegalization]:
+def obtener_legalizaciones_por_viaje(db: Session, travel_request_id: int) -> list[TravelLegalizations]:
     return (
-        db.query(TravelLegalization)
-        .options(joinedload(TravelLegalization.regimen_type))
-        .filter(TravelLegalization.travel_request_id == travel_request_id)
-        .order_by(TravelLegalization.legalization_id.asc())
+        db.query(TravelLegalizations)
+        .options(
+            joinedload(TravelLegalizations.regimen_type),
+            joinedload(TravelLegalizations.concept),
+        )
+        .filter(TravelLegalizations.travel_request_id == travel_request_id)
+        .order_by(TravelLegalizations.legalization_id.asc())
         .all()
     )
 
-def obtener_legalizacion_por_viaje(db: Session, travel_request_id: int) -> TravelLegalization:
+def obtener_legalizacion_por_viaje(db: Session, travel_request_id: int) -> TravelLegalizations:
     return (
-        db.query(TravelLegalization)
-        .options(joinedload(TravelLegalization.regimen_type))
-        .filter(TravelLegalization.travel_request_id == travel_request_id)
+        db.query(TravelLegalizations)
+        .options(joinedload(TravelLegalizations.regimen_type))
+        .filter(TravelLegalizations.travel_request_id == travel_request_id)
         .first()
     )
 
-def obtener_legalizacion_por_id(db: Session, legalization_id: int) -> TravelLegalization:
+def obtener_legalizacion_por_id(db: Session, legalization_id: int) -> TravelLegalizations:
     return (
-        db.query(TravelLegalization)
-        .options(joinedload(TravelLegalization.regimen_type))
-        .filter(TravelLegalization.legalization_id == legalization_id)
+        db.query(TravelLegalizations)
+        .options(joinedload(TravelLegalizations.regimen_type))
+        .filter(TravelLegalizations.legalization_id == legalization_id)
         .first()
     )
 
-def actualizar_legalizacion(db: Session, legalization_id: int, datos_actualizar: dict) -> TravelLegalization:
+def actualizar_legalizacion(db: Session, legalization_id: int, datos_actualizar: dict) -> TravelLegalizations:
     try:
         legalizacion = (
-            db.query(TravelLegalization)
-            .options(joinedload(TravelLegalization.regimen_type))
-            .filter(TravelLegalization.legalization_id == legalization_id)
+            db.query(TravelLegalizations)
+            .options(joinedload(TravelLegalizations.regimen_type))
+            .filter(TravelLegalizations.legalization_id == legalization_id)
             .first()
         )
         if not legalizacion:
@@ -193,4 +198,57 @@ def actualizar_legalizacion(db: Session, legalization_id: int, datos_actualizar:
     except Exception as e:
         db.rollback()
         logging.error(f"Error al actualizar legalizacion: {str(e)}")
+        raise e
+
+
+def listar_anticipos_por_viaje(travel_request_id: int, db: Session) -> list[TravelAdvances]:
+    return (
+        db.query(TravelAdvances)
+        .options(joinedload(TravelAdvances.concept))
+        .filter(TravelAdvances.travel_request_id == travel_request_id)
+        .order_by(TravelAdvances.travel_advance_id.asc())
+        .all()
+    )
+
+
+def actualizar_anticipos_viaje(
+    travel_request_id: int,
+    anticipos: list,
+    total: Decimal,
+    db: Session,
+) -> None:
+    try:
+        existentes = db.query(TravelAdvances).filter(
+            TravelAdvances.travel_request_id == travel_request_id
+        ).all()
+        existentes_por_id = {item.travel_advance_id: item for item in existentes}
+        ids_conservados = set()
+
+        for item in anticipos:
+            advance_id = item.travel_advance_id
+            registro = existentes_por_id.get(advance_id) if advance_id is not None else None
+            if registro is None:
+                registro = TravelAdvances(travel_request_id=travel_request_id)
+                db.add(registro)
+            else:
+                ids_conservados.add(registro.travel_advance_id)
+
+            registro.expense_advance_concept_id = item.expense_advance_concept_id
+            registro.amount = item.amount or 0
+            registro.observations = item.observations
+
+        for registro in existentes:
+            if registro.travel_advance_id not in ids_conservados:
+                db.delete(registro)
+
+        viaje = db.query(TravelRequests).filter(
+            TravelRequests.travel_request_id == travel_request_id
+        ).first()
+        if viaje:
+            viaje.advance_amount = total
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error al actualizar anticipos del viaje {travel_request_id}: {str(e)}")
         raise e

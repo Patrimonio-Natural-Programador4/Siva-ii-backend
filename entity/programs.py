@@ -24,7 +24,8 @@ class Programs(Base):
     code: Mapped[Optional[str]] = mapped_column(String(100))
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-
+    first_alert_approval: Mapped[Optional[int]] = mapped_column(Integer)
+    secod_alert_approval: Mapped[Optional[int]] = mapped_column(Integer)
 
  # RELACIONES
     documents_approval = relationship("DocumentsApproval", back_populates="programs")

@@ -193,6 +193,7 @@ def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
                     label_ajuste=r.adjustment_label,
                     asigna_revisor=r.assign_reviewer,
                     label_pendiente=r.pending_label,
+                    days_for_approval=r.days_for_approval,
                 )
                 for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
             ]
@@ -232,6 +233,7 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
                 label_ajuste=r.adjustment_label,
                 asigna_revisor=r.assign_reviewer,
                 label_pendiente=r.pending_label,
+                days_for_approval=r.days_for_approval,
             )
             for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
         ]
@@ -394,6 +396,7 @@ def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase]
                 adjustment_label=ruta.label_ajuste,
                 assign_reviewer=ruta.asigna_revisor if ruta.asigna_revisor is not None else False,
                 pending_label=ruta.label_pendiente,
+                days_for_approval=ruta.days_for_approval,
             ))
         else:
             ruta_actual = rutas_actuales_por_id[ruta.id_ruta]
@@ -404,6 +407,7 @@ def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase]
             ruta_actual.adjustment_label = ruta.label_ajuste
             ruta_actual.assign_reviewer = ruta.asigna_revisor if ruta.asigna_revisor is not None else False
             ruta_actual.pending_label = ruta.label_pendiente
+            ruta_actual.days_for_approval = ruta.days_for_approval
     db.commit()
 
 

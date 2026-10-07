@@ -517,7 +517,7 @@ def generar_excel_facturas_legalizacion(viaje, legalizaciones) -> bytes:
         ws.cell(row=fila, column=3, value=legalizacion.beneficiary)
         ws.cell(row=fila, column=4, value=legalizacion.nit_beneficiary)
         ws.cell(row=fila, column=5, value=legalizacion.observations_outlay)
-        ws.cell(row=fila, column=6, value=legalizacion.regimen_name)
+        ws.cell(row=fila, column=6, value=legalizacion.regimen_type.name if legalizacion.regimen_type else None)
         ws.cell(row=fila, column=7, value=obtener_valor_numerico(legalizacion.subtotal))
         ws.cell(row=fila, column=8, value=obtener_valor_numerico(legalizacion.iva))
         ws.cell(row=fila, column=9, value=obtener_valor_numerico(legalizacion.retention_porcentage))

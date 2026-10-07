@@ -72,3 +72,4 @@ class ApprovalFlowStep(Base):
         server_default=text('false')
     )
     pending_label: Mapped[Optional[str]] = mapped_column(Text)
+    days_for_approval: Mapped[Optional[int]] = mapped_column(Integer)

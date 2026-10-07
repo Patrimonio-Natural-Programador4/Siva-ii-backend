@@ -5,6 +5,7 @@ from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from dto.ResponseRequest import ResponseRequest
 from dto.ViajesDTO import ViajesCalendar, ViajesCreate, ViajesListSP, TravelLegalizationCreate, TravelLegalizationUpdate
+from dto.TravelAdvanceDTO import TravelAdvanceBase
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.ViajesHotelDTO import ViajesHotelBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
@@ -77,7 +78,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
         nuevo_viaje.mentions_json = viaje.menciones_json
         nuevo_viaje.mentioned_user_ids = viaje.id_usuarios_mencion
         nuevo_viaje.program_id = viaje.id_programa
-        nuevo_viaje.advance_amount = viaje.valor_anticipo
+        nuevo_viaje.advance_amount = Decimal('0')
         nuevo_viaje.rubro_id = viaje.id_rubro
         nuevo_viaje.activity_id = viaje.id_actividad
         nuevo_viaje.year_rubro = anio_actual
@@ -112,6 +113,7 @@ def crear_viaje(viaje: ViajesCreate, db: Session, usuario_guid: str, background_
             actualizar_hotel_viaje(nuevo_viaje.travel_request_id, viaje.hotel, db)
         if viaje.itinerario:
             actualizar_itinerario_viaje(nuevo_viaje.travel_request_id, viaje.itinerario, db)
+        actualizar_anticipo_viaje(nuevo_viaje.travel_request_id, viaje.anticipo or [], db)
 
         # Guardar archivo Excel de listado de invitados si aplica
         if viaje.dos_o_mas_personas and viaje.soporte_dos_o_mas_personas:
@@ -306,7 +308,6 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         viajeDb.mentions_json = viaje.menciones_json
         viajeDb.mentioned_user_ids = viaje.id_usuarios_mencion
         viajeDb.program_id = viaje.id_programa
-        viajeDb.advance_amount = viaje.valor_anticipo
         viajeDb.rubro_id = viaje.id_rubro
         viajeDb.activity_id = viaje.id_actividad
         viajeDb.short_rubro = viaje.rubro_corto
@@ -331,6 +332,8 @@ def actualizar_viaje(guid: str, viaje: ViajesCreate, db: Session, usuario_guid: 
         #         viajeDb.ruta_soporte_pasaporte = tmpFile.ruta_soporte
         db.commit()
         db.refresh(viajeDb)
+
+        actualizar_anticipo_viaje(viajeDb.travel_request_id, viaje.anticipo, db)
 
         tiene_anticipo = False
 
@@ -620,6 +623,29 @@ def actualizar_hotel_viaje(viaje_id: int, hotelList: list[ViajesHotelBase], db: 
 
 
 
+def actualizar_anticipo_viaje(
+    viaje_id: int,
+    anticipos: list[TravelAdvanceBase] | None,
+    db: Session,
+) -> None:
+    if anticipos is None:
+        anticipos = [
+            TravelAdvanceBase(
+                travel_advance_id=item.travel_advance_id,
+                expense_advance_concept_id=item.expense_advance_concept_id,
+                concept=item.concept.concept if item.concept else None,
+                amount=float(item.amount or 0),
+                observations=item.observations,
+            )
+            for item in ViajesRepository.listar_anticipos_por_viaje(viaje_id, db)
+        ]
+    total = sum(
+        (Decimal(str(item.amount or 0)) for item in anticipos),
+        Decimal('0'),
+    )
+    ViajesRepository.actualizar_anticipos_viaje(viaje_id, anticipos, total, db)
+
+
 def obtener_viaje_por_id(guuid: str, db: Session) -> ViajesCreate:
     viajeDb = ViajesRepository.obtener_por_guid(guuid, db)
     itinerario = ViajesItinerarioRepository.listar_itinerarios_por_viaje(viajeDb.travel_request_id, db)
@@ -629,6 +655,7 @@ def obtener_viaje_por_id(guuid: str, db: Session) -> ViajesCreate:
     return viajeDTO
 
 def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries], hoteles: list[TravelAccommodations], db: Session) -> ViajesCreate:
+    anticipos = ViajesRepository.listar_anticipos_por_viaje(viajeDb.travel_request_id, db)
     viajeDTO = ViajesCreate(
         id_viaje=viajeDb.travel_request_id,
         guid=viajeDb.guid,
@@ -645,6 +672,16 @@ def viajeCreateDTO(viajeDb: TravelRequests, itinerario: list[TravelItineraries],
         id_rol_aprobacion_supervisor=viajeDb.supervisor_approval_role_id,
         itinerario = [],
         hotel = [],
+        anticipo=[
+            TravelAdvanceBase(
+                travel_advance_id=item.travel_advance_id,
+                expense_advance_concept_id=item.expense_advance_concept_id,
+                concept=item.concept.concept if item.concept else None,
+                amount=float(item.amount or 0),
+                observations=item.observations,
+            )
+            for item in anticipos
+        ],
         guid_msft=viajeDb.user.guid_msft if viajeDb.user else None,
         id_estado=viajeDb.travel_status_id,
         observaciones_adicionales=viajeDb.additional_comments,

@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import Optional
 import uuid
 from pydantic import BaseModel, Field
+from dto.TravelAdvanceDTO import TravelAdvanceBase
 from dto.ViajesItinerarioDTO import ViajesItinerarioBase
 from dto.ViajesHotelDTO import ViajesHotelBase
-from dto.AnticiposReintegroDTO import AnticiposReintegrosBase
 from datetime import date
 import decimal
 from decimal import Decimal
@@ -80,8 +80,7 @@ class ViajesCreate(BaseModel):
     itinerario: Optional[list[ViajesItinerarioBase]] = None
     hotel: Optional[list[ViajesHotelBase]] = None
     # anticipo: Optional[list[AnticiposBase]] = None
-    anticipo: Optional[AnticiposReintegrosBase] = None
-    reintegro: Optional[AnticiposReintegrosBase] = None
+    anticipo: Optional[list[TravelAdvanceBase]] = None
     numero_cuenta: Optional[str] = None
     id_tipo_cuenta: Optional[int] = None
     id_entidad_bancaria: Optional[int] = None
@@ -214,6 +213,7 @@ class TravelLegalizationCreate(BaseModel):
     check_number: Optional[str] = None
     beneficiary: str
     nit_beneficiary: str
+    concept_id: Optional[int] = None
     observations_outlay: Optional[str] = None
     regimen_type_id: int
     subtotal: Decimal = Field(..., max_digits=12, decimal_places=2)
@@ -228,6 +228,7 @@ class TravelLegalizationUpdate(BaseModel):
     check_number: Optional[str] = None
     beneficiary: Optional[str] = None
     nit_beneficiary: Optional[str] = None
+    concept_id: Optional[int] = None
     observations_outlay: Optional[str] = None
     regimen_type_id: Optional[int] = None
     subtotal: Optional[Decimal] = Field(None, max_digits=12, decimal_places=2)
@@ -240,6 +241,7 @@ class TravelLegalizationUpdate(BaseModel):
 class TravelLegalizationResponse(TravelLegalizationCreate):
     legalization_id: int
     regimen_name: Optional[str] = None
+    concept_name: Optional[str] = None
     created_at: date
 
     class Config:

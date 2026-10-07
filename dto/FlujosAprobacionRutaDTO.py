@@ -15,6 +15,7 @@ class FlujosAprobacionRutaBase(BaseModel):
     label_ajuste: Optional[str] = None
     asigna_revisor: Optional[bool] = None
     label_pendiente: Optional[str] = None
+    days_for_approval: Optional[int] = None
 
     class Config:
         from_attributes = True
