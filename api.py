@@ -23,6 +23,9 @@ from controllers import PreviousStudiesController
 from controllers import PreviousStudiesStatesController
 from controllers import AgreementOriginsController
 from controllers import AgreementTypesController
+from controllers import PurchaseTypesController
+from controllers import ExpenseCategoriesController
+from controllers import CodesController
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from starlette.staticfiles import StaticFiles
@@ -186,7 +189,9 @@ def register_routes(app: FastAPI):
     app.include_router( AgreementsController.router , dependencies=auth_dependency)
     app.include_router( AgreementOriginsController.router , dependencies=auth_dependency)
     app.include_router( AgreementTypesController.router , dependencies=auth_dependency)
-    
+    app.include_router( PurchaseTypesController.router , dependencies=auth_dependency)
+    app.include_router( ExpenseCategoriesController.router , dependencies=auth_dependency)
+    app.include_router( CodesController.router , dependencies=auth_dependency)    
 
 def register_middlewares(app: FastAPI):
     # Register CORS middleware
