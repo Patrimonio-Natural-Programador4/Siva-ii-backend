@@ -25,6 +25,5 @@ class AgreementsListSP(BaseModel):
     monto_total_apropiado: Optional[decimal.Decimal] = None
     total_paa: Optional[decimal.Decimal] = None
     total_registros: Optional[int] = None
-
     # Configuración compatible con Pydantic V2
     model_config = ConfigDict(from_attributes=True)
