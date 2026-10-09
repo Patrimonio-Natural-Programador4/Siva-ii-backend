@@ -92,3 +92,5 @@ class Contracts(Base):
    
     parent_contract: Mapped[Optional["Contracts"]] = relationship("Contracts", remote_side="Contracts.id", back_populates="child_contracts")
     child_contracts: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="parent_contract")
+    
+    
