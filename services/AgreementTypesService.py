@@ -8,7 +8,7 @@ from repository import AgreementTypesRepository
 
 
 def list_agreement_types(db: Session) -> list[AgreementTypesBase]:
-    agreement_origins = AgreementTypesRepository.list_agreement_types(db)
+    agreement_types = AgreementTypesRepository.list_agreement_types(db)
     return [
         AgreementTypesBase(
             id=int(m.id),
@@ -20,7 +20,7 @@ def list_agreement_types(db: Session) -> list[AgreementTypesBase]:
             color= m.color,
             
         )
-        for m in agreement_origins
+        for m in agreement_types
     ]
 
 

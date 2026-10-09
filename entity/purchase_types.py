@@ -31,3 +31,4 @@ class PurchaseTypes(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     
     #capacity_assessments_modalitie:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="modalitie") #este nombre debe coincidir con el del otro lado
+    contracts_purchase_type: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="purchase_type")

@@ -10,20 +10,20 @@ from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 
 #from entity.capacity_assessments import CapacityAssessments
 
-class ExpenseCategories(Base):
-    __tablename__ = 'expense_categories'
+class ContractTypes(Base):
+    __tablename__ = 'contract_types'
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='expense_categories'),
+        PrimaryKeyConstraint('id', name='contract_types'),
    
     )
    
-
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(CITEXT, nullable= False )
-    description: Mapped[str] = mapped_column(CITEXT, nullable= True )
+    code: Mapped[str] = mapped_column(String, nullable= True )
+    description: Mapped[str] = mapped_column(CITEXT, nullable= False )
+    color: Mapped[str] = mapped_column(String(255), nullable=False)
         
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     
     #capacity_assessments_modalitie:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="modalitie") #este nombre debe coincidir con el del otro lado
-    contracts_expense_category: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="expense_category")
