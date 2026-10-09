@@ -29,3 +29,6 @@ class Pillars(Base):
 #     activities: Mapped[list['Activities']] = relationship('Activities', back_populates='pillar')
 #     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='pillar')
 #     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='pillar')
+
+# Relaciones simples
+    contracts_pillar: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="pillar")    
