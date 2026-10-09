@@ -33,3 +33,4 @@ class Programs(Base):
 # Relaciones simples
     capacity_assessments_programa:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="programa")
     previous_studies_programs: Mapped[list["PreviousStudies"]] = relationship("PreviousStudies", back_populates="programs")
+    contracts_programa: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="programa")
