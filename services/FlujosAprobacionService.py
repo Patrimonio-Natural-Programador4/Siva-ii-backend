@@ -196,6 +196,7 @@ def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
                     days_for_approval=r.days_for_approval,
                 )
                 for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
+                if r.active is True
             ]
             result.append(FlujosAprobacionBase(
                 id_flujo_aprobacion=flujo.approval_flow_id,
@@ -236,6 +237,7 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
                 days_for_approval=r.days_for_approval,
             )
             for r in sorted(flujo.steps, key=lambda x: x.step_order or 0)
+            if r.active is True
         ]
         return FlujosAprobacionBase(
             id_flujo_aprobacion=flujo.approval_flow_id,

@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi import status
 from jinja2 import Environment, FileSystemLoader
 from dto.ResponseRequest import ResponseRequest
@@ -22,6 +23,7 @@ from dto.PreviousStudiesDTO import PreviousStudiesCreate
 from services import PreviousStudiesService
 from entity.previous_studies import PreviousStudies as PreviousStudiesEntity
 from entity.programs import Programs
+from exceptions import PruebaNotFoundError
 
 CATEGORIA_APROBACION = "APP_EP"
 
@@ -291,3 +293,18 @@ def obtener_pdf_solicitud_EP(guid: str, db: DbSession):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))    
+
+@router.get("/formato-ep/{guid}")
+def formato_ep(guid: str, db: DbSession,
+                         user_oid: str = Depends(get_current_user_oid)):
+    try:
+        documento = PreviousStudiesService.obtener_formato_ep(guid, db)
+        return FileResponse(
+            path=documento,
+            filename=documento.name,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+    except PruebaNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail="No fue posible generar el formato EP") from error

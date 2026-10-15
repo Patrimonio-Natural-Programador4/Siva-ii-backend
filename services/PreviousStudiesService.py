@@ -21,6 +21,7 @@ from fastapi import BackgroundTasks
 from jinja2 import Environment, FileSystemLoader
 from entity.users import Users
 from services import NotificacionesService
+from services.PreviousStudiesDocumentService import generar_formato_ep
 
 
 
@@ -541,3 +542,37 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         db.rollback()
         logging.error(f"Error al actualizar estudio previo: {e}")
         return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))
+
+def obtener_formato_ep(guid: str, db: Session):
+    try:
+        estudios_previos = PreviousStudiesRepository.obtener_por_guid(guid, db)
+        if not estudios_previos:
+            raise PruebaNotFoundError("Estudio previo no encontrado")
+        diccionario = {
+            "<<ANTECEDENTES>>": estudios_previos.precedents,
+            "<<JUSTIFICACION>>": estudios_previos.justification,
+            "<<ALCANCE>>": estudios_previos.scope,
+            "<<OBJETIVO_GENERAL>>": estudios_previos.overall_objective,
+            "<<PLAZO>>": estudios_previos.term,
+            "<<OBLIGACIONES>>": estudios_previos.obligations,
+            "<<FUNCIONES_SUPERVISOR>>": estudios_previos.supervisor,
+            "<<ENTIDAD_IMPLEMENTADORA>>": (
+                estudios_previos.implementers.acronym if estudios_previos.implementers else ""
+            ),
+            "<<VALOR_TOTAL>>": estudios_previos.total_value,
+            "<<APORTES_EI>>": estudios_previos.contributions_ei,
+            "<<VALOR_EJECUTA_EI>>": estudios_previos.total_value_executes_ei,
+        }
+        
+
+
+        return generar_formato_ep(diccionario, estudios_previos.code)
+        
+        
+
+
+    except PruebaNotFoundError:
+        raise
+    except Exception as e:
+        logging.error(f"Error al obtener formato EP por guid: {str(e)}")
+        raise

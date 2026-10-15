@@ -9,6 +9,7 @@ import uuid
 from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint,Date, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
+from entity.implementers import Implementers
 
 class PreviousStudies(Base):
     __tablename__ = 'previous_studies'
@@ -54,7 +55,7 @@ class PreviousStudies(Base):
    #Relacion simples
     #cap_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="previous_studies")
     app_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests", back_populates="previous_studies")
-    implementers: Mapped["Implementers"] = relationship("Implementers", back_populates="previous_studies_implementer") #back populates debe coincidir con el nombre de la contraparte
+    implementers: Mapped["Implementers"] = relationship("Implementers") #back populates debe coincidir con el nombre de la contraparte
     persons: Mapped["Persons"] = relationship("Persons", back_populates="previous_studies_person") 
     capacity_assessment: Mapped["CapacityAssessments"] = relationship("CapacityAssessments", back_populates="previous_studies_capacity_assessment") 
     programs:  Mapped["Programs"] = relationship("Programs", back_populates="previous_studies_programs")

@@ -86,3 +86,5 @@ def crear_agreement(payload: AgreementsCreateBase, db: DbSession,
     response_request = AgreementssService.crear_agreement(payload, db)
     status_code = status.HTTP_201_CREATED if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
     return JSONResponse(content=jsonable_encoder(response_request.model_dump()), status_code=status_code)
+
+

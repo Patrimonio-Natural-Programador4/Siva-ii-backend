@@ -4,6 +4,7 @@ from entity.agreements import Agreements
 from dto.agreementDTO import AgreementsBase,AgreementsCreateBase
 from sqlalchemy.exc import SQLAlchemyError
 from exceptions import PruebaNotFoundError
+from services import PreviousStudiesService
 
 
 def listar(db: Session):
@@ -49,3 +50,4 @@ def crear_agreement(agreement: Agreements, db: Session) -> Agreements:
         db.rollback()
         logging.error(f"Error al crear acuerdo: {str(e)}")
         raise
+
