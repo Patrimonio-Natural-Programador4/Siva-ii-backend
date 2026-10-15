@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, Date, ForeignKeyConstraint, Integer, Numeric, PrimaryKeyConstraint, String, Text
+from sqlalchemy import BigInteger, text, Uuid,Boolean, Date, ForeignKeyConstraint, Integer, Numeric, PrimaryKeyConstraint, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.database import Base
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
@@ -11,8 +11,9 @@ from entity.agreement_types     import AgreementTypes
 from entity.modalities          import Modalities
 from entity.pillars             import Pillars
 from entity.programs            import Programs
-from entity.regions            import Regions
-
+from entity.regions             import Regions
+from entity.previous_studies    import PreviousStudies
+import uuid
 import decimal
 
 class Agreements(Base):
@@ -26,6 +27,7 @@ class Agreements(Base):
         ForeignKeyConstraint(['pillar_id'], ['pillars.id'], name='agreements_pillar_id_foreign'),
         ForeignKeyConstraint(['program_id'], ['programs.id'], name='agreements_program_id_foreign'),
         ForeignKeyConstraint(['region_id'], ['regions.id'], name='agreements_region_id_foreign'),
+        ForeignKeyConstraint(['prevou_study_id'], ['previous_studies.id'], name='agreements_previous_studies_foreign'),
         PrimaryKeyConstraint('id', name='agreements_pkey')
     )
 
@@ -103,8 +105,12 @@ class Agreements(Base):
     legal_observations: Mapped[Optional[str]] = mapped_column(Text)
     acquisitions_observations: Mapped[Optional[str]] = mapped_column(Text)
     uer_observations: Mapped[Optional[str]] = mapped_column(Text)
-
-
+    precedents: Mapped[Optional[str]] = mapped_column(Text)
+    justification: Mapped[Optional[str]] = mapped_column(Text)
+    scope: Mapped[Optional[str]] = mapped_column(Text)
+    
+    prevou_study_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    guid:  Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
 
     # Relaciones
     agreement_parent: Mapped[Optional['Agreements']] = relationship('Agreements', remote_side=[id])
@@ -115,3 +121,4 @@ class Agreements(Base):
     pillar: Mapped[Optional['Pillars']] = relationship('Pillars')
     program: Mapped['Programs'] = relationship('Programs')
     region: Mapped[Optional['Regions']] = relationship('Regions')
+    previous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies')

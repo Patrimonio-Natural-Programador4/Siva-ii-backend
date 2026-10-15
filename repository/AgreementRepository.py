@@ -25,6 +25,19 @@ def obtener_por_id(id: int, db: Session) -> Agreements | None:
         logging.error(f"Error al obtener acuerdo por id: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
+def obtener_por_uuid(uuid: str, db: Session) -> Agreements | None:
+    try:
+        return (
+            db.query(Agreements)
+              .options(joinedload(Agreements.agreement_origin))
+              .filter(Agreements.guid == uuid)
+              .first()
+        )
+    except Exception as e:
+        logging.error(f"Error al obtener acuerdo por id: {str(e)}")
+        raise PruebaNotFoundError(str(e))  
+    
+    
     
     
 def obtener_por_code(code: str, db: Session) -> Agreements | None:
