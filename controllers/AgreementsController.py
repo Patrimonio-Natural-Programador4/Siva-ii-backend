@@ -1,6 +1,6 @@
 from typing import Optional, List
 from fastapi.responses import JSONResponse
-from fastapi import APIRouter, HTTPException, Query,Depends
+from fastapi import APIRouter, HTTPException,BackgroundTasks, Query,Depends
 from database.database import DbSession
 from dto.AgreementsDTO import AgreementsListSP
 from dto.ListadosDTO import Listados
@@ -10,11 +10,9 @@ from fastapi import status
 from services import AgreementssService
 from dto.agreementDTO import AgreementsBase,AgreementsCreateBase
 from dependencies.auth_dependency import get_current_user_oid
-
-router = APIRouter(
-    prefix='/agreements', 
-    tags=['Agreements']
-    )
+from fastapi.encoders import jsonable_encoder
+# Inicialización del router de FastAPI
+router = APIRouter(prefix='/agreements', tags=['Agreements'])
 
 @router.get('/listados', response_model=List[Listados])
 def get_listados(db: DbSession):
@@ -78,7 +76,14 @@ def listar(id, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return acuerdo
 
 
-from fastapi.encoders import jsonable_encoder
+@router.get('/{guid}/detalle')
+def listar(guid, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    acuerdo = AgreementssService.obtener_por_uuid( guid,db)
+    if not acuerdo:
+        raise HTTPException(status_code=404, detail='Error al obtener acuerdo por id')
+    return acuerdo
+
+
 
 @router.post("/")
 def crear_agreement(payload: AgreementsCreateBase, db: DbSession,
@@ -88,3 +93,18 @@ def crear_agreement(payload: AgreementsCreateBase, db: DbSession,
     return JSONResponse(content=jsonable_encoder(response_request.model_dump()), status_code=status_code)
 
 
+@router.put('/{guid}', response_model=ResponseRequest)
+def actualizar_estudio(guid: str, payload: AgreementsCreateBase, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    try:
+        estudio_db = AgreementssService.obtener_por_uuid(guid, db)
+        if not estudio_db:
+            raise HTTPException(status_code=404, detail='Estudio previo no encontrado')
+        response_request = AgreementssService.actualizar(guid, payload, db, user_oid)
+        return JSONResponse(
+            content=response_request.model_dump(),
+            status_code=status.HTTP_200_OK if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -120,6 +120,8 @@ def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | Non
 def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest: # background_tasks
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
+        
+        #print("previous_studies create   " , previous_studies)
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
             raise Exception("Usuario no encontrado")
