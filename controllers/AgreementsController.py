@@ -11,6 +11,8 @@ from services import AgreementssService
 from dto.agreementDTO import AgreementsBase,AgreementsCreateBase
 from dependencies.auth_dependency import get_current_user_oid
 from fastapi.encoders import jsonable_encoder
+from dto.ResponseRequest import ResponseRequest
+
 # Inicialización del router de FastAPI
 router = APIRouter(prefix='/agreements', tags=['Agreements'])
 
