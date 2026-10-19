@@ -39,7 +39,8 @@ class PreviousStudiesBase(BaseModel):
     program_id: Optional[int] = None   
     codde:Optional[str]=None
     approval_request_id: Optional[int] = None   
-    guid: Optional[UUID] = None  
+    guid: Optional[UUID] = None
+    agreetment_id: Optional[int] = None
     
 
 

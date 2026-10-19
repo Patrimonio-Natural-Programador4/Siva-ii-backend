@@ -262,6 +262,7 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
 
 def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
     e = PreviousStudiesRepository.obtener_por_guid(guid, db)
+    agreetment = AgreementRepository.obtener_por_id_estudio_previo(e.id, db)
     if not e:
         return None
     return PreviousStudiesBase(
@@ -297,7 +298,8 @@ def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
        capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
        program_id=e.program_id,
        programs =e.programs.description if e.programs else None,
-       codde =e.code
+       codde =e.code,
+       agreetment_id=agreetment.id if agreetment else None,
     )
     
 def listar_previous_studies_por_usuario_sp(
@@ -553,9 +555,15 @@ def obtener_formato_ep(guid: str, db: Session):
             raise PruebaNotFoundError("Estudio previo no encontrado")
         evaluacion_capacidades = estudios_previos.capacity_assessment if estudios_previos else None
         agreetment = AgreementRepository.obtener_por_id_estudio_previo(estudios_previos.id, db) if estudios_previos else None
-        productos = AgreementsProductsRepository.obtener_por_id_agreement(agreetment.id, db) if agreetment else []
+        obtejivos_actividades_productos = ""
+        desembolsos = []
+        if agreetment:
+            productos = AgreementsProductsRepository.obtener_por_id_agreement(agreetment.id, db) if agreetment else []
+            obtejivos_actividades_productos = construir_objetivos_actividades_productos(productos)
+            desembolsos = AgreementsProductsRepository.obtener_desembolsos_por_id_agreement(agreetment.id, db)
         diccionario = {
-            "<<OBJETIVOS_ACTIVIDADES_PRODUCTOS>>": construir_objetivos_actividades_productos(productos),
+            "<<DESEMBOLSOS>>": desembolsos,
+            "<<OBJETIVOS_ACTIVIDADES_PRODUCTOS>>": obtejivos_actividades_productos,
             "<<ANTECEDENTES>>": estudios_previos.precedents,
             "<<JUSTIFICACION>>": estudios_previos.justification,
             "<<ALCANCE>>": estudios_previos.scope,

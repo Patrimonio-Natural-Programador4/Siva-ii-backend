@@ -7,6 +7,7 @@ from database.database import Base
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 import uuid
 import decimal
+from entity.disbursement_products import DisbursementProducts
 
 class AgreementsProducts(Base):
     __tablename__ = 'agreements_products'
@@ -45,4 +46,4 @@ class AgreementsProducts(Base):
     # agreements_products: Mapped[Optional['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id], foreign_keys=[id_product])
     # agreements_products__reverse: Mapped[list['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id_product], foreign_keys=[id_product], back_populates='agreements_products_')
     # state: Mapped[Optional['ProductsState']] = relationship('ProductsState', back_populates='agreements_products')
-    # disbursement_products: Mapped[list['DisbursementProducts']] = relationship('DisbursementProducts', back_populates='product')
+    disbursement_products: Mapped[list['DisbursementProducts']] = relationship('DisbursementProducts')
