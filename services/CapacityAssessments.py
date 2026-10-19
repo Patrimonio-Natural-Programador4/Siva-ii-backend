@@ -386,16 +386,16 @@ def procesar_accion_solicitud_aprobacion(
 
             to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
 
-            if to_recipients:
-                background_tasks.add_task(
-                    NotificacionesService.solicitud_viaje,
-                    f"Evaluación de capacidades {evaluacion_db.code} - {estado_nombre}",
-                    to_recipients,
-                    html_out,
-                    "",
-                    "",
-                    db
-                )
+            # if to_recipients:
+            #     background_tasks.add_task(
+            #         NotificacionesService.solicitud_viaje,
+            #         f"Evaluación de capacidades {evaluacion_db.code} - {estado_nombre}",
+            #         to_recipients,
+            #         html_out,
+            #         "",
+            #         "",
+            #         db
+            #     )
             
             
 
