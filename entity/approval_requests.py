@@ -9,7 +9,7 @@ from database.database import Base
 from sqlalchemy import Sequence, text
 from sqlalchemy.orm import mapped_column, Mapped
 from entity.approval_status import ApprovalStatus
-from entity.previous_studies import PreviousStudies
+# from entity.previous_studies import PreviousStudies
 
 
 
@@ -39,8 +39,8 @@ class ApprovalRequests(Base):
 #     approval_workflow: Mapped[Optional['ApprovalFlows']] = relationship('ApprovalFlows', back_populates='approval_requests')
 #     approval_request_history: Mapped[list['ApprovalRequestHistory']] = relationship('ApprovalRequestHistory', back_populates='approval_request')
 
-    capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship(
-            "CapacityAssessments", back_populates="approval_request")
+    # capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship(
+    #         "CapacityAssessments", back_populates="approval_request")
     # capacity_assessments: Mapped[list["CapacityAssessments"]] = relationship(
     #         "CapacityAssessments", back_populates="approval_request"
     # )

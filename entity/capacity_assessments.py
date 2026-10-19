@@ -81,6 +81,6 @@ class CapacityAssessments(Base):
     pid: Mapped["Pids"] = relationship("Pids", back_populates="capacity_assessments_pid") 
     programa: Mapped["Programs"] = relationship("Programs", back_populates="capacity_assessments_programa") 
     
-    previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
+    # previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
     AttachmentAgreementCapacityAssessments: Mapped["Attachment_Agreement"] = relationship("Attachment_Agreement", back_populates="capacity_assessments") 
     

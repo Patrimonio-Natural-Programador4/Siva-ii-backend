@@ -64,3 +64,14 @@ def crear_agreement(agreement: Agreements, db: Session) -> Agreements:
         logging.error(f"Error al crear acuerdo: {str(e)}")
         raise
 
+def obtener_por_id_estudio_previo(id: int, db: Session) -> Agreements | None:
+    try:
+        return (
+            db.query(Agreements)
+              .options(joinedload(Agreements.agreement_origin))
+              .filter(Agreements.prevou_study_id == id)
+              .first()
+        )
+    except Exception as e:
+        logging.error(f"Error al obtener acuerdo por id: {str(e)}")
+        raise PruebaNotFoundError(str(e))
