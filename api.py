@@ -1,4 +1,4 @@
-from controllers import AgreementsController, SolicitudesAprobacionController, TdrController, ViajesController
+from controllers import AgreementsController, DisbursementController, DisbursementStateController, SolicitudesAprobacionController, TdrController, ViajesController
 #from controllers import WordParametersController
 import os
 
@@ -195,7 +195,9 @@ def register_routes(app: FastAPI):
     app.include_router( ExpenseCategoriesController.router , dependencies=auth_dependency)
     app.include_router( CodesController.router , dependencies=auth_dependency)  
     app.include_router( ContractTypesController.router , dependencies=auth_dependency)   
-    app.include_router( ContractsController.router , dependencies=auth_dependency)    
+    app.include_router( ContractsController.router , dependencies=auth_dependency)   
+    app.include_router( DisbursementStateController.router , dependencies=auth_dependency)    
+    app.include_router( DisbursementController.router , dependencies=auth_dependency)      
      
 
 def register_middlewares(app: FastAPI):

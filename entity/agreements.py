@@ -115,3 +115,5 @@ class Agreements(Base):
     pillar: Mapped[Optional['Pillars']] = relationship('Pillars')
     program: Mapped['Programs'] = relationship('Programs')
     region: Mapped[Optional['Regions']] = relationship('Regions')
+    disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="agreement")
+
