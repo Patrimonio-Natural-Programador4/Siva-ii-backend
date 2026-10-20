@@ -1,21 +1,30 @@
 from typing import Optional, List
 from fastapi.responses import JSONResponse
-from fastapi import APIRouter, HTTPException, Query,Depends
+from fastapi import APIRouter, HTTPException,BackgroundTasks, Query,Depends
 from database.database import DbSession
 from dto.AgreementsDTO import AgreementsListSP
-from dto.ResponseRequest import ResponseRequest
+from dto.ListadosDTO import Listados
 from services.AgreementService import AgreementsService
 #from services import AgreementssService
 from fastapi import status
 from services import AgreementssService
 from dto.agreementDTO import AgreementsBase,AgreementsCreateBase
 from dependencies.auth_dependency import get_current_user_oid
+from fastapi.encoders import jsonable_encoder
+from dto.ResponseRequest import ResponseRequest
 
 # Inicialización del router de FastAPI
 router = APIRouter(prefix='/agreements', tags=['Agreements'])
 
-@router.get('', response_model=List[AgreementsListSP])
-def listar_convenios(
+@router.get('/listados', response_model=List[Listados])
+def get_listados(db: DbSession):
+    try:
+        return AgreementsService.obtener_listados(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get('/acuerdos/listar', response_model=List[AgreementsListSP])
+def listar_agreements(
     db: DbSession,
     p_agreement_id: Optional[int] = Query(None),
     p_type_ids: Optional[List[int]] = Query(None),
@@ -29,7 +38,7 @@ def listar_convenios(
     p_alert: Optional[List[str]] = Query(None),
     p_search: Optional[str] = Query(None),
     p_page: int = Query(1, ge=1),
-    p_page_size: int = Query(25, ge=1),
+    p_page_size: int = Query(20, ge=1),
 ):
     try:
         resultado = AgreementsService.listar_convenios(
@@ -69,7 +78,14 @@ def listar(id, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return acuerdo
 
 
-from fastapi.encoders import jsonable_encoder
+@router.get('/{guid}/detalle')
+def listar(guid, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    acuerdo = AgreementssService.obtener_por_uuid( guid,db)
+    if not acuerdo:
+        raise HTTPException(status_code=404, detail='Error al obtener acuerdo por id')
+    return acuerdo
+
+
 
 @router.post("/")
 def crear_agreement(payload: AgreementsCreateBase, db: DbSession,
@@ -77,3 +93,20 @@ def crear_agreement(payload: AgreementsCreateBase, db: DbSession,
     response_request = AgreementssService.crear_agreement(payload, db)
     status_code = status.HTTP_201_CREATED if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
     return JSONResponse(content=jsonable_encoder(response_request.model_dump()), status_code=status_code)
+
+
+@router.put('/{guid}', response_model=ResponseRequest)
+def actualizar_estudio(guid: str, payload: AgreementsCreateBase, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    try:
+        estudio_db = AgreementssService.obtener_por_uuid(guid, db)
+        if not estudio_db:
+            raise HTTPException(status_code=404, detail='Estudio previo no encontrado')
+        response_request = AgreementssService.actualizar(guid, payload, db, user_oid)
+        return JSONResponse(
+            content=response_request.model_dump(),
+            status_code=status.HTTP_200_OK if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

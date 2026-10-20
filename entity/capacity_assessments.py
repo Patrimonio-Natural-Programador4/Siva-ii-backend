@@ -14,6 +14,7 @@ from entity.approval_requests import ApprovalRequests
 
 from entity.approval_requests import ApprovalRequests
 from entity.attachment_agreement import Attachment_Agreement
+from entity.implementers import Implementers
 
 
 class CapacityAssessments(Base):
@@ -74,12 +75,12 @@ class CapacityAssessments(Base):
     
     #Relacion simples
     capacity_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="capacity_assessments")
-    implementer: Mapped["Implementers"] = relationship("Implementers", back_populates="capacity_assessments_implementer") #back populates debe coincidir con el nombre de la contraparte
+    implementer: Mapped["Implementers"] = relationship("Implementers") #back populates debe coincidir con el nombre de la contraparte
     modalitie: Mapped["Modalities"] = relationship("Modalities", back_populates="capacity_assessments_modalitie") 
     person: Mapped["Persons"] = relationship("Persons", back_populates="capacity_assessments_person") 
     pid: Mapped["Pids"] = relationship("Pids", back_populates="capacity_assessments_pid") 
     programa: Mapped["Programs"] = relationship("Programs", back_populates="capacity_assessments_programa") 
     
-    previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
+    # previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
     AttachmentAgreementCapacityAssessments: Mapped["Attachment_Agreement"] = relationship("Attachment_Agreement", back_populates="capacity_assessments") 
     

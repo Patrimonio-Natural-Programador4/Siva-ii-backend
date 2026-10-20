@@ -4,6 +4,7 @@ from entity.agreements import Agreements
 from dto.agreementDTO import AgreementsBase,AgreementsCreateBase
 from sqlalchemy.exc import SQLAlchemyError
 from exceptions import PruebaNotFoundError
+from services import PreviousStudiesService
 
 
 def listar(db: Session):
@@ -24,6 +25,19 @@ def obtener_por_id(id: int, db: Session) -> Agreements | None:
     except Exception as e:
         logging.error(f"Error al obtener acuerdo por id: {str(e)}")
         raise PruebaNotFoundError(str(e))
+    
+def obtener_por_uuid(uuid: str, db: Session) -> Agreements | None:
+    try:
+        return (
+            db.query(Agreements)
+              .options(joinedload(Agreements.agreement_origin))
+              .filter(Agreements.guid == uuid)
+              .first()
+        )
+    except Exception as e:
+        logging.error(f"Error al obtener acuerdo por id: {str(e)}")
+        raise PruebaNotFoundError(str(e))  
+    
     
     
     
@@ -49,3 +63,16 @@ def crear_agreement(agreement: Agreements, db: Session) -> Agreements:
         db.rollback()
         logging.error(f"Error al crear acuerdo: {str(e)}")
         raise
+
+def obtener_por_id_estudio_previo(id: int, db: Session) -> Agreements | None:
+    try:
+        return (
+            db.query(Agreements)
+              .options(joinedload(Agreements.agreement_origin))
+              .filter(Agreements.prevous_study_id == id)
+              .first()
+        )
+    
+    except Exception as e:
+        logging.error(f"Error al obtener acuerdo por id: {str(e)}")
+        raise PruebaNotFoundError(str(e))

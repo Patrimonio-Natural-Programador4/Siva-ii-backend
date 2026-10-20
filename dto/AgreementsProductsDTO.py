@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class AgreementsProductsBase(BaseModel):
     id: int
-    product: str
+    product: str  # objetivo
     code: Optional[str] = None
     quantity: Optional[Decimal] = None
     value: Optional[Decimal] = None
@@ -22,7 +22,7 @@ class AgreementsProductsBase(BaseModel):
     updated_at: Optional[datetime.datetime] = None
     id_agreement: int
     state_id: Optional[int] = None
-    id_product: Optional[int] = None
+    id_product: Optional[int] = None  # sin padre es objetivo
     id_duplicate_product: Optional[int] = None
     previous_studies_id: Optional[int] = None
     

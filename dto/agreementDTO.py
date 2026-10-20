@@ -1,14 +1,14 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date, datetime
 from decimal import Decimal
-
+from uuid import UUID
 from dto.AgreementOriginsDTO import AgreementOriginsBase
 
 class AgreementsBase(BaseModel):
     id: Optional[int] = None
     name: Optional[str] = None
-    code: Optional[str] = None
+    codee: Optional[str] =Field(None, serialization_alias="codee")
     local: Optional[int] = None
     description: Optional[str] = None
     value: Optional[int] = None
@@ -86,12 +86,19 @@ class AgreementsBase(BaseModel):
     uer_observations: Optional[str] = None
     region: Optional[str] = None
 
+    precedents: Optional[str] = None   
+    justification: Optional[str] = None  
+    scope: Optional[str] = None  
+    
+    prevou_study_id: Optional[int] = None
+    previous_study :  Optional[str] = None
+    guid: Optional[UUID] = None 
     class Config:
         from_attributes = True
 
 class AgreementsCreateBase(BaseModel):
     name: Optional[str] = None
-    code: Optional[str] = None
+    code: Optional[str] = None 
     local: Optional[int] = None
     description: Optional[str] = None
     value: Optional[int] = None
@@ -158,3 +165,7 @@ class AgreementsCreateBase(BaseModel):
     legal_observations: Optional[str] = None
     acquisitions_observations: Optional[str] = None
     uer_observations: Optional[str] = None
+    precedents: Optional[str] = None   
+    justification: Optional[str] = None  
+    scope: Optional[str] = None 
+    prevou_study_id: Optional[int] = None
