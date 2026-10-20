@@ -60,3 +60,4 @@ class PreviousStudies(Base):
     programs:  Mapped["Programs"] = relationship("Programs", back_populates="previous_studies_programs")
     prev_studies_state: Mapped["PreviousStudiesStates"] = relationship("PreviousStudiesStates", back_populates="previous_studies")
     disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="previous_study")
+    agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="previous_study")

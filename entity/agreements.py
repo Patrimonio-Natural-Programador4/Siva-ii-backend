@@ -116,4 +116,5 @@ class Agreements(Base):
     program: Mapped['Programs'] = relationship('Programs')
     region: Mapped[Optional['Regions']] = relationship('Regions')
     disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="agreement")
+    agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="agreement")
 
