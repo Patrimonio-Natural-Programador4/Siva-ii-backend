@@ -62,6 +62,8 @@ def listar(db: Session) -> list[CapacityAssessmentsBase]:
             capacity_assessments_states_id=c.capacity_assessments_states_id,
             modality_id=c.modality_id,
             url_sharepoint_ec=c.url_sharepoint_ec,
+            pillar_id=c.pillar_id,
+            pillar=c.pillar.name if c.pillar else None,
         )
         for c in capacidades
     ]
@@ -96,6 +98,8 @@ def obtener_por_id(id: int, db: Session) -> CapacityAssessmentsBase | None:
                 capacity_assessments_states_id=c.capacity_assessments_states_id,
                 modality_id=c.modality_id,
                 approval_request_id=c.approval_request_id,   
+                pillar_id=c.pillar_id,
+                pillar=c.pillar.name if c.pillar else None,
             )
 
 def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
@@ -127,8 +131,9 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
         nueva_capacidad.capacity_assessments_states_id = capacity_assessment.capacity_assessments_states_id
         nueva_capacidad.modality_id = capacity_assessment.modality_id
         nueva_capacidad.approval_request_id = capacity_assessment.approval_request_id
+        nueva_capacidad.pillar_id = capacity_assessment.pillar_id
 
-        print('usuario', capacity_assessment.user_session)
+        #print('usuario', capacity_assessment.user_session)
         db.add(nueva_capacidad)
         db.commit()
         db.refresh(nueva_capacidad)
@@ -264,6 +269,10 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         capacity_assessments_states_id=c.capacity_assessments_states_id,
         modality_id= c.modality_id if c.modality_id else None,     
         url_sharepoint_ec=c.url_sharepoint_ec,
+        pillar_id=c.pillar_id,
+        pillar=c.pillar.name if c.pillar else None,
+        
+        
     )    
     
 

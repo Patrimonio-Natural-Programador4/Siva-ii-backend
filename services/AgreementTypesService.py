@@ -13,7 +13,7 @@ def list_agreement_types(db: Session) -> list[AgreementTypesBase]:
         AgreementTypesBase(
             id=int(m.id),
             name= m.name,
-            code= m.code,
+            codee= m.code,
             description= m.description,
             is_frame=m.is_frame,
             is_independent= m.is_independent,

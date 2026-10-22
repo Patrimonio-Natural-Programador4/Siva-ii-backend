@@ -20,10 +20,12 @@ from entity.previous_studies_states import PreviousStudiesStates
 from services import PreviousStudiesService, SolicitudesAprobacionService
 from repository import PreviousStudiesRepository
 from dto.PreviousStudiesDTO import PreviousStudiesCreate
+from dto.agreementDTO import AgreementsCreateBase
 from services import PreviousStudiesService
 from entity.previous_studies import PreviousStudies as PreviousStudiesEntity
 from entity.programs import Programs
 from exceptions import PruebaNotFoundError
+
 
 CATEGORIA_APROBACION = "APP_EP"
 
@@ -67,8 +69,8 @@ def obtener_estudio_por_id(id: int, db: DbSession, user_oid: str = Depends(get_c
 def crear_estudio(payload: PreviousStudiesCreate, db: DbSession,background_tasks: BackgroundTasks, user_oid: str = Depends(get_current_user_oid)):
     try:
         response_request = PreviousStudiesService.crearEstudioPrevio(payload, db, user_oid, background_tasks)
-
         if response_request.solicitud_exitosa:
+            
             return JSONResponse(
                 content=response_request.model_dump(),
                 status_code=status.HTTP_201_CREATED

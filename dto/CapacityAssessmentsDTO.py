@@ -35,7 +35,8 @@ class CapacityAssessmentsBase(BaseModel):
     url_sharepoint_ec:Optional[str] =None
     implementer: Optional[str] = None
     implementer_type: Optional[str] = None   
-    
+    pillar_id: Optional[int] = None  
+    pillar: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -62,6 +63,7 @@ class CapacityAssessmentsCreate(BaseModel):
     modality_id: Optional[int] = None
     approval_request_id:  Optional[int] = None
     enviar_aprobacion: Optional[bool] = False 
+    pillar_id:  Optional[int] = None
 
     class Config:
         from_attributes = True

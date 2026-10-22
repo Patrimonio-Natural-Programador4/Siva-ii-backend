@@ -39,10 +39,11 @@ class PreviousStudiesBase(BaseModel):
     program_id: Optional[int] = None   
     codde:Optional[str]=None
     approval_request_id: Optional[int] = None   
-    guid: Optional[UUID] = None  
-    
-
-
+    guid: Optional[UUID] = None 
+    modality_id : Optional[int] = None   
+    agreement_type_id :  Optional[int] = None  
+    agreement_type:  Optional[str] = None
+    modality:  Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -76,8 +77,9 @@ class PreviousStudiesCreate(BaseModel):
      guid: Optional[UUID] = None  
     # code:Optional[str]=None
      enviar_aprobacion: Optional[bool] = False 
+     modality_id : Optional[int] = None   
+     agreement_type_id :  Optional[int] = None  
      
-    
 
 class PreviousStudiesListDTO(BaseModel):
     id: Optional[int] = None
@@ -116,7 +118,11 @@ class PreviousStudiesListDTO(BaseModel):
     guid_msft: Optional[UUID] = None                      
     step_order_actual_request: Optional[int] = None       
     guid_msft_adjustment: Optional[UUID] = None           
-    total_records: Optional[int] = None                   
+    total_records: Optional[int] = None
+    modality_id : Optional[int] = None   
+    agreement_type_id :  Optional[int] = None  
+    agreement_type:  Optional[str] = None
+    modality:  Optional[str] = None                  
     
    
     

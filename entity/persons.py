@@ -62,5 +62,5 @@ class Persons(Base):
  #relacion simple
     capacity_assessments_person:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="person") #este nombre debe coincidir con el del otro lado
     previous_studies_person:  Mapped[list["PreviousStudies"]] = relationship("PreviousStudies", back_populates="persons") #este nombre debe coincidir con el del otro lado
-
+    #pillars_person: Mapped[list["Pillars"]] = relationship("Pillars", back_populates="person") 
     

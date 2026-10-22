@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class AgreementTypesBase(BaseModel):
     id: Optional[int] = None
     name: Optional[str] = None
-    code: Optional[str] = None
+    codee: Optional[str] = None
     description: Optional[str] = None
     is_frame: Optional[bool] = None
     is_independent: Optional[bool] = None

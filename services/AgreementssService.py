@@ -224,7 +224,7 @@ def crear_agreement(payload: AgreementsCreateBase, db: Session) -> ResponseReque
             existente = AgreementRepository.obtener_por_code(code, db)
             if existente:
                 return ResponseRequest(mensaje='Ya existe un acuerdo con ese código', solicitud_exitosa=False)
-       
+        print("Acuerdddoooo ", payload)
         nuevo = Agreements(
             name=(payload.name or '').strip(),
             code=code or None,

@@ -111,6 +111,8 @@ class Agreements(Base):
     
     prevou_study_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     guid:  Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+    #
+   
 
     # Relaciones
     agreement_parent: Mapped[Optional['Agreements']] = relationship('Agreements', remote_side=[id])
@@ -122,3 +124,5 @@ class Agreements(Base):
     program: Mapped['Programs'] = relationship('Programs')
     region: Mapped[Optional['Regions']] = relationship('Regions')
     previous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies')
+    program: Mapped['Programs'] = relationship('Programs')
+    

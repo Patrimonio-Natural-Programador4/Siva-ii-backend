@@ -35,6 +35,7 @@ class CapacityAssessments(Base):
         ForeignKeyConstraint(["persons_id"], ["persons.id"],name="fk_capacity_assessment_persons"),
         ForeignKeyConstraint(["pid_id"], ["pids.id"],name="fk_capacity_assessment_pids"),
         ForeignKeyConstraint(["program_id"], ["programs.id"],name="fk_capacity_assessment_programs"),
+        ForeignKeyConstraint(["pillar_id"], ["pillars.id"],name="fk_capacity_assessment_pillars"),
     )
 
     id: Mapped[int] =       mapped_column(BigInteger, primary_key=True)
@@ -52,6 +53,8 @@ class CapacityAssessments(Base):
     persons_id: Mapped[int] = mapped_column(BigInteger, nullable=False) #importante
     pid_id: Mapped[int] = mapped_column(BigInteger, nullable=False) #importante
     program_id: Mapped[int] = mapped_column(BigInteger, nullable=False) #importante
+    #
+    pillar_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     
     
     # Fechas
@@ -83,4 +86,5 @@ class CapacityAssessments(Base):
     
     previous_studies_capacity_assessment:Mapped["PreviousStudies"] = relationship("PreviousStudies", back_populates="capacity_assessment") 
     AttachmentAgreementCapacityAssessments: Mapped["Attachment_Agreement"] = relationship("Attachment_Agreement", back_populates="capacity_assessments") 
-    
+    #
+    pillar: Mapped["Pillars"] = relationship("Pillars") 

@@ -1,7 +1,7 @@
 #ENTITY ESTUDIOS PREVIOS
 
 import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy.orm import declarative_base
 from database.database import Base 
 import uuid
@@ -10,6 +10,12 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 from entity.implementers import Implementers
+#from entity.capacity_assessments import CapacityAssessments
+
+
+if TYPE_CHECKING:
+    from entity.capacity_assessments import CapacityAssessments
+    #from entity.approval_requests import ApprovalRequests
 
 class PreviousStudies(Base):
     __tablename__ = 'previous_studies'
@@ -23,7 +29,9 @@ class PreviousStudies(Base):
         ForeignKeyConstraint(["persons_id"], ["persons.id"],name="fk_previous_studies_assessment_persons"),
         ForeignKeyConstraint(["capacity_assessment_id"], ["capacity_assessments.id"], name="fk_previous_studies_capacity_assessment"),  
         ForeignKeyConstraint(["program_id"], ["programs.id"], name="fk_previous_studies_programs"), 
-        ForeignKeyConstraint(["previous_studies_states_id"], ["previous_studies_states.id"],name="fk_previous_studies_previous_studies_states"),          
+        ForeignKeyConstraint(["previous_studies_states_id"], ["previous_studies_states.id"],name="fk_previous_studies_previous_studies_states"),     
+        ForeignKeyConstraint(['agreement_type_id'], ['agreement_types.id'], name='fk_previous_studies_agreement_type_id'),
+        ForeignKeyConstraint(['modality_id'], ['modalities.id'], name='fk_previous_studies_modality_id'),     
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -51,12 +59,18 @@ class PreviousStudies(Base):
     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
     program_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     code: Mapped[str] = mapped_column(CITEXT, nullable=False)
+    #
+    modality_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    agreement_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
    
    #Relacion simples
     #cap_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship("CapacityAssessmentsStates", back_populates="previous_studies")
     app_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests", back_populates="previous_studies")
     implementers: Mapped["Implementers"] = relationship("Implementers") #back populates debe coincidir con el nombre de la contraparte
     persons: Mapped["Persons"] = relationship("Persons", back_populates="previous_studies_person") 
-    capacity_assessment: Mapped["CapacityAssessments"] = relationship("CapacityAssessments", back_populates="previous_studies_capacity_assessment") 
+    capacity_assessment: Mapped["CapacityAssessments"] = relationship("CapacityAssessments") 
     programs:  Mapped["Programs"] = relationship("Programs", back_populates="previous_studies_programs")
     prev_studies_state: Mapped["PreviousStudiesStates"] = relationship("PreviousStudiesStates", back_populates="previous_studies")
+    ##
+    agreement_type: Mapped['AgreementTypes'] = relationship('AgreementTypes')
+    modality: Mapped[Optional['Modalities']] = relationship('Modalities')
