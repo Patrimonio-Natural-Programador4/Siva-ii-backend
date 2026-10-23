@@ -6,8 +6,10 @@ from entity.approval_role_users import ApprovalRoleUser
 from entity.users import Users
 from entity.vw_approval_flows import VWApprovalFlows
 import logging
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,aliased
 from sqlalchemy import and_, asc, desc, func, or_
+from sqlalchemy import text
+
 
 
 def obtener_asignaciones_revisor(id_solicitud_aprobacion: int, id_flujo_aprobacion: int, db: Session):
@@ -79,8 +81,62 @@ def usuario_asignable_rol(id_rol_aprobacion: int, id_usuario: int, db: Session) 
         )
         .first()
     )
+#########################################################
 
 
+
+QUERY_FLUJO_ESTUDIOS_PREVIOS = text("""
+SELECT f.*
+FROM (
+    SELECT DISTINCT ON (a.approval_request_id)
+           a.approval_request_id,
+           a.code,
+           h.rol                                       AS rol,
+           im.name                                     AS implementadora,
+           h.created_at                                AS fecha_crea,
+           h.approved_at                               AS fecha_aprobacion,
+           pi.name                                     AS pilar,
+           concat_ws(' ', pe.first_name, pe.last_name) AS lider_pilar,
+           COALESCE(h."user", resp.responsables)       AS usuario,
+           pr.name                                     AS programa,
+           at.name                                     AS tipo_convenio,
+           mo.name                                     AS modalidad,
+           h.approval_route_status                     AS estado_aprobacion,
+           h.step_order,
+           ps.id                                       AS previous_study_id,
+           ca.id                                       AS capacity_assessment_id,
+           ps.guid                                     AS guid_ev
+    FROM approval_requests a
+    INNER JOIN vw_approval_request_history h ON h.approval_request_id = a.approval_request_id
+    INNER JOIN previous_studies ps           ON ps.approval_request_id = a.approval_request_id
+    INNER JOIN capacity_assessments ca       ON ca.id = ps.capacity_assessment_id
+    LEFT  JOIN implementers im               ON im.id = ps.implementer_id
+    LEFT  JOIN programs pr                   ON pr.id = ps.program_id
+    LEFT  JOIN pillars pi                    ON pi.id = ca.pillar_id
+    LEFT  JOIN persons pe                    ON pe.id = pi.person_id
+    LEFT  JOIN agreement_types at            ON at.id = ps.agreement_type_id
+    LEFT  JOIN modalities mo                 ON mo.id = ps.modality_id
+    LEFT  JOIN LATERAL (
+        SELECT string_agg(
+                   UPPER(concat_ws(' ', u.first_name, NULLIF(u.other_name, ''), u.last_name)),
+                   ', ' ORDER BY u.first_name, u.last_name
+               ) AS responsables
+        FROM approval_role_users aru
+        JOIN users u ON u.id = aru.user_id
+        WHERE aru.approval_role_id = h.approval_role_id
+    ) resp ON true
+    ORDER BY a.approval_request_id, h.history_id DESC
+) f
+ORDER BY f.approval_request_id DESC
+""")
+
+
+def listar_flujo_estudios_previos(db: Session) -> list[dict]:
+    rows = db.execute(QUERY_FLUJO_ESTUDIOS_PREVIOS).mappings().all()
+    return [dict(r) for r in rows]
+
+
+#########################################################
 def obtener_ruta_pendiente_usuario(
     id_solicitud_aprobacion: int,
     id_categoria: int,
@@ -140,6 +196,30 @@ def listar_pasos_aprobables_orden(id_flujo_aprobacion: int, orden: int, db: Sess
         .distinct()
         .all()
     )
+
+
+def listar_historial(db: Session) -> list[VWApprovalRequestHistory]:
+    try:
+        subq = (
+            db.query(VWApprovalRequestHistory)
+            .distinct(VWApprovalRequestHistory.guid)
+            .order_by(
+                VWApprovalRequestHistory.guid,
+                desc(VWApprovalRequestHistory.created_at)
+            )
+            .subquery()
+        )
+
+        historial = aliased(VWApprovalRequestHistory, subq)
+        return (
+            db.query(historial)
+            .order_by(asc(historial.created_at))
+            .all()
+        )
+    except Exception as e:
+        logging.error(f"Failed to listar historial: {str(e)}")
+        raise
+
 
 def obtener_historial_por_registro_asociado_categoria(id_registro_asociado: int, id_categoria: int, db: Session) -> list[VWApprovalRequestHistory] | None:
     try:

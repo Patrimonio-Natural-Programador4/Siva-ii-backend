@@ -15,6 +15,7 @@ import logging
 from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOBase
 from entity.vw_approval_request_history import VWApprovalRequestHistory
 from services import FlujosAprobacionService
+from dto.previousStudies_flowsDTO    import PreviousStudiesFlowItem
 
 
 ESTADO_APROBACION_ENVIADO = 2
@@ -79,6 +80,13 @@ def obtener_solicitud_aprobacion_por_id_asociado_id_categoria(id_registro_asocia
         logging.error(f"Error al obtener solicitud de aprobación: {e}")
         raise
 
+
+#mine
+def obtener_flujo_estudios_previos(db: Session) -> list[PreviousStudiesFlowItem]:
+    rows = ApprovalRequestHistoryRepository.listar_flujo_estudios_previos(db)
+    return [PreviousStudiesFlowItem.model_validate(r) for r in rows]
+
+################################################################
 
 
 def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociado: int, id_usuario_solicita: int, 

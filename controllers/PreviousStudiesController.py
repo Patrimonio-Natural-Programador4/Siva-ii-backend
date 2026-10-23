@@ -310,3 +310,6 @@ def formato_ep(guid: str, db: DbSession,
         raise HTTPException(status_code=404, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=500, detail="No fue posible generar el formato EP") from error
+    
+    
+    

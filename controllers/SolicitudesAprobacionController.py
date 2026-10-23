@@ -2,12 +2,14 @@ from dto.SolicitudAprobacionHistorialDTO import SolicitudAprobacionHistorialDTOB
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status, Request
 from database.database import DbSession
 from dependencies.auth_dependency import get_current_user_oid
+from dto.previousStudies_flowsDTO import PreviousStudiesFlowItem
 from services import SolicitudesAprobacionService
 
 router = APIRouter(
     prefix='/solicitudes-aprobacion',
     tags=['SolicitudesAprobacion']
 )
+
 
 
 @router.get("/historial_aprobacion")
@@ -19,3 +21,11 @@ def historial_aprobacion(
 ) -> list[SolicitudAprobacionHistorialDTOBase]:
     id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(tipo_solicitud, db)
     return SolicitudesAprobacionService.obtener_solicitud_aprobacion_por_id_asociado_id_categoria(guid, id_categoria, db)
+
+
+@router.get("/historial-aprobacion-estudios-previos")
+def listar_historial_aprobacion_general(
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid)
+) -> list[PreviousStudiesFlowItem]:
+    return SolicitudesAprobacionService.obtener_flujo_estudios_previos(db)
