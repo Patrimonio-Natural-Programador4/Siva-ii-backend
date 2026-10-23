@@ -162,3 +162,5 @@ def generar_formato_ep(diccionario: dict[str, object], code: str) -> Path:
     salida.parent.mkdir(parents=True, exist_ok=True)
     documento.save(str(salida))
     return salida
+
+    
