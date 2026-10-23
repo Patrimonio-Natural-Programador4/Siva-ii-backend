@@ -13,7 +13,7 @@ from entity.implementers import Implementers
 from entity.persons import Persons
 from entity.previous_studies import PreviousStudies as PreviousStudiesEntity 
 from exceptions import PruebaNotFoundError
-from repository import PreviousStudiesRepository, UsuariosRepository
+from repository import AgreementRepository, AgreementsProductsRepository, PreviousStudiesRepository, UsuariosRepository
 from services import PreviousStudiesService
 from services import SolicitudesAprobacionService
 #NOTIFUCACIONES
@@ -21,9 +21,16 @@ from fastapi import BackgroundTasks
 from jinja2 import Environment, FileSystemLoader
 from entity.users import Users
 from services import NotificacionesService
+<<<<<<< HEAD
 from services.PreviousStudiesDocumentService import generar_formato_ep
 from dto.agreementDTO import AgreementsCreateBase
 from services import AgreementssService
+=======
+from services.PreviousStudiesDocumentService import construir_objetivos_actividades_productos, generar_formato_ep
+from num2words import num2words
+
+
+>>>>>>> c4ddaba4e0a6a3c54abbb0a0bb4d0385e96c632d
 
 
 CATEGORIA_APROBACION_previous_studies = "APP_EP"  #APP_EP
@@ -291,6 +298,7 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
 
 def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
     e = PreviousStudiesRepository.obtener_por_guid(guid, db)
+    agreetment = AgreementRepository.obtener_por_id_estudio_previo(e.id, db)
     if not e:
         return None
     return PreviousStudiesBase(
@@ -326,7 +334,8 @@ def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
        capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
        program_id=e.program_id,
        programs =e.programs.description if e.programs else None,
-       codde =e.code
+       codde =e.code,
+       agreetment_id=agreetment.id if agreetment else None,
     )
     
 def listar_previous_studies_por_usuario_sp(
@@ -580,20 +589,37 @@ def obtener_formato_ep(guid: str, db: Session):
         estudios_previos = PreviousStudiesRepository.obtener_por_guid(guid, db)
         if not estudios_previos:
             raise PruebaNotFoundError("Estudio previo no encontrado")
+        evaluacion_capacidades = estudios_previos.capacity_assessment if estudios_previos else None
+        agreetment = AgreementRepository.obtener_por_id_estudio_previo(estudios_previos.id, db) if estudios_previos else None
+        obtejivos_actividades_productos = ""
+        desembolsos = []
+        if agreetment:
+            productos = AgreementsProductsRepository.obtener_por_id_agreement(agreetment.id, db) if agreetment else []
+            obtejivos_actividades_productos = construir_objetivos_actividades_productos(productos)
+            desembolsos = AgreementsProductsRepository.obtener_desembolsos_por_id_agreement(agreetment.id, db)
         diccionario = {
+            "<<DESEMBOLSOS>>": desembolsos,
+            "<<OBJETIVOS_ACTIVIDADES_PRODUCTOS>>": obtejivos_actividades_productos,
             "<<ANTECEDENTES>>": estudios_previos.precedents,
             "<<JUSTIFICACION>>": estudios_previos.justification,
             "<<ALCANCE>>": estudios_previos.scope,
             "<<OBJETIVO_GENERAL>>": estudios_previos.overall_objective,
-            "<<PLAZO>>": estudios_previos.term,
+            "<<PLAZO_NUM>>": estudios_previos.term,
+            "<<PLAZO_LETRAS>>": num2words(estudios_previos.term, lang="es_CO"),
             "<<OBLIGACIONES>>": estudios_previos.obligations,
             "<<FUNCIONES_SUPERVISOR>>": estudios_previos.supervisor,
-            "<<ENTIDAD_IMPLEMENTADORA>>": (
-                estudios_previos.implementers.acronym if estudios_previos.implementers else ""
-            ),
-            "<<VALOR_TOTAL>>": estudios_previos.total_value,
-            "<<APORTES_EI>>": estudios_previos.contributions_ei,
-            "<<VALOR_EJECUTA_EI>>": estudios_previos.total_value_executes_ei,
+            "<<VALOR_TOTAL>>": f"{estudios_previos.total_value:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
+            "<<VALOR_TOTAL_LETRAS>>": num2words(estudios_previos.total_value, lang="es_CO"),
+            "<<APORTE_FPN>>": f"{estudios_previos.contributions_fpn:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
+            "<<APORTE_FPN_LETRAS>>": num2words(estudios_previos.contributions_fpn, lang="es_CO"),
+            "<<APORTES_EI>>": f"{estudios_previos.contributions_ei:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
+            "<<APORTES_EI_LETRAS>>": num2words(estudios_previos.contributions_ei, lang="es_CO"),
+            "<<VALOR_EJECUTA_EI>>": f"{estudios_previos.total_value_executes_ei:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
+            "<<VALOR_EJECUTA_EI_LETRAS>>": num2words(estudios_previos.total_value_executes_ei, lang="es_CO"),
+            "<<VALOR_EJECUTA_FPN>>": f"{estudios_previos.total_value_executes_fpn:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
+            "<<VALOR_EJECUTA_FPN_LETRAS>>": num2words(estudios_previos.total_value_executes_fpn, lang="es_CO"),
+            "<<NOMBRE_EI>>": estudios_previos.implementers.name if estudios_previos.implementers else "",
+            "<<ACRONIMO_EI>>": estudios_previos.implementers.acronym if estudios_previos.implementers else ""
         }
         
 

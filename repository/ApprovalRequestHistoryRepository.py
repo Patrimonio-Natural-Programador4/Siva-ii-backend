@@ -129,12 +129,12 @@ FROM (
 ) f
 ORDER BY f.approval_request_id DESC
 """)
-
+#############################################################
 
 def listar_flujo_estudios_previos(db: Session) -> list[dict]:
     rows = db.execute(QUERY_FLUJO_ESTUDIOS_PREVIOS).mappings().all()
     return [dict(r) for r in rows]
-
+#############################################################
 
 #########################################################
 def obtener_ruta_pendiente_usuario(
