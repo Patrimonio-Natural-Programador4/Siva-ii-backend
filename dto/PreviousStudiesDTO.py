@@ -39,19 +39,13 @@ class PreviousStudiesBase(BaseModel):
     program_id: Optional[int] = None   
     codde:Optional[str]=None
     approval_request_id: Optional[int] = None   
-<<<<<<< HEAD
     guid: Optional[UUID] = None 
     modality_id : Optional[int] = None   
     agreement_type_id :  Optional[int] = None  
     agreement_type:  Optional[str] = None
     modality:  Optional[str] = None
-=======
-    guid: Optional[UUID] = None
     agreetment_id: Optional[int] = None
     
-
-
->>>>>>> c4ddaba4e0a6a3c54abbb0a0bb4d0385e96c632d
     class Config:
         from_attributes = True
 

@@ -21,16 +21,13 @@ from fastapi import BackgroundTasks
 from jinja2 import Environment, FileSystemLoader
 from entity.users import Users
 from services import NotificacionesService
-<<<<<<< HEAD
 from services.PreviousStudiesDocumentService import generar_formato_ep
 from dto.agreementDTO import AgreementsCreateBase
 from services import AgreementssService
-=======
 from services.PreviousStudiesDocumentService import construir_objetivos_actividades_productos, generar_formato_ep
 from num2words import num2words
 
 
->>>>>>> c4ddaba4e0a6a3c54abbb0a0bb4d0385e96c632d
 
 
 CATEGORIA_APROBACION_previous_studies = "APP_EP"  #APP_EP
