@@ -24,4 +24,4 @@ class Codes(Base):
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     
-    #capacity_assessments_modalitie:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="modalitie") #este nombre debe coincidir con el del otro lado
+    acquisitions_code: Mapped[list["Acquisitions"]] = relationship("Acquisitions", back_populates="code_rel")

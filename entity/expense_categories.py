@@ -27,3 +27,4 @@ class ExpenseCategories(Base):
     
     #capacity_assessments_modalitie:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="modalitie") #este nombre debe coincidir con el del otro lado
     contracts_expense_category: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="expense_category")
+    acquisitions_expense_category: Mapped[list["Acquisitions"]] = relationship("Acquisitions", back_populates="expense_category")

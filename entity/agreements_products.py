@@ -55,7 +55,7 @@ class AgreementsProducts(Base):
         "AgreementsProducts", foreign_keys=[id_product], back_populates="parent_product"
     )
 
-    # RELACIONES con la misma tabla (id_duplicate_product)
+    # RELACIONES 
     duplicate_product: Mapped[Optional["AgreementsProducts"]] = relationship(
         "AgreementsProducts", remote_side=[id], foreign_keys=[id_duplicate_product], back_populates="duplicates"
     )

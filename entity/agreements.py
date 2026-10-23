@@ -125,3 +125,5 @@ class Agreements(Base):
     agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="agreement")
 
     previous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies')
+    acquisitions_agreement: Mapped["Acquisitions"] = relationship("Acquisitions", back_populates="agreement")
+    

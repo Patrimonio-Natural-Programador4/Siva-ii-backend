@@ -223,3 +223,9 @@ def update_agreements_products(id: int, payload: AgreementsProductsCreateBase, d
         db.rollback()
         logging.error(f"Error updating agreements product: {e}")
         return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))
+    
+    
+    
+    
+def get_tree_by_previous_studies(previous_studies_id: int, db: Session):
+    return AgreementsProductsRepository.get_tree_by_previous_studies(previous_studies_id, db)

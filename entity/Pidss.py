@@ -60,4 +60,4 @@ class Pids(Base):
  #relacion simple
     capacity_assessments_pid:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="pid") #este nombre debe coincidir con el del otro lado
 
-    
+    acquisitions_pid: Mapped[list["Acquisitions"]] = relationship("Acquisitions", back_populates="pid")

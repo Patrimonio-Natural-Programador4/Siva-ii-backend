@@ -1,4 +1,5 @@
 import logging
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from entity.agreements_products import AgreementsProducts
 from entity.disbursement import Disbursement
@@ -86,3 +87,16 @@ def obtener_desembolsos_por_id_agreement(id_agreement: int, db: Session):
         Disbursement.id.asc(),
         AgreementsProducts.id.asc(),
     ).all()
+
+
+
+def get_tree_by_previous_studies(previous_studies_id: int, db: Session):
+    try:
+        result = db.execute(
+            text("SELECT fn_arbol_productos_estudio_previo(:id)"),
+            {"id": previous_studies_id}
+        ).scalar()
+        return result or []
+    except Exception as e:
+        logging.error(f"Failed to get products tree by previous studies: {str(e)}")
+        raise PruebaNotFoundError(str(e))

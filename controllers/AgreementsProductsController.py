@@ -55,3 +55,9 @@ def update_agreements_products(id: int, payload: AgreementsProductsCreateBase, d
 
     status_code = status.HTTP_404_NOT_FOUND if response_request.mensaje == 'Producto no encontrado' else status.HTTP_400_BAD_REQUEST
     return JSONResponse(content=jsonable_encoder(response_request), status_code=status_code)
+
+
+
+@router.get('/estudio-previo/{previous_studies_id}/arbol')
+def get_tree_by_previous_studies(previous_studies_id: int, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    return AgreementsProductsService.get_tree_by_previous_studies(previous_studies_id, db)
