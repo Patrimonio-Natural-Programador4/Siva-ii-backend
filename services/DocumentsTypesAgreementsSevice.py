@@ -2,21 +2,41 @@ import logging
 import traceback
 from sqlalchemy.orm import Session
 from exceptions import PruebaCreationError, PruebaNotFoundError
-from dto.DocumentsTypesAgreements import DocumentsTypesAgreementsBase,DocumentsTypesAgreementsUpdateBase,DocumentsTypesAgreementsCreateBase
+from dto.DocumentsTypesAgreements import DocumentsTypesAgreementsBase, DocumentsTypesAgreementsListBase,DocumentsTypesAgreementsUpdateBase,DocumentsTypesAgreementsCreateBase
 from repository import DocumentsTypesAgreementsRepository
 from dto.ResponseRequest import ResponseRequest
 from entity.documents_types_agreements import DocumentsTypesAgreements
 
 
-def listar(db: Session,documents_approval_id:int |None=None) :
-    query=db.query(DocumentsTypesAgreements)
-    if documents_approval_id is not  None:
+def listar(db: Session,documents_approval_id:int |None=None) -> list[DocumentsTypesAgreementsListBase]:
+    tipo_documentos= DocumentsTypesAgreementsRepository.listar(db,documents_approval_id)
+    return [
+        DocumentsTypesAgreementsListBase(
+            id = int(d.id),
+            description= d.description,
+            number= d.number,
+            code=d.code,
+            template=d.template,
+            template_path= d.template_path,
+            documents_approval_id=d.documents_approval_id,
+            documents_approval=d.documents_approval.name if d.documents_approval else None,
+            is_required=d.is_required,
+            is_active=d.is_active,
+            
+        )
+        
+        for d in tipo_documentos
+    ]
+    
+    
+    
+    '''if documents_approval_id is not  None:
         query = query.filter(
             DocumentsTypesAgreements.documents_approval_id== documents_approval_id
         )
         
     return query.order_by(DocumentsTypesAgreements.id).all()
-    
+    '''
     
 def crear_tipo_doc(payload: DocumentsTypesAgreementsBase, db: Session) -> ResponseRequest:
     try:
