@@ -90,7 +90,7 @@ SELECT f.*
 FROM (
     SELECT DISTINCT ON (a.approval_request_id)
            a.approval_request_id,
-           a.code,
+           a.code                                       AS code_agreements,
            h.rol                                       AS rol,
            im.name                                     AS implementadora,
            h.created_at                                AS fecha_crea,
@@ -98,18 +98,24 @@ FROM (
            pi.name                                     AS pilar,
            concat_ws(' ', pe.first_name, pe.last_name) AS lider_pilar,
            COALESCE(h."user", resp.responsables)       AS usuario,
+		   pr.id 									   AS id_programa,
            pr.name                                     AS programa,
            at.name                                     AS tipo_convenio,
+		   mo.id									   AS modalidad_id,
            mo.name                                     AS modalidad,
            h.approval_route_status                     AS estado_aprobacion,
            h.step_order,
            ps.id                                       AS previous_study_id,
            ca.id                                       AS capacity_assessment_id,
-           ps.guid                                     AS guid_ev
+           ps.guid                                     AS guid_ev,
+		   caes.id 									   AS id_capacity_state_id,
+		   caes.state 								   AS capacity_state,
+            ps.code									   AS codde
     FROM approval_requests a
     INNER JOIN vw_approval_request_history h ON h.approval_request_id = a.approval_request_id
     INNER JOIN previous_studies ps           ON ps.approval_request_id = a.approval_request_id
     INNER JOIN capacity_assessments ca       ON ca.id = ps.capacity_assessment_id
+	INNER JOIN capacity_assessments_states caes   ON caes.id = ca.capacity_assessments_states_id
     LEFT  JOIN implementers im               ON im.id = ps.implementer_id
     LEFT  JOIN programs pr                   ON pr.id = ps.program_id
     LEFT  JOIN pillars pi                    ON pi.id = ca.pillar_id
@@ -127,7 +133,7 @@ FROM (
     ) resp ON true
     ORDER BY a.approval_request_id, h.history_id DESC
 ) f
-ORDER BY f.approval_request_id DESC
+ORDER BY f.approval_request_id DESC;   
 """)
 #############################################################
 

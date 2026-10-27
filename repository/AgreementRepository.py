@@ -69,7 +69,7 @@ def obtener_por_id_estudio_previo(id: int, db: Session) -> Agreements | None:
         return (
             db.query(Agreements)
               .options(joinedload(Agreements.agreement_origin))
-              .filter(Agreements.prevous_study_id == id)
+              .filter(Agreements.prevou_study_id == id)#    prevous_study_id
               .first()
         )
     

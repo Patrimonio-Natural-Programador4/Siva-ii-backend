@@ -27,7 +27,8 @@ class Agreements(Base):
         ForeignKeyConstraint(['pillar_id'], ['pillars.id'], name='agreements_pillar_id_foreign'),
         ForeignKeyConstraint(['program_id'], ['programs.id'], name='agreements_program_id_foreign'),
         ForeignKeyConstraint(['region_id'], ['regions.id'], name='agreements_region_id_foreign'),
-        ForeignKeyConstraint(['prevous_study_id'], ['previous_studies.id'], name='agreements_previous_studies_foreign'),
+        #ForeignKeyConstraint(['prevous_study_id'], ['previous_studies.id'], name='agreements_previous_studies_foreign'),
+        ForeignKeyConstraint(['prevou_study_id'], ['previous_studies.id'], name='agreements_previous_studies_foreign'),
         PrimaryKeyConstraint('id', name='agreements_pkey')
     )
 
@@ -109,7 +110,8 @@ class Agreements(Base):
     justification: Mapped[Optional[str]] = mapped_column(Text)
     scope: Mapped[Optional[str]] = mapped_column(Text)
     
-    prevous_study_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    #prevous_study_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    prevou_study_id: Mapped[int] = mapped_column(BigInteger, nullable=True)
     guid:  Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
     #
    
