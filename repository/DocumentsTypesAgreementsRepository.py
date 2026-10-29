@@ -1,13 +1,18 @@
 import logging
+from typing import Optional
 from sqlalchemy.orm import Session
 from entity.documents_types_agreements import DocumentsTypesAgreements
 
 from exceptions import PruebaCreationError, PruebaNotFoundError
 
 
-def listar(db: Session) -> list[DocumentsTypesAgreements]:
+def listar(db: Session, id: Optional[int] = None) -> list[DocumentsTypesAgreements]:
     try:
-        return db.query(DocumentsTypesAgreements).order_by(DocumentsTypesAgreements.id.asc()).all()
+        query= db.query(DocumentsTypesAgreements).order_by(DocumentsTypesAgreements.id.asc())
+
+        if id is not None:
+            query = query.filter(DocumentsTypesAgreements.documents_approval_id == id)
+        return query.all()
     except Exception as e:
         logging.error(f"Failed to list DocumentsTypesAgreements: {str(e)}")
         raise PruebaNotFoundError(str(e))

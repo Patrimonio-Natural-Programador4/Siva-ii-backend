@@ -32,3 +32,4 @@ class PurchaseTypes(Base):
     
     #capacity_assessments_modalitie:  Mapped[list["CapacityAssessments"]] = relationship("CapacityAssessments", back_populates="modalitie") #este nombre debe coincidir con el del otro lado
     contracts_purchase_type: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="purchase_type")
+    acquisitions_purchase_type: Mapped[list["Acquisitions"]] = relationship("Acquisitions", back_populates="purchase_type")

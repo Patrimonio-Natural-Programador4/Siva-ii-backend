@@ -1,6 +1,6 @@
 
 from sqlalchemy import BigInteger, ForeignKeyConstraint, PrimaryKeyConstraint, String, Text, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional
 import datetime
 
@@ -36,3 +36,9 @@ class Activities(Base):
 #     payment_orders: Mapped[list['PaymentOrders']] = relationship('PaymentOrders', back_populates='activity')
 #     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='activity')
 #     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='activity')
+
+
+
+
+    acquisitions_activity: Mapped[list["Acquisitions"]] = relationship("Acquisitions", back_populates="activity")
+

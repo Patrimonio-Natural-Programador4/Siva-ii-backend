@@ -35,4 +35,4 @@ class Pads(Base):
 
  # RELACIONES
 
-   
+    acquisitions_pad: Mapped[list["Acquisitions"]] = relationship("Acquisitions", back_populates="pad")
