@@ -35,4 +35,4 @@ class Disbursement(Base):
     # RELACIONES
     disbursement_state: Mapped[Optional["DisbursementState"]] = relationship("DisbursementState", back_populates="disbursements")
     agreement: Mapped[Optional["Agreements"]] = relationship("Agreements", back_populates="disbursements")
-    previous_study: Mapped[Optional["PreviousStudies"]] = relationship("PreviousStudies", back_populates="disbursements")
+#     previous_study: Mapped[Optional["PreviousStudies"]] = relationship("PreviousStudies", back_populates="disbursements")

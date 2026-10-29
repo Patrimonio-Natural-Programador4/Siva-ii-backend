@@ -76,6 +76,6 @@ class PreviousStudies(Base):
     ##
     agreement_type: Mapped['AgreementTypes'] = relationship('AgreementTypes')
     modality: Mapped[Optional['Modalities']] = relationship('Modalities')
-    disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="previous_study")
+    disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement")
     agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="previous_study")
     risks: Mapped[list["Risks"]] = relationship("Risks", back_populates="previous_study")
