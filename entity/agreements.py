@@ -125,8 +125,8 @@ class Agreements(Base):
     pillar: Mapped[Optional['Pillars']] = relationship('Pillars')
     program: Mapped['Programs'] = relationship('Programs')
     region: Mapped[Optional['Regions']] = relationship('Regions')
-    disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="agreement")
-    agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="agreement")
+    disbursement: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="agreement")
+    # agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="agreement")
 
     previous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies')
     acquisitions_agreement: Mapped["Acquisitions"] = relationship("Acquisitions", back_populates="agreement")

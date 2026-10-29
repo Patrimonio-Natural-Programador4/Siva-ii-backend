@@ -18,4 +18,4 @@ class ProductsState(Base):
     color: Mapped[Optional[str]] = mapped_column(Text)
 
  # RELACIONES
-    agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="product_state")
+   #  agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="product_state")

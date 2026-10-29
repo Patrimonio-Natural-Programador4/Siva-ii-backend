@@ -40,7 +40,7 @@ class AgreementsProducts(Base):
     approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
     id_duplicate_product: Mapped[Optional[int]] = mapped_column(BigInteger)
 
-    # agreements: Mapped['Agreements'] = relationship('Agreements', back_populates='agreements_products')
+    # agreement: Mapped['Agreements'] = relationship('Agreements', back_populates='agreements_products')
     # agreements_products: Mapped[Optional['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id], foreign_keys=[id_duplicate_product], back_populates='agreements_products_reverse')
     # agreements_products_reverse: Mapped[list['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id_duplicate_product], foreign_keys=[id_duplicate_product], back_populates='agreements_products')
     # agreements_products: Mapped[Optional['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id], foreign_keys=[id_product])

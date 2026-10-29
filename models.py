@@ -3,7 +3,7 @@
 # import decimal
 # import uuid
 
-# from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, CheckConstraint, Column, Computed, Date, DateTime, Double, ForeignKeyConstraint, Identity, Index, Integer, JSON, LargeBinary, Numeric, PrimaryKeyConstraint, Sequence, SmallInteger, String, Table, Text, UniqueConstraint, Uuid, text
+# from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, CheckConstraint, Column, Computed, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, JSON, LargeBinary, Numeric, PrimaryKeyConstraint, Sequence, SmallInteger, String, Table, Text, UniqueConstraint, Uuid, text
 # from sqlalchemy.dialects.postgresql import CITEXT, INET, TIME, TIMESTAMP
 # from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -88,6 +88,7 @@
 
 #     type_rules_agreement_type_1: Mapped[list['TypeRules']] = relationship('TypeRules', foreign_keys='[TypeRules.agreement_type_id_1]', back_populates='agreement_type_1')
 #     type_rules_agreement_type_2: Mapped[list['TypeRules']] = relationship('TypeRules', foreign_keys='[TypeRules.agreement_type_id_2]', back_populates='agreement_type_2')
+#     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='agreement_type')
 #     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='agreement_type')
 
 
@@ -552,6 +553,7 @@
 #     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
 
 #     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='modality')
+#     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='modality')
 #     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='modality')
 
 
@@ -850,26 +852,6 @@
 #     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
 
 
-# class Pillars(Base):
-#     __tablename__ = 'pillars'
-#     __table_args__ = (
-#         CheckConstraint("color::text = ANY (ARRAY['neutral'::character varying::text, 'lime'::character varying::text, 'blue'::character varying::text, 'gray'::character varying::text, 'red'::character varying::text, 'green'::character varying::text, 'yellow'::character varying::text, 'indigo'::character varying::text, 'purple'::character varying::text, 'pink'::character varying::text, 'slate'::character varying::text, 'orange'::character varying::text, 'amber'::character varying::text, 'teal'::character varying::text, 'sky'::character varying::text])", name='pillars_color_check'),
-#         PrimaryKeyConstraint('id', name='pillars_pkey'),
-#         UniqueConstraint('name', name='pillars_name_unique')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     name: Mapped[str] = mapped_column(CITEXT, nullable=False)
-#     color: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("'gray'::character varying"))
-#     description: Mapped[Optional[str]] = mapped_column(CITEXT)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-
-#     activities: Mapped[list['Activities']] = relationship('Activities', back_populates='pillar')
-#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='pillar')
-#     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='pillar')
-
-
 # class PreviousStudiesStates(Base):
 #     __tablename__ = 'previous_studies_states'
 #     __table_args__ = (
@@ -930,10 +912,10 @@
 #     approval_flows: Mapped[list['ApprovalFlows']] = relationship('ApprovalFlows', back_populates='program')
 #     documents_approval: Mapped[list['DocumentsApproval']] = relationship('DocumentsApproval', back_populates='program')
 #     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='program')
-#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='program')
 #     users_programs: Mapped[list['UsersPrograms']] = relationship('UsersPrograms', back_populates='program')
-#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='program')
 #     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='program')
+#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='program')
+#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='program')
 #     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='program')
 
 
@@ -1052,8 +1034,8 @@
 #     commitments: Mapped[list['Commitments']] = relationship('Commitments', back_populates='rubro_')
 #     hws: Mapped[list['Hws']] = relationship('Hws', back_populates='rubro_')
 #     payment_orders: Mapped[list['PaymentOrders']] = relationship('PaymentOrders', back_populates='rubro_')
-#     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='rubro')
 #     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='rubro')
+#     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='rubro')
 #     terms_reference: Mapped[list['TermsReference']] = relationship('TermsReference', back_populates='rubro')
 
 
@@ -1276,6 +1258,82 @@
 # )
 
 
+# t_vw_travel_accommodations = Table(
+#     'vw_travel_accommodations', Base.metadata,
+#     Column('code', Text),
+#     Column('traveler', Text),
+#     Column('accommodation_department', CITEXT),
+#     Column('accommodation_municipality', CITEXT),
+#     Column('check_in_date', Date),
+#     Column('check_out_date', Date),
+#     Column('accommodation_additional_comments', Text)
+# )
+
+
+# t_vw_travel_general = Table(
+#     'vw_travel_general', Base.metadata,
+#     Column('code', Text),
+#     Column('traveler', Text),
+#     Column('request_date', Date),
+#     Column('travel_start_date', Date),
+#     Column('travel_end_date', Date),
+#     Column('requires_advance_payment', Boolean),
+#     Column('requested_advance_amount', Numeric(18, 2)),
+#     Column('total_days', Numeric(18, 2)),
+#     Column('status', Text),
+#     Column('budget_item', String(23)),
+#     Column('expense_category', Text),
+#     Column('travel_purpose', Text),
+#     Column('general_additional_comments', Text),
+#     Column('supervisor', Text),
+#     Column('program', CITEXT),
+#     Column('is_international_travel', Boolean),
+#     Column('is_employee_travel', Boolean),
+#     Column('is_guest_travel', Boolean),
+#     Column('birth_date', Date),
+#     Column('mobile_phone', String(255)),
+#     Column('emergency_contact_name', Text),
+#     Column('emergency_contact_phone', Text),
+#     Column('emergency_relationship', Text),
+#     Column('includes_food', Boolean)
+# )
+
+
+# t_vw_travel_itineraries = Table(
+#     'vw_travel_itineraries', Base.metadata,
+#     Column('code', Text),
+#     Column('traveler', Text),
+#     Column('origin_department', CITEXT),
+#     Column('origin_municipality', CITEXT),
+#     Column('destination_department', CITEXT),
+#     Column('destination_municipality', CITEXT),
+#     Column('requires_air_tickets', Boolean),
+#     Column('travel_date', Date),
+#     Column('estimated_departure_time', Text),
+#     Column('is_rural_destination', Boolean),
+#     Column('itinerary_additional_comments', Text)
+# )
+
+
+# t_vw_travel_legalizations = Table(
+#     'vw_travel_legalizations', Base.metadata,
+#     Column('code', Text),
+#     Column('traveler', Text),
+#     Column('legalization_date', Date),
+#     Column('transaction_number', String(50)),
+#     Column('legalization_beneficiary', String(255)),
+#     Column('beneficiary_nit', String(20)),
+#     Column('regimen_type', String(100)),
+#     Column('legalized_subtotal', Numeric(12, 2)),
+#     Column('legalized_iva', Numeric(12, 2)),
+#     Column('retention_percentage', Numeric(5, 2)),
+#     Column('retention', Numeric(12, 2)),
+#     Column('total_paid', Numeric(12, 2)),
+#     Column('outlay_observations', Text),
+#     Column('legalization_observations', Text)
+# )
+
+
 # class Accesses(Base):
 #     __tablename__ = 'accesses'
 #     __table_args__ = (
@@ -1297,39 +1355,6 @@
 
 #     unit: Mapped['Units'] = relationship('Units', back_populates='accesses')
 #     access_agreement_person: Mapped[list['AccessAgreementPerson']] = relationship('AccessAgreementPerson', back_populates='access')
-
-
-# class Activities(Base):
-#     __tablename__ = 'activities'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='activities_activity_id_foreign'),
-#         ForeignKeyConstraint(['pillar_id'], ['pillars.id'], name='activities_pillar_id_foreign'),
-#         PrimaryKeyConstraint('id', name='activities_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     code: Mapped[str] = mapped_column(String(20), nullable=False)
-#     pillar_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     activity_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     description: Mapped[Optional[str]] = mapped_column(Text)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-#     is_logistics_expense_associate: Mapped[Optional[bool]] = mapped_column(Boolean)
-
-#     activity: Mapped[Optional['Activities']] = relationship('Activities', remote_side=[id], back_populates='activity_reverse')
-#     activity_reverse: Mapped[list['Activities']] = relationship('Activities', remote_side=[activity_id], back_populates='activity')
-#     pillar: Mapped['Pillars'] = relationship('Pillars', back_populates='activities')
-#     audit_acquisitions: Mapped[list['AuditAcquisitions']] = relationship('AuditAcquisitions', back_populates='activity')
-#     availabilities: Mapped[list['Availabilities']] = relationship('Availabilities', back_populates='activity')
-#     commitments: Mapped[list['Commitments']] = relationship('Commitments', back_populates='activity')
-#     hws: Mapped[list['Hws']] = relationship('Hws', back_populates='activity')
-#     payment_orders: Mapped[list['PaymentOrders']] = relationship('PaymentOrders', back_populates='activity')
-#     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='activity')
-#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='activity')
-#     lines: Mapped[list['Lines']] = relationship('Lines', back_populates='activity')
-#     terms_reference_activity: Mapped[list['TermsReference']] = relationship('TermsReference', foreign_keys='[TermsReference.activity_id]', back_populates='activity')
-#     terms_reference_component: Mapped[list['TermsReference']] = relationship('TermsReference', foreign_keys='[TermsReference.component]', back_populates='activities')
-#     acquisitions: Mapped[list['Acquisitions']] = relationship('Acquisitions', back_populates='activity')
 
 
 # class ApprovalFlows(Base):
@@ -1374,31 +1399,6 @@
 
 #     module: Mapped['Modules'] = relationship('Modules', back_populates='controls')
 #     control_access: Mapped[list['ControlAccess']] = relationship('ControlAccess', back_populates='control')
-
-
-# class Disbursement(Base):
-#     __tablename__ = 'disbursement'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['state_id'], ['disbursement_state.id'], name='fk_disbursement_state'),
-#         PrimaryKeyConstraint('id', name='disbursement_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(True, 0))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(15, 2))
-#     scheduled_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     request_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     validation_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     number_disbursement: Mapped[Optional[int]] = mapped_column(Integer)
-#     disbursement_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     state_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     documento_soporte: Mapped[Optional[str]] = mapped_column(Text)
-#     observations: Mapped[Optional[str]] = mapped_column(Text)
-
-#     state: Mapped[Optional['DisbursementState']] = relationship('DisbursementState', back_populates='disbursement')
-#     disbursement_products: Mapped[list['DisbursementProducts']] = relationship('DisbursementProducts', back_populates='disbursement')
 
 
 # class DocumentsApproval(Base):
@@ -1450,12 +1450,12 @@
 
 #     document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='implementers')
 #     type: Mapped[Optional['ImplementerTypes']] = relationship('ImplementerTypes', back_populates='implementers')
+#     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='implementer')
 #     audit_acquisitions_person_executer: Mapped[list['AuditAcquisitions']] = relationship('AuditAcquisitions', foreign_keys='[AuditAcquisitions.person_id_executer]', back_populates='person_executer')
 #     audit_acquisitions_person_implementer: Mapped[list['AuditAcquisitions']] = relationship('AuditAcquisitions', foreign_keys='[AuditAcquisitions.person_id_implementer]', back_populates='person_implementer')
+#     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='implementer')
 #     upt_acquisitions_person_executer: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', foreign_keys='[UptAcquisitions.person_id_executer]', back_populates='person_executer')
 #     upt_acquisitions_person_implementer: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', foreign_keys='[UptAcquisitions.person_id_implementer]', back_populates='person_implementer')
-#     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='implementer')
-#     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='implementer')
 #     agreement_implementer: Mapped[list['AgreementImplementer']] = relationship('AgreementImplementer', back_populates='implementer')
 #     lines: Mapped[list['Lines']] = relationship('Lines', back_populates='implementer')
 #     acquisition_implementer: Mapped[list['AcquisitionImplementer']] = relationship('AcquisitionImplementer', back_populates='implementer')
@@ -1570,6 +1570,7 @@
 #     person_type: Mapped[Optional[str]] = mapped_column(String(255))
 
 #     document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='persons')
+#     pillars: Mapped[list['Pillars']] = relationship('Pillars', back_populates='person')
 #     users: Mapped[Optional['Users']] = relationship('Users', uselist=False, back_populates='person')
 #     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='persons')
 #     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='persons')
@@ -1609,8 +1610,8 @@
 #     sicof_code: Mapped[Optional[str]] = mapped_column(String(255))
 
 #     pad_: Mapped[Optional['Pads']] = relationship('Pads', back_populates='pids')
-#     hws: Mapped[list['Hws']] = relationship('Hws', back_populates='pid')
 #     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='pid')
+#     hws: Mapped[list['Hws']] = relationship('Hws', back_populates='pid')
 #     lines: Mapped[list['Lines']] = relationship('Lines', back_populates='pid')
 #     terms_reference: Mapped[list['TermsReference']] = relationship('TermsReference', back_populates='pid')
 #     acquisitions: Mapped[list['Acquisitions']] = relationship('Acquisitions', back_populates='pid')
@@ -1747,6 +1748,384 @@
 #     approval_request_history: Mapped[list['ApprovalRequestHistory']] = relationship('ApprovalRequestHistory', back_populates='approval_request')
 #     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='approval_request')
 #     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='approval_request')
+
+
+# class ControlAccess(Base):
+#     __tablename__ = 'control_access'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['control_id'], ['controls.control_id'], name='fk_control_access_control'),
+#         ForeignKeyConstraint(['role_id'], ['roles.id'], name='fk_control_access_role'),
+#         PrimaryKeyConstraint('control_access_id', name='control_access_pkey')
+#     )
+
+#     control_access_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     role_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     control_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     has_access: Mapped[Optional[bool]] = mapped_column(Boolean)
+
+#     control: Mapped[Optional['Controls']] = relationship('Controls', back_populates='control_access')
+#     role: Mapped[Optional['Roles']] = relationship('Roles', back_populates='control_access')
+
+
+# class DocumentsTypesAgreements(Base):
+#     __tablename__ = 'documents_types_agreements'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['documents_approval_id'], ['documents_approval.id'], name='fk_documents_type_agreements_documents_approval'),
+#         PrimaryKeyConstraint('id', name='documents_types_agreements_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+#     description: Mapped[str] = mapped_column(Text, nullable=False)
+#     code: Mapped[str] = mapped_column(Text, nullable=False)
+#     template: Mapped[str] = mapped_column(Text, nullable=False)
+#     documents_approval_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     number: Mapped[Optional[int]] = mapped_column(Integer)
+#     template_path: Mapped[Optional[str]] = mapped_column(Text)
+#     is_active: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('true'))
+
+#     documents_approval: Mapped['DocumentsApproval'] = relationship('DocumentsApproval', back_populates='documents_types_agreements')
+#     attachment_agreement: Mapped[list['AttachmentAgreement']] = relationship('AttachmentAgreement', back_populates='documents_types_agreements')
+
+
+# class Pillars(Base):
+#     __tablename__ = 'pillars'
+#     __table_args__ = (
+#         CheckConstraint("color::text = ANY (ARRAY['neutral'::character varying::text, 'lime'::character varying::text, 'blue'::character varying::text, 'gray'::character varying::text, 'red'::character varying::text, 'green'::character varying::text, 'yellow'::character varying::text, 'indigo'::character varying::text, 'purple'::character varying::text, 'pink'::character varying::text, 'slate'::character varying::text, 'orange'::character varying::text, 'amber'::character varying::text, 'teal'::character varying::text, 'sky'::character varying::text])", name='pillars_color_check'),
+#         ForeignKeyConstraint(['person_id'], ['persons.id'], name='fk_pillars_person_id'),
+#         PrimaryKeyConstraint('id', name='pillars_pkey'),
+#         UniqueConstraint('name', name='pillars_name_unique')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     name: Mapped[str] = mapped_column(CITEXT, nullable=False)
+#     color: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("'gray'::character varying"))
+#     description: Mapped[Optional[str]] = mapped_column(CITEXT)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     person_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+#     person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='pillars')
+#     activities: Mapped[list['Activities']] = relationship('Activities', back_populates='pillar')
+#     capacity_assessments: Mapped[list['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='pillar')
+#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='pillar')
+#     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='pillar')
+
+
+# class Users(Base):
+#     __tablename__ = 'users'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['identification_type'], ['document_types.id'], name='users_identification_type_foreign'),
+#         ForeignKeyConstraint(['person_id'], ['persons.id'], name='users_person_id_foreign'),
+#         PrimaryKeyConstraint('id', name='users_pkey'),
+#         UniqueConstraint('identification_number', name='users_identification_number_unique'),
+#         UniqueConstraint('person_id', name='users_person_id_unique'),
+#         Index('users_email_index', 'email'),
+#         Index('users_identification_number_index', 'identification_number')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     first_name: Mapped[str] = mapped_column(CITEXT, nullable=False)
+#     last_name: Mapped[str] = mapped_column(CITEXT, nullable=False)
+#     identification_type: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     identification_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     email: Mapped[str] = mapped_column(String(255), nullable=False)
+#     password: Mapped[str] = mapped_column(String(255), nullable=False)
+#     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+#     other_name: Mapped[Optional[str]] = mapped_column(CITEXT)
+#     other_last_name: Mapped[Optional[str]] = mapped_column(CITEXT)
+#     position: Mapped[Optional[str]] = mapped_column(CITEXT)
+#     email_verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     mobile_phone: Mapped[Optional[str]] = mapped_column(String(255))
+#     remember_token: Mapped[Optional[str]] = mapped_column(String(100))
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     person_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     guid_msft: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+#     full_name: Mapped[Optional[str]] = mapped_column(Text, Computed("btrim((((((((COALESCE(first_name, ''::citext))::text || ' '::text) || (COALESCE(other_name, ''::citext))::text) || ' '::text) || (COALESCE(last_name, ''::citext))::text) || ' '::text) || (COALESCE(other_last_name, ''::citext))::text))", persisted=True))
+#     is_guest: Mapped[Optional[bool]] = mapped_column(Boolean)
+
+#     document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='users')
+#     person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
+#     approval_role_users: Mapped[list['ApprovalRoleUsers']] = relationship('ApprovalRoleUsers', back_populates='user')
+#     model_has_roles: Mapped[list['ModelHasRoles']] = relationship('ModelHasRoles', back_populates='model')
+#     notifications: Mapped[list['Notifications']] = relationship('Notifications', back_populates='user')
+#     tasks_applicant: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.applicant_id]', back_populates='applicant')
+#     tasks_executor: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.executor_id]', back_populates='executor')
+#     tasks_responsible: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.responsible_id]', back_populates='responsible')
+#     tasks_reviewer: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.reviewer_id]', back_populates='reviewer')
+#     users_delegate_delegate: Mapped[list['UsersDelegate']] = relationship('UsersDelegate', foreign_keys='[UsersDelegate.delegate_id]', back_populates='delegate')
+#     users_delegate_responsable: Mapped[list['UsersDelegate']] = relationship('UsersDelegate', foreign_keys='[UsersDelegate.responsable_id]', back_populates='responsable')
+#     users_programs: Mapped[list['UsersPrograms']] = relationship('UsersPrograms', back_populates='user')
+#     observations: Mapped[list['Observations']] = relationship('Observations', back_populates='users')
+#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='traveler_user')
+#     annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='user')
+
+
+# class Activities(Base):
+#     __tablename__ = 'activities'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='activities_activity_id_foreign'),
+#         ForeignKeyConstraint(['pillar_id'], ['pillars.id'], name='activities_pillar_id_foreign'),
+#         PrimaryKeyConstraint('id', name='activities_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     code: Mapped[str] = mapped_column(String(20), nullable=False)
+#     pillar_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     activity_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     description: Mapped[Optional[str]] = mapped_column(Text)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+#     is_logistics_expense_associate: Mapped[Optional[bool]] = mapped_column(Boolean)
+
+#     activity: Mapped[Optional['Activities']] = relationship('Activities', remote_side=[id], back_populates='activity_reverse')
+#     activity_reverse: Mapped[list['Activities']] = relationship('Activities', remote_side=[activity_id], back_populates='activity')
+#     pillar: Mapped['Pillars'] = relationship('Pillars', back_populates='activities')
+#     audit_acquisitions: Mapped[list['AuditAcquisitions']] = relationship('AuditAcquisitions', back_populates='activity')
+#     availabilities: Mapped[list['Availabilities']] = relationship('Availabilities', back_populates='activity')
+#     commitments: Mapped[list['Commitments']] = relationship('Commitments', back_populates='activity')
+#     hws: Mapped[list['Hws']] = relationship('Hws', back_populates='activity')
+#     payment_orders: Mapped[list['PaymentOrders']] = relationship('PaymentOrders', back_populates='activity')
+#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='activity')
+#     upt_acquisitions: Mapped[list['UptAcquisitions']] = relationship('UptAcquisitions', back_populates='activity')
+#     lines: Mapped[list['Lines']] = relationship('Lines', back_populates='activity')
+#     terms_reference_activity: Mapped[list['TermsReference']] = relationship('TermsReference', foreign_keys='[TermsReference.activity_id]', back_populates='activity')
+#     terms_reference_component: Mapped[list['TermsReference']] = relationship('TermsReference', foreign_keys='[TermsReference.component]', back_populates='activities')
+#     acquisitions: Mapped[list['Acquisitions']] = relationship('Acquisitions', back_populates='activity')
+
+
+# class ApprovalRequestHistory(Base):
+#     __tablename__ = 'approval_request_history'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['approval_request_id'], ['approval_requests.approval_request_id'], name='fk_approval_request_history_request'),
+#         ForeignKeyConstraint(['approval_role_id'], ['approval_roles.approval_role_id'], name='fk_approval_request_history_role'),
+#         ForeignKeyConstraint(['approval_status_id'], ['approval_status.approval_status_id'], name='fk_approval_request_history_status'),
+#         ForeignKeyConstraint(['step_id'], ['approval_flow_steps.step_id'], name='fk_approval_request_history_route'),
+#         PrimaryKeyConstraint('history_id', name='approval_request_history_pkey'),
+#         Index('idx_arh_request', 'approval_request_id'),
+#         Index('idx_arh_role', 'approval_role_id'),
+#         Index('idx_arh_status_user', 'approval_status_id', 'user_id'),
+#         Index('idx_arh_user_status', 'user_id', 'approval_status_id')
+#     )
+
+#     history_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     approval_request_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     approval_role_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     approval_status_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     user_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+#     comments: Mapped[Optional[str]] = mapped_column(Text)
+#     step_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     approved_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+#     received_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+#     due_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+#     mentioned_user_ids: Mapped[Optional[list[int]]] = mapped_column(ARRAY(Integer()))
+#     approver_user_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     approved_by_user: Mapped[Optional[str]] = mapped_column(Text)
+#     state_label: Mapped[Optional[str]] = mapped_column(Text)
+
+#     approval_request: Mapped['ApprovalRequests'] = relationship('ApprovalRequests', back_populates='approval_request_history')
+#     approval_role: Mapped['ApprovalRoles'] = relationship('ApprovalRoles', back_populates='approval_request_history')
+#     approval_status: Mapped['ApprovalStatus'] = relationship('ApprovalStatus', back_populates='approval_request_history')
+#     step: Mapped[Optional['ApprovalFlowSteps']] = relationship('ApprovalFlowSteps', back_populates='approval_request_history')
+
+
+# class ApprovalRoleUsers(Base):
+#     __tablename__ = 'approval_role_users'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['approval_role_id'], ['approval_roles.approval_role_id'], name='fk_approval_role_users_role'),
+#         ForeignKeyConstraint(['user_id'], ['users.id'], name='fk_approval_role_users_user'),
+#         PrimaryKeyConstraint('approval_role_user_id', name='approval_role_users_pkey'),
+#         Index('idx_approval_role_users_user_role', 'user_id', 'approval_role_id')
+#     )
+
+#     approval_role_user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     approval_role_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     active: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('true'))
+
+#     approval_role: Mapped['ApprovalRoles'] = relationship('ApprovalRoles', back_populates='approval_role_users')
+#     user: Mapped['Users'] = relationship('Users', back_populates='approval_role_users')
+
+
+# class CapacityAssessments(Base):
+#     __tablename__ = 'capacity_assessments'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['approval_request_id'], ['approval_requests.approval_request_id'], name='fk_capacity_assessment_approval_request'),
+#         ForeignKeyConstraint(['capacity_assessments_states_id'], ['capacity_assessments_states.id'], name='fk_capacity_assessment_capacity_assessments_states'),
+#         ForeignKeyConstraint(['implementer_id'], ['implementers.id'], name='fk_capacity_assessment_implementer'),
+#         ForeignKeyConstraint(['modality_id'], ['modalities.id'], name='fk_capacity_assessment_modalities'),
+#         ForeignKeyConstraint(['persons_id'], ['persons.id'], name='fk_capacity_assessment_persons'),
+#         ForeignKeyConstraint(['pid_id'], ['pids.id'], name='fk_capacity_assessment_pid'),
+#         ForeignKeyConstraint(['pillar_id'], ['pillars.id'], name='fk_capacity_assessments_pillar_id'),
+#         ForeignKeyConstraint(['program_id'], ['programs.id'], name='fk_capacity_assessment_program'),
+#         PrimaryKeyConstraint('id', name='capacity_assessments_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     name: Mapped[Optional[str]] = mapped_column(Text)
+#     observation: Mapped[Optional[str]] = mapped_column(Text)
+#     approximate_value: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+#     user_session: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     create_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+#     policy_approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     document_signature_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     code: Mapped[Optional[str]] = mapped_column(Text, server_default=text('gen_random_uuid()'))
+#     program_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     pid_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     implementer_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     approval_request_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     persons_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     capacity_assessments_states_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     modality_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     url_sharepoint_ec: Mapped[Optional[str]] = mapped_column(Text)
+#     pillar_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+#     approval_request: Mapped[Optional['ApprovalRequests']] = relationship('ApprovalRequests', back_populates='capacity_assessments')
+#     capacity_assessments_states: Mapped[Optional['CapacityAssessmentsStates']] = relationship('CapacityAssessmentsStates', back_populates='capacity_assessments')
+#     implementer: Mapped[Optional['Implementers']] = relationship('Implementers', back_populates='capacity_assessments')
+#     modality: Mapped[Optional['Modalities']] = relationship('Modalities', back_populates='capacity_assessments')
+#     persons: Mapped[Optional['Persons']] = relationship('Persons', back_populates='capacity_assessments')
+#     pid: Mapped[Optional['Pids']] = relationship('Pids', back_populates='capacity_assessments')
+#     pillar: Mapped[Optional['Pillars']] = relationship('Pillars', back_populates='capacity_assessments')
+#     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='capacity_assessments')
+#     attachment_agreement: Mapped[list['AttachmentAgreement']] = relationship('AttachmentAgreement', back_populates='capacity_assessments')
+#     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='capacity_assessment')
+#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='capacity_assessment')
+
+
+# class ModelHasRoles(Base):
+#     __tablename__ = 'model_has_roles'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['model_id'], ['users.id'], name='model_has_roles_model_id_fkey'),
+#         ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE', name='model_has_roles_role_id_foreign'),
+#         PrimaryKeyConstraint('role_id', 'model_id', 'model_type', name='model_has_roles_pkey'),
+#         Index('model_has_roles_model_id_model_type_index', 'model_id', 'model_type')
+#     )
+
+#     role_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     model_type: Mapped[str] = mapped_column(String(255), primary_key=True)
+#     model_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+#     model: Mapped['Users'] = relationship('Users', back_populates='model_has_roles')
+#     role: Mapped['Roles'] = relationship('Roles', back_populates='model_has_roles')
+
+
+# class Notifications(Base):
+#     __tablename__ = 'notifications'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='notifications_user_id_foreign'),
+#         PrimaryKeyConstraint('id', name='notifications_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     titulo: Mapped[str] = mapped_column(String(255), nullable=False)
+#     mensaje: Mapped[str] = mapped_column(Text, nullable=False)
+#     type: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("'info'::character varying"))
+#     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+#     data: Mapped[Optional[dict]] = mapped_column(JSON)
+#     read_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+
+#     user: Mapped['Users'] = relationship('Users', back_populates='notifications')
+
+
+# class Tasks(Base):
+#     __tablename__ = 'tasks'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['applicant_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_applicant_id_foreign'),
+#         ForeignKeyConstraint(['executor_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_executor_id_foreign'),
+#         ForeignKeyConstraint(['priority_id'], ['priorities.id'], ondelete='RESTRICT', onupdate='CASCADE', name='tasks_priority_id_foreign'),
+#         ForeignKeyConstraint(['responsible_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_responsible_id_foreign'),
+#         ForeignKeyConstraint(['reviewer_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_reviewer_id_foreign'),
+#         ForeignKeyConstraint(['state_id'], ['task_states.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_state_id_foreign'),
+#         PrimaryKeyConstraint('id', name='tasks_pkey'),
+#         Index('tasks_priority_id_index', 'priority_id')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     description: Mapped[str] = mapped_column(Text, nullable=False)
+#     applicant_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     executor_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     responsible_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     state_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     request_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     reviewer_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     expected_fulfillment_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     execution_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     file_path: Mapped[Optional[str]] = mapped_column(Text)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     name: Mapped[Optional[str]] = mapped_column(String(255))
+#     priority_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+#     applicant: Mapped['Users'] = relationship('Users', foreign_keys=[applicant_id], back_populates='tasks_applicant')
+#     executor: Mapped['Users'] = relationship('Users', foreign_keys=[executor_id], back_populates='tasks_executor')
+#     priority: Mapped[Optional['Priorities']] = relationship('Priorities', back_populates='tasks')
+#     responsible: Mapped['Users'] = relationship('Users', foreign_keys=[responsible_id], back_populates='tasks_responsible')
+#     reviewer: Mapped[Optional['Users']] = relationship('Users', foreign_keys=[reviewer_id], back_populates='tasks_reviewer')
+#     state: Mapped['TaskStates'] = relationship('TaskStates', back_populates='tasks')
+#     observations: Mapped[list['Observations']] = relationship('Observations', back_populates='tasks')
+
+
+# class UsersDelegate(Base):
+#     __tablename__ = 'users_delegate'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['delegate_id'], ['users.id'], name='fk_users_delegate_delegate'),
+#         ForeignKeyConstraint(['responsable_id'], ['users.id'], name='fk_users_delegate_responsable'),
+#         PrimaryKeyConstraint('delegation_id', name='users_delegate_pkey')
+#     )
+
+#     delegation_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     responsable_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     delegate_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=6), nullable=False, server_default=text('now()'))
+
+#     delegate: Mapped['Users'] = relationship('Users', foreign_keys=[delegate_id], back_populates='users_delegate_delegate')
+#     responsable: Mapped['Users'] = relationship('Users', foreign_keys=[responsable_id], back_populates='users_delegate_responsable')
+
+
+# class UsersPrograms(Base):
+#     __tablename__ = 'users_programs'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['program_id'], ['programs.id'], name='users_programs_id_program_fkey'),
+#         ForeignKeyConstraint(['user_id'], ['users.id'], name='users_programs_id_user_fkey'),
+#         PrimaryKeyConstraint('user_program_id', name='users_programs_pkey')
+#     )
+
+#     user_program_id: Mapped[int] = mapped_column(Integer, Sequence('users_programs_id_usuario_programa_seq'), primary_key=True)
+#     program_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+#     program: Mapped['Programs'] = relationship('Programs', back_populates='users_programs')
+#     user: Mapped['Users'] = relationship('Users', back_populates='users_programs')
+
+
+# class AttachmentAgreement(Base):
+#     __tablename__ = 'attachment_agreement'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['capacity_assessments_id'], ['capacity_assessments.id'], name='fk_attachment_agreements_capacity_assessments'),
+#         ForeignKeyConstraint(['documents_types_agreements_id'], ['documents_types_agreements.id'], name='fk_attachment_agreements_documents_types_agreements'),
+#         PrimaryKeyConstraint('id', name='attachment_agreement_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     attachment_name: Mapped[str] = mapped_column(Text, nullable=False)
+#     path_document: Mapped[str] = mapped_column(Text, nullable=False)
+#     capacity_assessments_id: Mapped[int] = mapped_column(Integer, nullable=False)
+#     observations: Mapped[str] = mapped_column(Text, nullable=False)
+#     documents_types_agreements_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+#     capacity_assessments: Mapped['CapacityAssessments'] = relationship('CapacityAssessments', back_populates='attachment_agreement')
+#     documents_types_agreements: Mapped['DocumentsTypesAgreements'] = relationship('DocumentsTypesAgreements', back_populates='attachment_agreement')
 
 
 # class AuditAcquisitions(Base):
@@ -1907,44 +2286,6 @@
 #     rubro_: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='commitments')
 
 
-# class ControlAccess(Base):
-#     __tablename__ = 'control_access'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['control_id'], ['controls.control_id'], name='fk_control_access_control'),
-#         ForeignKeyConstraint(['role_id'], ['roles.id'], name='fk_control_access_role'),
-#         PrimaryKeyConstraint('control_access_id', name='control_access_pkey')
-#     )
-
-#     control_access_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     role_id: Mapped[Optional[int]] = mapped_column(Integer)
-#     control_id: Mapped[Optional[int]] = mapped_column(Integer)
-#     has_access: Mapped[Optional[bool]] = mapped_column(Boolean)
-
-#     control: Mapped[Optional['Controls']] = relationship('Controls', back_populates='control_access')
-#     role: Mapped[Optional['Roles']] = relationship('Roles', back_populates='control_access')
-
-
-# class DocumentsTypesAgreements(Base):
-#     __tablename__ = 'documents_types_agreements'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['documents_approval_id'], ['documents_approval.id'], name='fk_documents_type_agreements_documents_approval'),
-#         PrimaryKeyConstraint('id', name='documents_types_agreements_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
-#     description: Mapped[str] = mapped_column(Text, nullable=False)
-#     code: Mapped[str] = mapped_column(Text, nullable=False)
-#     template: Mapped[str] = mapped_column(Text, nullable=False)
-#     documents_approval_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     number: Mapped[Optional[int]] = mapped_column(Integer)
-#     template_path: Mapped[Optional[str]] = mapped_column(Text)
-#     is_active: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('true'))
-
-#     documents_approval: Mapped['DocumentsApproval'] = relationship('DocumentsApproval', back_populates='documents_types_agreements')
-#     attachment_agreement: Mapped[list['AttachmentAgreement']] = relationship('AttachmentAgreement', back_populates='documents_types_agreements')
-
-
 # class Hws(Base):
 #     __tablename__ = 'hws'
 #     __table_args__ = (
@@ -1995,6 +2336,25 @@
 #     rubro_: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='hws')
 
 
+# class Observations(Base):
+#     __tablename__ = 'observations'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['id_task'], ['tasks.id'], ondelete='SET NULL', onupdate='CASCADE', name='observations_id_task_foreign'),
+#         ForeignKeyConstraint(['id_user'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='observations_id_user_foreign'),
+#         PrimaryKeyConstraint('id', name='observations_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     observation: Mapped[str] = mapped_column(Text, nullable=False)
+#     id_task: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     id_user: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+
+#     tasks: Mapped['Tasks'] = relationship('Tasks', back_populates='observations')
+#     users: Mapped['Users'] = relationship('Users', back_populates='observations')
+
+
 # class PaymentOrders(Base):
 #     __tablename__ = 'payment_orders'
 #     __table_args__ = (
@@ -2005,6 +2365,7 @@
 
 #     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 #     year: Mapped[int] = mapped_column(Integer, nullable=False)
+#     is_op: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
 #     consecutive: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     consecutive_rp: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     date_prepared: Mapped[Optional[datetime.date]] = mapped_column(Date)
@@ -2027,301 +2388,59 @@
 #     rubro_: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='payment_orders')
 
 
-# class UptAcquisitions(Base):
-#     __tablename__ = 'upt_acquisitions'
+# class PreviousStudies(Base):
+#     __tablename__ = 'previous_studies'
 #     __table_args__ = (
-#         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='upt_acquisitions_activity_id_foreign'),
-#         ForeignKeyConstraint(['code_id'], ['codes.id'], name='upt_acquisitions_code_id_foreign'),
-#         ForeignKeyConstraint(['expense_category_id'], ['expense_categories.id'], name='upt_acquisitions_expense_category_id_foreign'),
-#         ForeignKeyConstraint(['general_cat_id'], ['general_categories.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_general_cat_id_foreign'),
-#         ForeignKeyConstraint(['kfw_id'], ['kfw_observations.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_kfw_id_foreign'),
-#         ForeignKeyConstraint(['pad_id'], ['pads.id'], name='upt_acquisitions_pad_id_foreign'),
-#         ForeignKeyConstraint(['person_id_executer'], ['implementers.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_person_id_executer_foreign'),
-#         ForeignKeyConstraint(['person_id_implementer'], ['implementers.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_person_id_implementer_foreign'),
-#         ForeignKeyConstraint(['purchase_type_id'], ['purchase_types.id'], name='upt_acquisitions_purchase_type_id_foreign'),
-#         ForeignKeyConstraint(['rubro_id'], ['rubros.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_rubro_id_foreign'),
-#         ForeignKeyConstraint(['status_id'], ['padstatus.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_status_id_foreign'),
-#         PrimaryKeyConstraint('id', name='upt_acquisitions_pkey')
+#         ForeignKeyConstraint(['agreement_type_id'], ['agreement_types.id'], name='fk_previous_studies_agreement_type_id'),
+#         ForeignKeyConstraint(['approval_request_id'], ['approval_requests.approval_request_id'], name='fk_previous_studies_approval_request'),
+#         ForeignKeyConstraint(['capacity_assessment_id'], ['capacity_assessments.id'], name='fk_previous_studies_capacity_assessments'),
+#         ForeignKeyConstraint(['implementer_id'], ['implementers.id'], name='fk_previous_studies_implemeters'),
+#         ForeignKeyConstraint(['modality_id'], ['modalities.id'], name='fk_previous_studies_modality_id'),
+#         ForeignKeyConstraint(['persons_id'], ['persons.id'], name='fk_previous_studies_persons'),
+#         ForeignKeyConstraint(['previous_studies_states_id'], ['previous_studies_states.id'], name='fk_previous_studies_previous_studies_states'),
+#         ForeignKeyConstraint(['program_id'], ['programs.id'], name='fk_previous_studies_programs'),
+#         PrimaryKeyConstraint('id', name='previous_studies_pkey')
 #     )
 
 #     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     id_adquisition: Mapped[int] = mapped_column(Integer, nullable=False)
-#     process_number: Mapped[int] = mapped_column(Integer, nullable=False)
-#     pad_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     activity_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     expense_category_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     purchase_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     description: Mapped[Optional[str]] = mapped_column(Text)
-#     numero_contrato_temporal: Mapped[Optional[str]] = mapped_column(Text)
-#     status: Mapped[Optional[str]] = mapped_column(String(255))
-#     contracts_qty: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
-#     trm: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(8, 2))
-#     initial_budget_cop: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     initial_budget_usd: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     final_budget_cop: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     final_budget_usd: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     appropriate: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     appropriate_pending: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     fulfilled: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     unfulfilled: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     detail: Mapped[Optional[str]] = mapped_column(Text)
-#     code: Mapped[Optional[str]] = mapped_column(Text)
-#     code_siva: Mapped[Optional[str]] = mapped_column(Text)
-#     observations: Mapped[Optional[str]] = mapped_column(Text)
-#     code_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     initial_budget_eur: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     final_budget_eur: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
-#     person_id_implementer: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     person_id_executer: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     rubro_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     status_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     general_cat_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     kfw_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     version_creation: Mapped[Optional[str]] = mapped_column(String(255))
-#     version_update: Mapped[Optional[str]] = mapped_column(String(255))
-
-#     activity: Mapped['Activities'] = relationship('Activities', back_populates='upt_acquisitions')
-#     code_: Mapped[Optional['Codes']] = relationship('Codes', back_populates='upt_acquisitions')
-#     expense_category: Mapped['ExpenseCategories'] = relationship('ExpenseCategories', back_populates='upt_acquisitions')
-#     general_cat: Mapped[Optional['GeneralCategories']] = relationship('GeneralCategories', back_populates='upt_acquisitions')
-#     kfw: Mapped[Optional['KfwObservations']] = relationship('KfwObservations', back_populates='upt_acquisitions')
-#     pad: Mapped['Pads'] = relationship('Pads', back_populates='upt_acquisitions')
-#     person_executer: Mapped[Optional['Implementers']] = relationship('Implementers', foreign_keys=[person_id_executer], back_populates='upt_acquisitions_person_executer')
-#     person_implementer: Mapped[Optional['Implementers']] = relationship('Implementers', foreign_keys=[person_id_implementer], back_populates='upt_acquisitions_person_implementer')
-#     purchase_type: Mapped['PurchaseTypes'] = relationship('PurchaseTypes', back_populates='upt_acquisitions')
-#     rubro: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='upt_acquisitions')
-#     status_: Mapped[Optional['Padstatus']] = relationship('Padstatus', back_populates='upt_acquisitions')
-
-
-# class Users(Base):
-#     __tablename__ = 'users'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['identification_type'], ['document_types.id'], name='users_identification_type_foreign'),
-#         ForeignKeyConstraint(['person_id'], ['persons.id'], name='users_person_id_foreign'),
-#         PrimaryKeyConstraint('id', name='users_pkey'),
-#         UniqueConstraint('email', name='users_email_unique'),
-#         UniqueConstraint('identification_number', name='users_identification_number_unique'),
-#         UniqueConstraint('person_id', name='users_person_id_unique'),
-#         Index('users_email_index', 'email'),
-#         Index('users_identification_number_index', 'identification_number')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     first_name: Mapped[str] = mapped_column(CITEXT, nullable=False)
-#     last_name: Mapped[str] = mapped_column(CITEXT, nullable=False)
-#     identification_type: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     identification_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     email: Mapped[str] = mapped_column(String(255), nullable=False)
-#     password: Mapped[str] = mapped_column(String(255), nullable=False)
-#     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
-#     other_name: Mapped[Optional[str]] = mapped_column(CITEXT)
-#     other_last_name: Mapped[Optional[str]] = mapped_column(CITEXT)
-#     position: Mapped[Optional[str]] = mapped_column(CITEXT)
-#     email_verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     mobile_phone: Mapped[Optional[str]] = mapped_column(String(255))
-#     remember_token: Mapped[Optional[str]] = mapped_column(String(100))
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-#     person_id: Mapped[Optional[int]] = mapped_column(Integer)
-#     full_name: Mapped[Optional[str]] = mapped_column(Text, Computed("btrim((((((((COALESCE(first_name, ''::citext))::text || ' '::text) || (COALESCE(other_name, ''::citext))::text) || ' '::text) || (COALESCE(last_name, ''::citext))::text) || ' '::text) || (COALESCE(other_last_name, ''::citext))::text))", persisted=True))
-#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
-#     guid_msft: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-#     is_guest: Mapped[Optional[bool]] = mapped_column(Boolean)
-
-#     document_types: Mapped['DocumentTypes'] = relationship('DocumentTypes', back_populates='users')
-#     person: Mapped[Optional['Persons']] = relationship('Persons', back_populates='users')
-#     approval_role_users: Mapped[list['ApprovalRoleUsers']] = relationship('ApprovalRoleUsers', back_populates='user')
-#     model_has_roles: Mapped[list['ModelHasRoles']] = relationship('ModelHasRoles', back_populates='model')
-#     notifications: Mapped[list['Notifications']] = relationship('Notifications', back_populates='user')
-#     tasks_applicant: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.applicant_id]', back_populates='applicant')
-#     tasks_executor: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.executor_id]', back_populates='executor')
-#     tasks_responsible: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.responsible_id]', back_populates='responsible')
-#     tasks_reviewer: Mapped[list['Tasks']] = relationship('Tasks', foreign_keys='[Tasks.reviewer_id]', back_populates='reviewer')
-#     travel_requests: Mapped[list['TravelRequests']] = relationship('TravelRequests', back_populates='traveler_user')
-#     users_delegate_delegate: Mapped[list['UsersDelegate']] = relationship('UsersDelegate', foreign_keys='[UsersDelegate.delegate_id]', back_populates='delegate')
-#     users_delegate_responsable: Mapped[list['UsersDelegate']] = relationship('UsersDelegate', foreign_keys='[UsersDelegate.responsable_id]', back_populates='responsable')
-#     users_programs: Mapped[list['UsersPrograms']] = relationship('UsersPrograms', back_populates='user')
-#     observations: Mapped[list['Observations']] = relationship('Observations', back_populates='users')
-#     annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='user')
-
-
-# class ApprovalRequestHistory(Base):
-#     __tablename__ = 'approval_request_history'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['approval_request_id'], ['approval_requests.approval_request_id'], name='fk_approval_request_history_request'),
-#         ForeignKeyConstraint(['approval_role_id'], ['approval_roles.approval_role_id'], name='fk_approval_request_history_role'),
-#         ForeignKeyConstraint(['approval_status_id'], ['approval_status.approval_status_id'], name='fk_approval_request_history_status'),
-#         ForeignKeyConstraint(['step_id'], ['approval_flow_steps.step_id'], name='fk_approval_request_history_route'),
-#         PrimaryKeyConstraint('history_id', name='approval_request_history_pkey'),
-#         Index('idx_arh_request', 'approval_request_id'),
-#         Index('idx_arh_role', 'approval_role_id'),
-#         Index('idx_arh_status_user', 'approval_status_id', 'user_id'),
-#         Index('idx_arh_user_status', 'user_id', 'approval_status_id')
-#     )
-
-#     history_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     approval_request_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     approval_role_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     approval_status_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     user_id: Mapped[Optional[int]] = mapped_column(Integer)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-#     comments: Mapped[Optional[str]] = mapped_column(Text)
-#     step_id: Mapped[Optional[int]] = mapped_column(Integer)
-#     approved_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-#     received_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-#     due_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-#     mentioned_user_ids: Mapped[Optional[list[int]]] = mapped_column(ARRAY(Integer()))
-#     approver_user_id: Mapped[Optional[int]] = mapped_column(Integer)
-#     approved_by_user: Mapped[Optional[str]] = mapped_column(Text)
-#     state_label: Mapped[Optional[str]] = mapped_column(Text)
-
-#     approval_request: Mapped['ApprovalRequests'] = relationship('ApprovalRequests', back_populates='approval_request_history')
-#     approval_role: Mapped['ApprovalRoles'] = relationship('ApprovalRoles', back_populates='approval_request_history')
-#     approval_status: Mapped['ApprovalStatus'] = relationship('ApprovalStatus', back_populates='approval_request_history')
-#     step: Mapped[Optional['ApprovalFlowSteps']] = relationship('ApprovalFlowSteps', back_populates='approval_request_history')
-
-
-# class ApprovalRoleUsers(Base):
-#     __tablename__ = 'approval_role_users'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['approval_role_id'], ['approval_roles.approval_role_id'], name='fk_approval_role_users_role'),
-#         ForeignKeyConstraint(['user_id'], ['users.id'], name='fk_approval_role_users_user'),
-#         PrimaryKeyConstraint('approval_role_user_id', name='approval_role_users_pkey'),
-#         Index('idx_approval_role_users_user_role', 'user_id', 'approval_role_id')
-#     )
-
-#     approval_role_user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     approval_role_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     active: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=text('true'))
-
-#     approval_role: Mapped['ApprovalRoles'] = relationship('ApprovalRoles', back_populates='approval_role_users')
-#     user: Mapped['Users'] = relationship('Users', back_populates='approval_role_users')
-
-
-# class CapacityAssessments(Base):
-#     __tablename__ = 'capacity_assessments'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['approval_request_id'], ['approval_requests.approval_request_id'], name='fk_capacity_assessment_approval_request'),
-#         ForeignKeyConstraint(['capacity_assessments_states_id'], ['capacity_assessments_states.id'], name='fk_capacity_assessment_capacity_assessments_states'),
-#         ForeignKeyConstraint(['implementer_id'], ['implementers.id'], name='fk_capacity_assessment_implementer'),
-#         ForeignKeyConstraint(['modality_id'], ['modalities.id'], name='fk_capacity_assessment_modalities'),
-#         ForeignKeyConstraint(['persons_id'], ['persons.id'], name='fk_capacity_assessment_persons'),
-#         ForeignKeyConstraint(['pid_id'], ['pids.id'], name='fk_capacity_assessment_pid'),
-#         ForeignKeyConstraint(['program_id'], ['programs.id'], name='fk_capacity_assessment_program'),
-#         PrimaryKeyConstraint('id', name='capacity_assessments_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     name: Mapped[Optional[str]] = mapped_column(Text)
-#     observation: Mapped[Optional[str]] = mapped_column(Text)
-#     approximate_value: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+#     precedents: Mapped[str] = mapped_column(Text, nullable=False)
+#     justification: Mapped[Optional[str]] = mapped_column(Text)
+#     scope: Mapped[Optional[str]] = mapped_column(Text)
+#     overall_objective: Mapped[Optional[str]] = mapped_column(Text)
+#     term: Mapped[Optional[str]] = mapped_column(Text)
+#     obligations: Mapped[Optional[str]] = mapped_column(Text)
+#     supervisor: Mapped[Optional[str]] = mapped_column(Text)
 #     user_session: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     create_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-#     policy_approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     document_signature_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     end_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     code: Mapped[Optional[str]] = mapped_column(Text, server_default=text('gen_random_uuid()'))
-#     program_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     pid_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     total_value: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     contributions_ei: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     total_value_executes_fpn: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     total_value_executes_ei: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     implementer_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     approval_request_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     persons_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     capacity_assessments_states_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     modality_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     url_sharepoint_ec: Mapped[Optional[str]] = mapped_column(Text)
+#     capacity_assessment_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     approval_request_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     contributions_fpn: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     estimated_term: Mapped[Optional[str]] = mapped_column(Text)
+#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+#     program_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     code: Mapped[Optional[str]] = mapped_column(Text)
+#     previous_studies_states_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     agreement_type_id: Mapped[Optional[int]] = mapped_column(Integer)
+#     modality_id: Mapped[Optional[int]] = mapped_column(Integer)
 
-#     approval_request: Mapped[Optional['ApprovalRequests']] = relationship('ApprovalRequests', back_populates='capacity_assessments')
-#     capacity_assessments_states: Mapped[Optional['CapacityAssessmentsStates']] = relationship('CapacityAssessmentsStates', back_populates='capacity_assessments')
-#     implementer: Mapped[Optional['Implementers']] = relationship('Implementers', back_populates='capacity_assessments')
-#     modality: Mapped[Optional['Modalities']] = relationship('Modalities', back_populates='capacity_assessments')
-#     persons: Mapped[Optional['Persons']] = relationship('Persons', back_populates='capacity_assessments')
-#     pid: Mapped[Optional['Pids']] = relationship('Pids', back_populates='capacity_assessments')
-#     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='capacity_assessments')
-#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='capacity_assessment')
-#     attachment_agreement: Mapped[list['AttachmentAgreement']] = relationship('AttachmentAgreement', back_populates='capacity_assessments')
-#     previous_studies: Mapped[list['PreviousStudies']] = relationship('PreviousStudies', back_populates='capacity_assessment')
-
-
-# class ModelHasRoles(Base):
-#     __tablename__ = 'model_has_roles'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['model_id'], ['users.id'], name='model_has_roles_model_id_fkey'),
-#         ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE', name='model_has_roles_role_id_foreign'),
-#         PrimaryKeyConstraint('role_id', 'model_id', 'model_type', name='model_has_roles_pkey'),
-#         Index('model_has_roles_model_id_model_type_index', 'model_id', 'model_type')
-#     )
-
-#     role_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     model_type: Mapped[str] = mapped_column(String(255), primary_key=True)
-#     model_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-
-#     model: Mapped['Users'] = relationship('Users', back_populates='model_has_roles')
-#     role: Mapped['Roles'] = relationship('Roles', back_populates='model_has_roles')
-
-
-# class Notifications(Base):
-#     __tablename__ = 'notifications'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='notifications_user_id_foreign'),
-#         PrimaryKeyConstraint('id', name='notifications_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     titulo: Mapped[str] = mapped_column(String(255), nullable=False)
-#     mensaje: Mapped[str] = mapped_column(Text, nullable=False)
-#     type: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("'info'::character varying"))
-#     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
-#     data: Mapped[Optional[dict]] = mapped_column(JSON)
-#     read_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-
-#     user: Mapped['Users'] = relationship('Users', back_populates='notifications')
-
-
-# class Tasks(Base):
-#     __tablename__ = 'tasks'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['applicant_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_applicant_id_foreign'),
-#         ForeignKeyConstraint(['executor_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_executor_id_foreign'),
-#         ForeignKeyConstraint(['priority_id'], ['priorities.id'], ondelete='RESTRICT', onupdate='CASCADE', name='tasks_priority_id_foreign'),
-#         ForeignKeyConstraint(['responsible_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_responsible_id_foreign'),
-#         ForeignKeyConstraint(['reviewer_id'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_reviewer_id_foreign'),
-#         ForeignKeyConstraint(['state_id'], ['task_states.id'], ondelete='SET NULL', onupdate='CASCADE', name='tasks_state_id_foreign'),
-#         PrimaryKeyConstraint('id', name='tasks_pkey'),
-#         Index('tasks_priority_id_index', 'priority_id')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     description: Mapped[str] = mapped_column(Text, nullable=False)
-#     applicant_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     executor_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     responsible_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     state_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     request_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     reviewer_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     expected_fulfillment_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     execution_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-#     file_path: Mapped[Optional[str]] = mapped_column(Text)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     name: Mapped[Optional[str]] = mapped_column(String(255))
-#     priority_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-
-#     applicant: Mapped['Users'] = relationship('Users', foreign_keys=[applicant_id], back_populates='tasks_applicant')
-#     executor: Mapped['Users'] = relationship('Users', foreign_keys=[executor_id], back_populates='tasks_executor')
-#     priority: Mapped[Optional['Priorities']] = relationship('Priorities', back_populates='tasks')
-#     responsible: Mapped['Users'] = relationship('Users', foreign_keys=[responsible_id], back_populates='tasks_responsible')
-#     reviewer: Mapped[Optional['Users']] = relationship('Users', foreign_keys=[reviewer_id], back_populates='tasks_reviewer')
-#     state: Mapped['TaskStates'] = relationship('TaskStates', back_populates='tasks')
-#     observations: Mapped[list['Observations']] = relationship('Observations', back_populates='tasks')
+#     agreement_type: Mapped[Optional['AgreementTypes']] = relationship('AgreementTypes', back_populates='previous_studies')
+#     approval_request: Mapped[Optional['ApprovalRequests']] = relationship('ApprovalRequests', back_populates='previous_studies')
+#     capacity_assessment: Mapped[Optional['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='previous_studies')
+#     implementer: Mapped[Optional['Implementers']] = relationship('Implementers', back_populates='previous_studies')
+#     modality: Mapped[Optional['Modalities']] = relationship('Modalities', back_populates='previous_studies')
+#     persons: Mapped[Optional['Persons']] = relationship('Persons', back_populates='previous_studies')
+#     previous_studies_states: Mapped[Optional['PreviousStudiesStates']] = relationship('PreviousStudiesStates', back_populates='previous_studies')
+#     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='previous_studies')
+#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='prevous_study')
+#     risks: Mapped[list['Risks']] = relationship('Risks', back_populates='previous_studies')
+#     agreements_products: Mapped[list['AgreementsProducts']] = relationship('AgreementsProducts', back_populates='previous_studies')
+#     disbursement: Mapped[list['Disbursement']] = relationship('Disbursement', back_populates='previous_studies')
 
 
 # class TravelRequests(Base):
@@ -2426,37 +2545,72 @@
 #     travel_legalizations: Mapped[list['TravelLegalizations']] = relationship('TravelLegalizations', back_populates='travel_request')
 
 
-# class UsersDelegate(Base):
-#     __tablename__ = 'users_delegate'
+# class UptAcquisitions(Base):
+#     __tablename__ = 'upt_acquisitions'
 #     __table_args__ = (
-#         ForeignKeyConstraint(['delegate_id'], ['users.id'], name='fk_users_delegate_delegate'),
-#         ForeignKeyConstraint(['responsable_id'], ['users.id'], name='fk_users_delegate_responsable'),
-#         PrimaryKeyConstraint('delegation_id', name='users_delegate_pkey')
+#         ForeignKeyConstraint(['activity_id'], ['activities.id'], name='upt_acquisitions_activity_id_foreign'),
+#         ForeignKeyConstraint(['code_id'], ['codes.id'], name='upt_acquisitions_code_id_foreign'),
+#         ForeignKeyConstraint(['expense_category_id'], ['expense_categories.id'], name='upt_acquisitions_expense_category_id_foreign'),
+#         ForeignKeyConstraint(['general_cat_id'], ['general_categories.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_general_cat_id_foreign'),
+#         ForeignKeyConstraint(['kfw_id'], ['kfw_observations.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_kfw_id_foreign'),
+#         ForeignKeyConstraint(['pad_id'], ['pads.id'], name='upt_acquisitions_pad_id_foreign'),
+#         ForeignKeyConstraint(['person_id_executer'], ['implementers.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_person_id_executer_foreign'),
+#         ForeignKeyConstraint(['person_id_implementer'], ['implementers.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_person_id_implementer_foreign'),
+#         ForeignKeyConstraint(['purchase_type_id'], ['purchase_types.id'], name='upt_acquisitions_purchase_type_id_foreign'),
+#         ForeignKeyConstraint(['rubro_id'], ['rubros.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_rubro_id_foreign'),
+#         ForeignKeyConstraint(['status_id'], ['padstatus.id'], ondelete='SET NULL', onupdate='CASCADE', name='upt_acquisitions_status_id_foreign'),
+#         PrimaryKeyConstraint('id', name='upt_acquisitions_pkey')
 #     )
 
-#     delegation_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     responsable_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     delegate_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=6), nullable=False, server_default=text('now()'))
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     id_adquisition: Mapped[int] = mapped_column(Integer, nullable=False)
+#     process_number: Mapped[int] = mapped_column(Integer, nullable=False)
+#     pad_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     activity_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     expense_category_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     purchase_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     description: Mapped[Optional[str]] = mapped_column(Text)
+#     numero_contrato_temporal: Mapped[Optional[str]] = mapped_column(Text)
+#     status: Mapped[Optional[str]] = mapped_column(String(255))
+#     contracts_qty: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))
+#     trm: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(8, 2))
+#     initial_budget_cop: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     initial_budget_usd: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     final_budget_cop: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     final_budget_usd: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     appropriate: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     appropriate_pending: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     fulfilled: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     unfulfilled: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     detail: Mapped[Optional[str]] = mapped_column(Text)
+#     code: Mapped[Optional[str]] = mapped_column(Text)
+#     code_siva: Mapped[Optional[str]] = mapped_column(Text)
+#     observations: Mapped[Optional[str]] = mapped_column(Text)
+#     code_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     initial_budget_eur: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     final_budget_eur: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'0'::bigint"))
+#     person_id_implementer: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     person_id_executer: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     rubro_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     status_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     general_cat_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     kfw_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     version_creation: Mapped[Optional[str]] = mapped_column(String(255))
+#     version_update: Mapped[Optional[str]] = mapped_column(String(255))
 
-#     delegate: Mapped['Users'] = relationship('Users', foreign_keys=[delegate_id], back_populates='users_delegate_delegate')
-#     responsable: Mapped['Users'] = relationship('Users', foreign_keys=[responsable_id], back_populates='users_delegate_responsable')
-
-
-# class UsersPrograms(Base):
-#     __tablename__ = 'users_programs'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['program_id'], ['programs.id'], name='users_programs_id_program_fkey'),
-#         ForeignKeyConstraint(['user_id'], ['users.id'], name='users_programs_id_user_fkey'),
-#         PrimaryKeyConstraint('user_program_id', name='users_programs_pkey')
-#     )
-
-#     user_program_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     program_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
-
-#     program: Mapped['Programs'] = relationship('Programs', back_populates='users_programs')
-#     user: Mapped['Users'] = relationship('Users', back_populates='users_programs')
+#     activity: Mapped['Activities'] = relationship('Activities', back_populates='upt_acquisitions')
+#     code_: Mapped[Optional['Codes']] = relationship('Codes', back_populates='upt_acquisitions')
+#     expense_category: Mapped['ExpenseCategories'] = relationship('ExpenseCategories', back_populates='upt_acquisitions')
+#     general_cat: Mapped[Optional['GeneralCategories']] = relationship('GeneralCategories', back_populates='upt_acquisitions')
+#     kfw: Mapped[Optional['KfwObservations']] = relationship('KfwObservations', back_populates='upt_acquisitions')
+#     pad: Mapped['Pads'] = relationship('Pads', back_populates='upt_acquisitions')
+#     person_executer: Mapped[Optional['Implementers']] = relationship('Implementers', foreign_keys=[person_id_executer], back_populates='upt_acquisitions_person_executer')
+#     person_implementer: Mapped[Optional['Implementers']] = relationship('Implementers', foreign_keys=[person_id_implementer], back_populates='upt_acquisitions_person_implementer')
+#     purchase_type: Mapped['PurchaseTypes'] = relationship('PurchaseTypes', back_populates='upt_acquisitions')
+#     rubro: Mapped[Optional['Rubros']] = relationship('Rubros', back_populates='upt_acquisitions')
+#     status_: Mapped[Optional['Padstatus']] = relationship('Padstatus', back_populates='upt_acquisitions')
 
 
 # class Agreements(Base):
@@ -2470,6 +2624,7 @@
 #         ForeignKeyConstraint(['capacity_assessment_id'], ['capacity_assessments.id'], name='fk_agreements_capacity_assessment'),
 #         ForeignKeyConstraint(['modality_id'], ['modalities.id'], ondelete='CASCADE', name='agreements_modality_id_foreign'),
 #         ForeignKeyConstraint(['pillar_id'], ['pillars.id'], name='agreements_pillar_id_foreign'),
+#         ForeignKeyConstraint(['prevous_study_id'], ['previous_studies.id'], name='agreements_prevous_study_id_fkey'),
 #         ForeignKeyConstraint(['program_id'], ['programs.id'], name='agreements_program_id_foreign'),
 #         ForeignKeyConstraint(['region_id'], ['regions.id'], name='agreements_region_id_foreign'),
 #         PrimaryKeyConstraint('id', name='agreements_pkey'),
@@ -2483,10 +2638,6 @@
 #     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 #     is_currency_usd: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
 #     policy_approval: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
-#     program_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("'1'::bigint"))
-#     agreement_type_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     agreement_stage_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     agreement_origin_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 #     name: Mapped[Optional[str]] = mapped_column(CITEXT)
 #     code: Mapped[Optional[str]] = mapped_column(String(100))
 #     local: Mapped[Optional[int]] = mapped_column(Integer)
@@ -2504,7 +2655,11 @@
 #     liquidation_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 #     final_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 #     agreement_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     program_id: Mapped[Optional[int]] = mapped_column(BigInteger, server_default=text("'1'::bigint"))
 #     pillar_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     agreement_type_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     agreement_stage_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     agreement_origin_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     region_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     marking: Mapped[Optional[str]] = mapped_column(String(255))
 #     priority: Mapped[Optional[str]] = mapped_column(String(255), server_default=text("'Bajo'::character varying"))
@@ -2552,16 +2707,22 @@
 #     acquisitions_observations: Mapped[Optional[str]] = mapped_column(Text)
 #     uer_observations: Mapped[Optional[str]] = mapped_column(Text)
 #     capacity_assessment_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
+#     justification: Mapped[Optional[str]] = mapped_column(Text)
+#     precedents: Mapped[Optional[str]] = mapped_column(Text)
+#     prevous_study_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     scope: Mapped[Optional[str]] = mapped_column(Text)
 
 #     agreement: Mapped[Optional['Agreements']] = relationship('Agreements', remote_side=[id], back_populates='agreement_reverse')
 #     agreement_reverse: Mapped[list['Agreements']] = relationship('Agreements', remote_side=[agreement_id], back_populates='agreement')
-#     agreement_origin: Mapped['AgreementOrigins'] = relationship('AgreementOrigins', back_populates='agreements')
-#     agreement_stage: Mapped['AgreementStages'] = relationship('AgreementStages', back_populates='agreements')
-#     agreement_type: Mapped['AgreementTypes'] = relationship('AgreementTypes', back_populates='agreements')
+#     agreement_origin: Mapped[Optional['AgreementOrigins']] = relationship('AgreementOrigins', back_populates='agreements')
+#     agreement_stage: Mapped[Optional['AgreementStages']] = relationship('AgreementStages', back_populates='agreements')
+#     agreement_type: Mapped[Optional['AgreementTypes']] = relationship('AgreementTypes', back_populates='agreements')
 #     capacity_assessment: Mapped[Optional['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='agreements')
 #     modality: Mapped[Optional['Modalities']] = relationship('Modalities', back_populates='agreements')
 #     pillar: Mapped[Optional['Pillars']] = relationship('Pillars', back_populates='agreements')
-#     program: Mapped['Programs'] = relationship('Programs', back_populates='agreements')
+#     prevous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies', back_populates='agreements')
+#     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='agreements')
 #     region: Mapped[Optional['Regions']] = relationship('Regions', back_populates='agreements')
 #     access_agreement_person: Mapped[list['AccessAgreementPerson']] = relationship('AccessAgreementPerson', back_populates='agreement')
 #     agreement_implementer: Mapped[list['AgreementImplementer']] = relationship('AgreementImplementer', back_populates='agreement')
@@ -2569,28 +2730,10 @@
 #     agreements_products: Mapped[list['AgreementsProducts']] = relationship('AgreementsProducts', back_populates='agreements')
 #     annotations: Mapped[list['Annotations']] = relationship('Annotations', back_populates='agreement')
 #     audit_meetings_committees: Mapped[list['AuditMeetingsCommittees']] = relationship('AuditMeetingsCommittees', back_populates='agreements')
+#     disbursement: Mapped[list['Disbursement']] = relationship('Disbursement', back_populates='agreement')
 #     lines: Mapped[list['Lines']] = relationship('Lines', back_populates='agreement')
 #     terms_reference: Mapped[list['TermsReference']] = relationship('TermsReference', back_populates='agreements')
 #     acquisitions: Mapped[list['Acquisitions']] = relationship('Acquisitions', back_populates='agreement')
-
-
-# class AttachmentAgreement(Base):
-#     __tablename__ = 'attachment_agreement'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['capacity_assessments_id'], ['capacity_assessments.id'], name='fk_attachment_agreements_capacity_assessments'),
-#         ForeignKeyConstraint(['documents_types_agreements_id'], ['documents_types_agreements.id'], name='fk_attachment_agreements_documents_types_agreements'),
-#         PrimaryKeyConstraint('id', name='attachment_agreement_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     attachment_name: Mapped[str] = mapped_column(Text, nullable=False)
-#     path_document: Mapped[str] = mapped_column(Text, nullable=False)
-#     capacity_assessments_id: Mapped[int] = mapped_column(Integer, nullable=False)
-#     observations: Mapped[str] = mapped_column(Text, nullable=False)
-#     documents_types_agreements_id: Mapped[int] = mapped_column(Integer, nullable=False)
-
-#     capacity_assessments: Mapped['CapacityAssessments'] = relationship('CapacityAssessments', back_populates='attachment_agreement')
-#     documents_types_agreements: Mapped['DocumentsTypesAgreements'] = relationship('DocumentsTypesAgreements', back_populates='attachment_agreement')
 
 
 # class AttachmentTravelTp(Base):
@@ -2612,69 +2755,19 @@
 #     travel_request: Mapped[Optional['TravelRequests']] = relationship('TravelRequests', back_populates='attachment_travel_tp')
 
 
-# class Observations(Base):
-#     __tablename__ = 'observations'
+# class Risks(Base):
+#     __tablename__ = 'risks'
 #     __table_args__ = (
-#         ForeignKeyConstraint(['id_task'], ['tasks.id'], ondelete='SET NULL', onupdate='CASCADE', name='observations_id_task_foreign'),
-#         ForeignKeyConstraint(['id_user'], ['users.id'], ondelete='SET NULL', onupdate='CASCADE', name='observations_id_user_foreign'),
-#         PrimaryKeyConstraint('id', name='observations_pkey')
+#         ForeignKeyConstraint(['previous_studies_id'], ['previous_studies.id'], name='fk_risks_previous_studies'),
+#         PrimaryKeyConstraint('id', name='risks_pkey')
 #     )
 
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     observation: Mapped[str] = mapped_column(Text, nullable=False)
-#     id_task: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     id_user: Mapped[int] = mapped_column(BigInteger, nullable=False)
-#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
-#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+#     risk: Mapped[str] = mapped_column(Text, nullable=False)
+#     mitigation: Mapped[str] = mapped_column(Text, nullable=False)
+#     previous_studies_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
-#     tasks: Mapped['Tasks'] = relationship('Tasks', back_populates='observations')
-#     users: Mapped['Users'] = relationship('Users', back_populates='observations')
-
-
-# class PreviousStudies(Base):
-#     __tablename__ = 'previous_studies'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['approval_request_id'], ['approval_requests.approval_request_id'], name='fk_previous_studies_approval_request'),
-#         ForeignKeyConstraint(['capacity_assessment_id'], ['capacity_assessments.id'], name='fk_previous_studies_capacity_assessments'),
-#         ForeignKeyConstraint(['implementer_id'], ['implementers.id'], name='fk_previous_studies_implemeters'),
-#         ForeignKeyConstraint(['persons_id'], ['persons.id'], name='fk_previous_studies_persons'),
-#         ForeignKeyConstraint(['previous_studies_states_id'], ['previous_studies_states.id'], name='fk_previous_studies_previous_studies_states'),
-#         ForeignKeyConstraint(['program_id'], ['programs.id'], name='fk_previous_studies_programs'),
-#         PrimaryKeyConstraint('id', name='previous_studies_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-#     precedents: Mapped[str] = mapped_column(Text, nullable=False)
-#     justification: Mapped[Optional[str]] = mapped_column(Text)
-#     scope: Mapped[Optional[str]] = mapped_column(Text)
-#     overall_objective: Mapped[Optional[str]] = mapped_column(Text)
-#     term: Mapped[Optional[str]] = mapped_column(Text)
-#     obligations: Mapped[Optional[str]] = mapped_column(Text)
-#     supervisor: Mapped[Optional[str]] = mapped_column(Text)
-#     user_session: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     create_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-#     total_value: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     contributions_ei: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     total_value_executes_fpn: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     total_value_executes_ei: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     implementer_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     persons_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     capacity_assessment_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     approval_request_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     contributions_fpn: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     estimated_term: Mapped[Optional[str]] = mapped_column(Text)
-#     guid: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, server_default=text('gen_random_uuid()'))
-#     program_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-#     code: Mapped[Optional[str]] = mapped_column(Text)
-#     previous_studies_states_id: Mapped[Optional[int]] = mapped_column(Integer)
-
-#     approval_request: Mapped[Optional['ApprovalRequests']] = relationship('ApprovalRequests', back_populates='previous_studies')
-#     capacity_assessment: Mapped[Optional['CapacityAssessments']] = relationship('CapacityAssessments', back_populates='previous_studies')
-#     implementer: Mapped[Optional['Implementers']] = relationship('Implementers', back_populates='previous_studies')
-#     persons: Mapped[Optional['Persons']] = relationship('Persons', back_populates='previous_studies')
-#     previous_studies_states: Mapped[Optional['PreviousStudiesStates']] = relationship('PreviousStudiesStates', back_populates='previous_studies')
-#     program: Mapped[Optional['Programs']] = relationship('Programs', back_populates='previous_studies')
-#     risks: Mapped[list['Risks']] = relationship('Risks', back_populates='previous_studies')
+#     previous_studies: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies', back_populates='risks')
 
 
 # class TravelAccommodations(Base):
@@ -2853,6 +2946,7 @@
 #         ForeignKeyConstraint(['id_agreement'], ['agreements.id'], name='agreements_products_id_agreement_foreign'),
 #         ForeignKeyConstraint(['id_duplicate_product'], ['agreements_products.id'], ondelete='SET NULL', name='fk_duplicate_product'),
 #         ForeignKeyConstraint(['id_product'], ['agreements_products.id'], name='fk_agreements_products'),
+#         ForeignKeyConstraint(['previous_studies_id'], ['previous_studies.id'], name='fk_agreements_products_previous_studies'),
 #         ForeignKeyConstraint(['state_id'], ['products_state.id'], name='agreements_products_state_id_foreign'),
 #         PrimaryKeyConstraint('id', name='agreements_products_pkey'),
 #         Index('idx_duplicate_product', 'id_duplicate_product')
@@ -2877,12 +2971,15 @@
 #     state_id: Mapped[Optional[int]] = mapped_column(Integer)
 #     approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 #     id_duplicate_product: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     session: Mapped[Optional[str]] = mapped_column(Text)
+#     previous_studies_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
 #     agreements: Mapped['Agreements'] = relationship('Agreements', back_populates='agreements_products')
 #     agreements_products: Mapped[Optional['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id], foreign_keys=[id_duplicate_product], back_populates='agreements_products_reverse')
 #     agreements_products_reverse: Mapped[list['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id_duplicate_product], foreign_keys=[id_duplicate_product], back_populates='agreements_products')
 #     agreements_products_: Mapped[Optional['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id], foreign_keys=[id_product], back_populates='agreements_products__reverse')
 #     agreements_products__reverse: Mapped[list['AgreementsProducts']] = relationship('AgreementsProducts', remote_side=[id_product], foreign_keys=[id_product], back_populates='agreements_products_')
+#     previous_studies: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies', back_populates='agreements_products')
 #     state: Mapped[Optional['ProductsState']] = relationship('ProductsState', back_populates='agreements_products')
 #     disbursement_products: Mapped[list['DisbursementProducts']] = relationship('DisbursementProducts', back_populates='product')
 
@@ -2944,6 +3041,37 @@
 #     audit_meetings_committees_detail: Mapped[list['AuditMeetingsCommitteesDetail']] = relationship('AuditMeetingsCommitteesDetail', back_populates='audit_meetings_committees')
 
 
+# class Disbursement(Base):
+#     __tablename__ = 'disbursement'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['agreement_id'], ['agreements.id'], name='fk_agreements_products_agreements'),
+#         ForeignKeyConstraint(['previous_studies_id'], ['previous_studies.id'], name='fk_disbursement_previous_studies'),
+#         ForeignKeyConstraint(['state_id'], ['disbursement_state.id'], name='fk_disbursement_state'),
+#         PrimaryKeyConstraint('id', name='disbursement_pkey')
+#     )
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(True, 0))
+#     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=0))
+#     value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(15, 2))
+#     scheduled_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     request_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     validation_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     number_disbursement: Mapped[Optional[int]] = mapped_column(Integer)
+#     disbursement_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
+#     state_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     documento_soporte: Mapped[Optional[str]] = mapped_column(Text)
+#     observations: Mapped[Optional[str]] = mapped_column(Text)
+#     agreement_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+#     previous_studies_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+#     agreement: Mapped[Optional['Agreements']] = relationship('Agreements', back_populates='disbursement')
+#     previous_studies: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies', back_populates='disbursement')
+#     state: Mapped[Optional['DisbursementState']] = relationship('DisbursementState', back_populates='disbursement')
+#     disbursement_products: Mapped[list['DisbursementProducts']] = relationship('DisbursementProducts', back_populates='disbursement')
+
+
 # class Lines(Base):
 #     __tablename__ = 'lines'
 #     __table_args__ = (
@@ -2992,21 +3120,6 @@
 #     pid: Mapped['Pids'] = relationship('Pids', back_populates='lines')
 #     terms_reference: Mapped[list['TermsReference']] = relationship('TermsReference', back_populates='line')
 #     contract_line: Mapped[list['ContractLine']] = relationship('ContractLine', back_populates='line')
-
-
-# class Risks(Base):
-#     __tablename__ = 'risks'
-#     __table_args__ = (
-#         ForeignKeyConstraint(['previous_studies_id'], ['previous_studies.id'], name='fk_risks_previous_studies'),
-#         PrimaryKeyConstraint('id', name='risks_pkey')
-#     )
-
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     risk: Mapped[str] = mapped_column(Text, nullable=False)
-#     mitigation: Mapped[str] = mapped_column(Text, nullable=False)
-#     previous_studies_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-
-#     previous_studies: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies', back_populates='risks')
 
 
 # class AuditMeetingsCommitteesDetail(Base):
@@ -3080,7 +3193,7 @@
 #         PrimaryKeyConstraint('id', name='terms_reference_pkey')
 #     )
 
-#     id: Mapped[int] = mapped_column(BigInteger, Identity(always=True, start=1, increment=1, minvalue=1, maxvalue=9223372036854775807, cycle=False, cache=1), primary_key=True)
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 #     pid_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     rubro_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     expense_categories_id: Mapped[Optional[int]] = mapped_column(BigInteger)
@@ -3189,7 +3302,6 @@
 #     causes_early_termination: Mapped[Optional[str]] = mapped_column(Text)
 #     released_resource: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     sharepoint_code_new: Mapped[Optional[str]] = mapped_column(String(255))
-#     terms_reference_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 #     functions_and_activities: Mapped[Optional[str]] = mapped_column(Text)
 #     subscription_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
 #     monthly_time: Mapped[Optional[float]] = mapped_column(Double(53))
@@ -3203,6 +3315,7 @@
 #     total_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(15, 2))
 #     accumulated_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(15, 2))
 #     remaining_value: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(15, 2))
+#     terms_reference_id: Mapped[Optional[int]] = mapped_column(BigInteger)
 
 #     contract: Mapped[Optional['Contracts']] = relationship('Contracts', remote_side=[id], back_populates='contract_reverse')
 #     contract_reverse: Mapped[list['Contracts']] = relationship('Contracts', remote_side=[contract_id], back_populates='contract')
