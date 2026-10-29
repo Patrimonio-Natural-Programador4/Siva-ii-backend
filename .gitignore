@@ -12,7 +12,10 @@ __pycache__/
 venv/
 env/
 
-tests/
+tests/*
+!tests/test_previous_studies_products_form.py
+!tests/test_previous_studies_products_persistence.py
+!tests/test_previous_studies_disbursements_form.py
 
 # IDE
 .vscode/

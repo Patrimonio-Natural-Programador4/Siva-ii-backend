@@ -199,7 +199,7 @@ def obtener_por_id(id: int, db: Session) -> AgreementsBase | None:
             )
     
         
-def crear_agreement(payload: AgreementsCreateBase, db: Session) -> ResponseRequest:
+def crear_agreement(payload: AgreementsCreateBase, db: Session, confirmar: bool = True) -> ResponseRequest:
     try:
         
         #print(" payload ", payload)
@@ -302,12 +302,12 @@ def crear_agreement(payload: AgreementsCreateBase, db: Session) -> ResponseReque
             precedents=payload.precedents,
             justification=payload.justification,
             scope=payload.scope,
-            prevou_study_id = payload.prevou_study_id,
+            prevous_study_id = payload.prevou_study_id,
             created_at=datetime.now(ZoneInfo("America/Bogota")).replace(tzinfo=None),
             
         )
 
-        creado = AgreementRepository.crear_agreement(nuevo, db)
+        creado = AgreementRepository.crear_agreement(nuevo, db, confirmar=confirmar)
         return ResponseRequest(
             mensaje='Acuerdo creado exitosamente',
             identity=int(creado.id),

@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from datetime import datetime,date
 from decimal import Decimal
 from uuid import UUID
+from dto.AgreementsProductsDTO import ObjetivoDTO
+from dto.DisbursementsDTO import DesembolsoDTO
 
 class PreviousStudiesBase(BaseModel):
     id: Optional[int] = None
@@ -45,6 +47,8 @@ class PreviousStudiesBase(BaseModel):
     agreement_type:  Optional[str] = None
     modality:  Optional[str] = None
     agreetment_id: Optional[int] = None
+    objetivos: list[dict] | None = None
+    desembolsos: list[dict] | None = None
     
     class Config:
         from_attributes = True
@@ -81,6 +85,8 @@ class PreviousStudiesCreate(BaseModel):
      enviar_aprobacion: Optional[bool] = False 
      modality_id : Optional[int] = None   
      agreement_type_id :  Optional[int] = None  
+     objetivos: list[ObjetivoDTO] | None = None
+     desembolsos: list[DesembolsoDTO] | None = None
      
 
 class PreviousStudiesListDTO(BaseModel):
@@ -131,6 +137,4 @@ class PreviousStudiesListDTO(BaseModel):
     class Config:
         from_attributes = True
    
-
-
 

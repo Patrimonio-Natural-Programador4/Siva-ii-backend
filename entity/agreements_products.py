@@ -15,7 +15,7 @@ class AgreementsProducts(Base):
         ForeignKeyConstraint(['id_agreement'], ['agreements.id'], name='agreements_products_id_agreement_foreign'),
         ForeignKeyConstraint(['id_duplicate_product'], ['agreements_products.id'], ondelete='SET NULL', name='fk_duplicate_product'),
         ForeignKeyConstraint(['id_product'], ['agreements_products.id'], name='fk_agreements_products'),
-        ForeignKeyConstraint(['state_id'], ['products_state.id'], name='agreements_products_state_id_foreign'),
+        # ForeignKeyConstraint(['state_id'], ['products_state.id'], name='agreements_products_state_id_foreign'),
         PrimaryKeyConstraint('id', name='agreements_products_pkey'),
         Index('idx_duplicate_product', 'id_duplicate_product')
     )

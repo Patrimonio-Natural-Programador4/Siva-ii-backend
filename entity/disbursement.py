@@ -11,8 +11,8 @@ import decimal
 class Disbursement(Base):
     __tablename__ = 'disbursement'
     __table_args__ = (
-        ForeignKeyConstraint(['state_id'], ['disbursement_state.id'], name='fk_disbursement_state'),
-        PrimaryKeyConstraint('id', name='disbursement_pkey')
+        PrimaryKeyConstraint('id', name='disbursement_pkey'),
+        # ForeignKeyConstraint(['state_id'], ['disbursement_state.id'], name='fk_disbursement_state'),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)

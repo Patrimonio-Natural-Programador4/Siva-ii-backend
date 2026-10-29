@@ -25,6 +25,7 @@ from services import PreviousStudiesService
 from entity.previous_studies import PreviousStudies as PreviousStudiesEntity
 from entity.programs import Programs
 from exceptions import PruebaNotFoundError
+from services import DisbursementsService
 
 
 CATEGORIA_APROBACION = "APP_EP"
@@ -56,6 +57,11 @@ def listar_previous_studies_filtro(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+@router.get('/catalogos/estados-desembolso')
+def listar_estados_desembolso(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    return DisbursementsService.listar_estados(db)
 
 
 @router.get('/{id}')

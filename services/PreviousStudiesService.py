@@ -24,6 +24,8 @@ from services import NotificacionesService
 from services.PreviousStudiesDocumentService import generar_formato_ep
 from dto.agreementDTO import AgreementsCreateBase
 from services import AgreementssService
+from services import AgreementsProductsService
+from services import DisbursementsService
 from services.PreviousStudiesDocumentService import construir_objetivos_actividades_productos, generar_formato_ep
 from num2words import num2words
 
@@ -166,11 +168,40 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.program_id = previous_studies.program_id
         nuevo_estudio_previo.code = f"EP-{fecha_actual.year}-{estudios_previos+1:02d}"
         #
-        nuevo_estudio_previo.modality_id = previous_studies.modality_id,
+        nuevo_estudio_previo.modality_id = previous_studies.modality_id
         nuevo_estudio_previo.agreement_type_id = previous_studies.agreement_type_id
 
         db.add(nuevo_estudio_previo)
-    
+        db.flush()
+
+        agreement = AgreementsCreateBase(
+            precedents=previous_studies.precedents,
+            justification=previous_studies.justification,
+            scope=previous_studies.scope,
+            value_executes_fpn=previous_studies.total_value_executes_fpn,
+            value_executes_entity=previous_studies.total_value_executes_ei,
+            description=previous_studies.overall_objective,
+            time_limit=previous_studies.term,
+            total_value=previous_studies.total_value,
+            program_id=previous_studies.program_id,
+            prevou_study_id=nuevo_estudio_previo.id,
+            modality_id=nuevo_estudio_previo.modality_id,
+            agreement_type_id=nuevo_estudio_previo.agreement_type_id,
+            code=nuevo_estudio_previo.capacity_assessment.code if nuevo_estudio_previo.capacity_assessment else None,
+        )
+        resultado_acuerdo = AgreementssService.crear_agreement(agreement, db, confirmar=False)
+        if not resultado_acuerdo.solicitud_exitosa or resultado_acuerdo.identity is None:
+            raise ValueError(resultado_acuerdo.mensaje or "No se pudo crear el acuerdo")
+        productos_nuevos = {}
+        if previous_studies.objetivos:
+            productos_nuevos = AgreementsProductsService.guardar_objetivos(
+                resultado_acuerdo.identity, previous_studies.objetivos, db
+            )
+        if previous_studies.desembolsos:
+            DisbursementsService.guardar_desembolsos(
+                resultado_acuerdo.identity, previous_studies.desembolsos, productos_nuevos, db
+            )
+
         db.commit()
         db.refresh(nuevo_estudio_previo)
 
@@ -257,29 +288,6 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         
         
         
-        #crera acuerdo 
-        agreement = AgreementsCreateBase(
-                precedents=previous_studies.precedents,
-                justification=previous_studies.justification,
-                scope=previous_studies.scope,
-                value_executes_fpn=previous_studies.total_value_executes_fpn,
-                value_executes_entity=previous_studies.total_value_executes_ei,
-                description = previous_studies.overall_objective,
-                time_limit=previous_studies.term,
-                total_value= previous_studies.total_value,
-                program_id=previous_studies.program_id,
-                prevou_study_id= nuevo_estudio_previo.id,
-                modality_id=nuevo_estudio_previo.modality_id,
-                agreement_type_id=nuevo_estudio_previo.agreement_type_id,
-                code=nuevo_estudio_previo.capacity_assessment.code if nuevo_estudio_previo.capacity_assessment else None
-
-   
-        )
-        
-        print("AGREEMENT A GUARDAR:", agreement.model_dump())   # v1: agreement.dict()
-        resultado_acuerdo = AgreementssService.crear_agreement(agreement, db)
-        print("RESULTADO:", resultado_acuerdo.__dict__ if resultado_acuerdo else None)
-        
         return respuesta
 
     except Exception as e:
@@ -295,9 +303,9 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
 
 def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
     e = PreviousStudiesRepository.obtener_por_guid(guid, db)
-    agreetment = AgreementRepository.obtener_por_id_estudio_previo(e.id, db)
     if not e:
         return None
+    agreetment = AgreementRepository.obtener_por_id_estudio_previo(e.id, db)
     return PreviousStudiesBase(
        id=int(e.id),
        precedents=e.precedents,
@@ -333,6 +341,8 @@ def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
        programs =e.programs.description if e.programs else None,
        codde =e.code,
        agreetment_id=agreetment.id if agreetment else None,
+       objetivos=AgreementsProductsService.obtener_objetivos(agreetment.id, db) if agreetment else [],
+       desembolsos=DisbursementsService.obtener_desembolsos(agreetment.id, db) if agreetment else [],
     )
     
 def listar_previous_studies_por_usuario_sp(
@@ -495,6 +505,20 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         registro.estimated_term = payload.estimated_term
         registro.program_id = payload.program_id
 
+        if payload.objetivos or payload.desembolsos:
+            acuerdo = AgreementRepository.obtener_por_id_estudio_previo(registro.id, db)
+            if not acuerdo:
+                raise ValueError("El estudio previo no tiene un acuerdo asociado para guardar los productos")
+            productos_nuevos = {}
+            if payload.objetivos:
+                productos_nuevos = AgreementsProductsService.guardar_objetivos(
+                    acuerdo.id, payload.objetivos, db
+                )
+            if payload.desembolsos:
+                DisbursementsService.guardar_desembolsos(
+                    acuerdo.id, payload.desembolsos, productos_nuevos, db
+                )
+
         db.commit()
         db.refresh(registro)
 
@@ -631,3 +655,7 @@ def obtener_formato_ep(guid: str, db: Session):
     except Exception as e:
         logging.error(f"Error al obtener formato EP por guid: {str(e)}")
         raise
+
+
+
+    

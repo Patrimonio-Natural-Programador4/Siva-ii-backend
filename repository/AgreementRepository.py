@@ -53,10 +53,13 @@ def obtener_por_code(code: str, db: Session) -> Agreements | None:
         logging.error(f"Error al obtener acuerdo por id: {str(e)}")
         raise PruebaNotFoundError(str(e))
     
-def crear_agreement(agreement: Agreements, db: Session) -> Agreements:
+def crear_agreement(agreement: Agreements, db: Session, confirmar: bool = True) -> Agreements:
     try:
         db.add(agreement)
-        db.commit()
+        if confirmar:
+            db.commit()
+        else:
+            db.flush()
         db.refresh(agreement)
         return agreement
     except Exception as e:

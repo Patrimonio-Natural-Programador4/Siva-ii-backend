@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from entity.AgreementsProducts import AgreementsProducts
+from entity.agreements_products import AgreementsProducts
 from entity.disbursement import Disbursement
 from entity.disbursement_products import DisbursementProducts
 
