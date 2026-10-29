@@ -6,7 +6,7 @@ from exceptions import PruebaCreationError, PruebaNotFoundError
 
 def listar(db: Session) -> list[CapacityAssessmentsStates]:
     try:
-        return db.query(CapacityAssessmentsStates).order_by(CapacityAssessmentsStates.state.asc()).all()
+        return db.query(CapacityAssessmentsStates).order_by(CapacityAssessmentsStates.id.asc()).all()
     except Exception as e:
         logging.error(f"Failed to list CapacityAssessmentsStates: {str(e)}")
         raise PruebaNotFoundError(str(e))

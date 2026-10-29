@@ -98,7 +98,7 @@ def obtener_por_guid(guid: str, db: DbSession, user_oid: str = Depends(get_curre
     estudio = PreviousStudiesService.obtener_por_guid(guid, db)
     if not estudio:
         raise HTTPException(status_code=404, detail='Estudio previo no encontrado')
-    print('ESTUDIOOO', estudio)
+    #print('ESTUDIOOO', estudio)
     return estudio
 
 

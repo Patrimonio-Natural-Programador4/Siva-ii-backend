@@ -46,10 +46,13 @@ class PreviousStudiesBase(BaseModel):
     agreement_type_id :  Optional[int] = None  
     agreement_type:  Optional[str] = None
     modality:  Optional[str] = None
+    guid: Optional[UUID] = None
     agreetment_id: Optional[int] = None
     objetivos: list[dict] | None = None
     desembolsos: list[dict] | None = None
     
+
+
     class Config:
         from_attributes = True
 

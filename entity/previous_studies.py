@@ -10,8 +10,15 @@ from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, Foreign
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
 from entity.implementers import Implementers
+#from entity.capacity_assessments import CapacityAssessments
+
+
 if TYPE_CHECKING:
     from entity.capacity_assessments import CapacityAssessments
+    #from entity.approval_requests import ApprovalRequests
+from entity.capacity_assessments import CapacityAssessments
+
+
 class PreviousStudies(Base):
     __tablename__ = 'previous_studies'
     __table_args__ = (
