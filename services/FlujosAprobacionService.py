@@ -38,11 +38,13 @@ def _full_name(user) -> str:
 
 def listar_roles_aprobacion(db: Session) -> list[RolesAprobacionBase]:
     try:
-        roles_db = db.query(ApprovalRole).all()
+        roles_db = db.query(ApprovalRole).filter(ApprovalRole.active.is_(True)).all()
         result = []
         for rol in roles_db:
             usuarios = []
             for u in rol.role_users:
+                if not u.active:
+                    continue
                 user = u.user
                 usuarios.append(RolesAprobacionUsuariosBase(
                     id_rol_usuario=u.approval_role_user_id,
@@ -73,6 +75,8 @@ def obtener_rol_aprobacion_por_id(role_id: int, db: Session) -> Optional[RolesAp
             return None
         usuarios = []
         for u in rol.role_users:
+            if not u.active:
+                continue
             user = u.user
             usuarios.append(RolesAprobacionUsuariosBase(
                 id_rol_usuario=u.approval_role_user_id,
