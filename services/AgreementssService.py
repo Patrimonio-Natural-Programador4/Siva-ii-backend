@@ -302,7 +302,7 @@ def crear_agreement(payload: AgreementsCreateBase, db: Session, confirmar: bool 
             precedents=payload.precedents,
             justification=payload.justification,
             scope=payload.scope,
-            prevous_study_id = payload.prevou_study_id,
+            prevou_study_id = payload.prevou_study_id,
             created_at=datetime.now(ZoneInfo("America/Bogota")).replace(tzinfo=None),
             
         )

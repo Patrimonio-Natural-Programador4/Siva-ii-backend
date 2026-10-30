@@ -78,10 +78,11 @@ def solicitud_viaje(titulo: str, to: list, body: str, cc: str = "", cco: str = "
     }
 
     try:
-        response = requests.post(send_mail_url, headers=headers, json=email_message)
-        if response.status_code == 202:
-            logger.info(f"Notificación de viaje '{titulo}' enviada exitosamente a: {to}")
-        else:
-            logger.error(f"Error de Graph al enviar correo: {response.status_code} - {response.text}")
+        print("Aplicar variable pruebas y poducción")
+        # response = requests.post(send_mail_url, headers=headers, json=email_message)
+        # if response.status_code == 202:
+        #     logger.info(f"Notificación de viaje '{titulo}' enviada exitosamente a: {to}")
+        # else:
+        #     logger.error(f"Error de Graph al enviar correo: {response.status_code} - {response.text}")
     except Exception as ex:
         logger.error(f"Excepción al enviar correo por Graph API: {str(ex)}")

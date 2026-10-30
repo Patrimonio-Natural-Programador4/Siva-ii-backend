@@ -16,3 +16,4 @@ bcrypt
 weasyprint
 openpyxl
 num2words
+tzdata

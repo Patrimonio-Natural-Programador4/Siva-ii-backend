@@ -162,8 +162,7 @@ def _actualizar_usuarios_rol(id_rol: int, usuarios: list[RolesAprobacionUsuarios
     ids_nuevos = {u.id_usuario for u in usuarios if u.id_usuario is not None}
 
     for u in usuarios_actuales:
-        if u.user_id not in ids_nuevos:
-            u.active = False
+        u.active = u.user_id in ids_nuevos
 
     for usuario in usuarios:
         if usuario.id_usuario is not None and usuario.id_usuario not in ids_actuales:
