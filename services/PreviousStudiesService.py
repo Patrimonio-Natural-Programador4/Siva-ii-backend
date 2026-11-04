@@ -28,7 +28,8 @@ from services import AgreementsProductsService
 from services import DisbursementsService
 from services.PreviousStudiesDocumentService import construir_objetivos_actividades_productos, generar_formato_ep
 from num2words import num2words
-
+from dto.CapacityAssessmentsDTO import CapacityAssessmentsCreate
+from services import CapacityAssessments
 
 
 
@@ -127,7 +128,7 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
         
-        print("previous_studies create  aquiii " , previous_studies)
+        #print("previous_studies create  aquiii " , previous_studies)
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
             raise Exception("Usuario no encontrado")
@@ -190,6 +191,12 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
             code=nuevo_estudio_previo.capacity_assessment.code if nuevo_estudio_previo.capacity_assessment else None,
         )
         resultado_acuerdo = AgreementssService.crear_agreement(agreement, db, confirmar=False)
+        
+        preciosStudieUpted = CapacityAssessments.actualizar_estado(previous_studies.capacity_assessment_id,db,usuario_guid)
+        
+        if not preciosStudieUpted.solicitud_exitosa or preciosStudieUpted.identity is None:
+                    raise ValueError(preciosStudieUpted.mensaje or "No se pudo actualizar el estado de la evaluacion de capacidades")
+        
         if not resultado_acuerdo.solicitud_exitosa or resultado_acuerdo.identity is None:
             raise ValueError(resultado_acuerdo.mensaje or "No se pudo crear el acuerdo")
         productos_nuevos = {}

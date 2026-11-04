@@ -536,6 +536,7 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session, usuario
     
     
     
+    
 def actualizar_url_sharepoint(guid: str, url: str | None, db: Session) -> ResponseRequest:
     try:
         registro = CapacityAssessments.obtener_por_guid(guid, db)
@@ -583,3 +584,27 @@ def obtener_historial_aprobacion_notificacion(id_evaluacion: int, db: Session) -
     except Exception as e:
         logging.error(f"Error al obtener historial de aprobación para notificación: {e}")
         return []
+    
+    
+    
+def actualizar_estado(id: int,  db: Session, usuario_guid: str) -> ResponseRequest:
+    try:
+        usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
+        if not usuario:
+            raise Exception("Usuario no encontrado")
+
+        registro = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.id == id).first()
+        if not registro:
+            return ResponseRequest(solicitud_exitosa=False, mensaje='Evaluación de capacidades no encontrada')
+      
+        registro.capacity_assessments_states_id = 10
+        
+        db.commit()
+        db.refresh(registro)
+
+        return ResponseRequest(solicitud_exitosa=True, mensaje='Evaluación de capacidades actualizada exitosamente', identity=registro.id)
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error al actualizar evaluación de capacidades: {e}")
+        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e)) 
+    
