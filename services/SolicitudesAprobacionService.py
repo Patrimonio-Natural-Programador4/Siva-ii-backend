@@ -120,6 +120,7 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
         db.add(nueva_solicitud)
         db.commit()
         db.refresh(nueva_solicitud)
+        print(f"Asignando inicio de ruta para la solicitud {nueva_solicitud.approval_request_id}")
         asignar_inicio_ruta(
             nueva_solicitud.approval_request_id,
             id_rol_aprobacion,
@@ -167,6 +168,7 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
 
 def asignar_inicio_ruta(id_solicitud: int, id_rol_aprobacion: int, id_usuario: int, id_ruta: int, db: Session, label_aprobacion: str = None) -> None:
     try:
+        print(f"Asignando inicio de ruta para la solicitud {id_solicitud}")
         solicitud_historial = ApprovalRequestHistory(
             approval_request_id=id_solicitud,
             approval_role_id=id_rol_aprobacion,
@@ -202,10 +204,16 @@ def obtener_usuario_aprobo(id_usuario: int, db: Session) -> str | None:
     usuario = usuario[0] if usuario else None
     if not usuario:
         return None
-    return usuario.first_name + " " + usuario.other_name + " " + usuario.last_name + " " + usuario.other_last_name
+    return (
+        (usuario.first_name or "") + " " +
+        (usuario.other_name or "") + " " +
+        (usuario.last_name or "") + " " +
+        (usuario.other_last_name or "")
+    ).strip()
 
 def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: int, db: Session, id_supervisor: int = None, label_pendiente: str = None) -> None:
     try:
+        print(f"Asignando siguiente paso para la solicitud {id_solicitud}")
         solicitud_historial = ApprovalRequestHistory(
             approval_request_id=id_solicitud,
             approval_role_id=id_rol_aprobacion,
