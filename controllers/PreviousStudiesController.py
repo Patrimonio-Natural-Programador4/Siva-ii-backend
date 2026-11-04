@@ -47,7 +47,7 @@ def listar_previous_studies_filtro(
     user_oid: str = Depends(get_current_user_oid),
     page: int = Query(...),
     estado: list[int] = Query([-1]),
-    programa: Optional[int] = Query(-1),
+    programa: list[int] = Query([-1]),
     filtro: str = Query(""),
 ):
     try:

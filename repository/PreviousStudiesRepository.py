@@ -128,7 +128,7 @@ def listar_previous_studies_por_usuario_sp(
                 program_name=row[20],
                 contributions_fpn=row[21],
                 estimated_term=row[22],
-                code=row[23],
+                codde=row[23],
                 prev_studies_state=row[24],
                 pending_my_approval=row[25],
                 approval_request_id=row[26],
@@ -137,8 +137,23 @@ def listar_previous_studies_por_usuario_sp(
                 step_order_actual_request=row[29],
                 guid_msft_adjustment=row[30],
                 total_records=row[31],
+                previous_study_id=row[32],
+                code_agreements=row[33],
+                rol=row[34],
+                implementadora=row[35],
+                fecha_crea=row[36],
+                fecha_aprobacion=row[37],
+                pilar=row[38],
+                lider_pilar=row[39],
+                usuario=row[40],
+                agreement_type=row[41],
+                modality_id=row[42],
+                modality=row[43],
+                estado_aprobacion=row[44],
+                id_capacity_state_id=row[45],
+                capacity_state=row[46],
                 persons=" ".join(
-                    part.strip() for part in [row[32], row[33] or '', row[34], row[35] or '']
+                    part.strip() for part in [row[47], row[48] or '', row[49], row[50] or '']
                     if part and part.strip()
                 ),
                 

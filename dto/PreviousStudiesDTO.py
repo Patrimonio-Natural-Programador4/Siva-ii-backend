@@ -133,7 +133,21 @@ class PreviousStudiesListDTO(BaseModel):
     modality_id : Optional[int] = None   
     agreement_type_id :  Optional[int] = None  
     agreement_type:  Optional[str] = None
-    modality:  Optional[str] = None                  
+    modality:  Optional[str] = None         
+    
+    # CAMPOS AGREGADOS 
+    previous_study_id: Optional[int] = None
+    code_agreements: Optional[str] = None
+    rol: Optional[str] = None
+    implementadora: Optional[str] = None
+    fecha_crea: Optional[datetime] = None
+    fecha_aprobacion: Optional[datetime] = None
+    pilar: Optional[str] = None
+    lider_pilar: Optional[str] = None
+    usuario: Optional[str] = None
+    estado_aprobacion: Optional[str] = None
+    id_capacity_state_id: Optional[int] = None
+    capacity_state: Optional[str] = None         
     
    
     
