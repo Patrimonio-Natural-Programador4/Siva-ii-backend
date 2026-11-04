@@ -393,9 +393,9 @@ def programas_usuario(guid: str,  db: DbSession,):
     return  UsuariosService.programs_user(guid,db)
 
 
-@router.get("/listados/{guid}")
-def lista_generica(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
-    return UsuariosService.lista_generica(guid,db, user_oid)
+@router.get("/listados")
+def lista_generica(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    return UsuariosService.lista_generica(db, user_oid)
 
 
 

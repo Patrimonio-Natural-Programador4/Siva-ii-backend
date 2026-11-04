@@ -632,7 +632,7 @@ def programs_user ( guid: str, db: Session ) :
         logging.error(f"Failed to validate usuario: {str(e)}")
         return respuesta
 
-def lista_generica(guid: str, db: Session, user_oid: str):
+def lista_generica(db: Session, user_oid: str):
     respuesta = ResponseRequest(solicitud_exitosa=False)
     try:
         programs = ProgramsRepository.listar(db)
