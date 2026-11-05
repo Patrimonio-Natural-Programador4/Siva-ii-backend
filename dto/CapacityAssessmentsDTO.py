@@ -37,6 +37,7 @@ class CapacityAssessmentsBase(BaseModel):
     implementer_type: Optional[str] = None   
     pillar_id: Optional[int] = None  
     pillar: Optional[str] = None
+    is_deleted: Optional[bool]= None
 
     class Config:
         from_attributes = True
@@ -64,6 +65,8 @@ class CapacityAssessmentsCreate(BaseModel):
     approval_request_id:  Optional[int] = None
     enviar_aprobacion: Optional[bool] = False 
     pillar_id:  Optional[int] = None
+    is_deleted: Optional[bool]= None
+    
 
     class Config:
         from_attributes = True
@@ -101,6 +104,7 @@ class CapacityAssessmentListSP(BaseModel):
     step_order_actual_request: Optional[int] = None
     guid_msft_adjustment: Optional[UUID] = None
     total_records: Optional[int] = None
+    is_deleted: Optional[bool]= None
 
     class Config:
         from_attributes = True

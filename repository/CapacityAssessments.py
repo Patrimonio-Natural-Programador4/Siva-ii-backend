@@ -99,7 +99,7 @@ def listar_capacity_assessments_por_usuario_sp(
                 pid_id=row[13],                             # pid_id
                 pad_name=row[14],                           # pad_name
                 persons_id=row[15],                         # persons_id
-                persons_name=" ".join(x for x in [row[28], row[29], row[30], row[31]] if x), 
+                persons_name=" ".join(x for x in [row[29], row[30], row[31], row[32]] if x), 
                 #persons_email=row[16],                      # persons_email
                 capacity_assessments_states_id=row[17],     # capacity_assessments_states_id
                 modality_id=row[18],                        # modality_id
@@ -112,6 +112,7 @@ def listar_capacity_assessments_por_usuario_sp(
                 step_order_actual_request=row[25],          # step_order_actual_request
                 guid_msft_adjustment=row[26],               # guid_msft_adjustment
                 total_records=row[27],                      # total_records
+                is_deleted= row[28],                        # eliminado lógico
 
             )
             for row in result

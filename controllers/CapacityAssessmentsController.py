@@ -118,6 +118,7 @@ def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession,background_
 
 @router.put('/{guid}', response_model=ResponseRequest)
 def actualizar(guid: str, payload: CapacityAssessmentsCreate, db: DbSession,background_tasks: BackgroundTasks,  user_oid: str = Depends(get_current_user_oid)):
+    print(' payload', payload)
     try:
         evaluacion_db = CapacityAssessments.obtener_por_guid(guid, db)
         if not evaluacion_db:

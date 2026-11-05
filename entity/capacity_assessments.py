@@ -55,6 +55,7 @@ class CapacityAssessments(Base):
     program_id: Mapped[int] = mapped_column(BigInteger, nullable=False) #importante
     #
     pillar_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+  
     
     
     # Fechas
@@ -66,7 +67,8 @@ class CapacityAssessments(Base):
     # Campo adicional
     code: Mapped[Optional[str]] 
     url_sharepoint_ec: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
+    is_deleted: Mapped[Boolean] = mapped_column(Boolean, nullable=True)
+   
     #created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     #updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     

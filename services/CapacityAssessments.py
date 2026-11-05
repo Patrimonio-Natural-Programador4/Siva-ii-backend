@@ -64,6 +64,7 @@ def listar(db: Session) -> list[CapacityAssessmentsBase]:
             url_sharepoint_ec=c.url_sharepoint_ec,
             pillar_id=c.pillar_id,
             pillar=c.pillar.name if c.pillar else None,
+            is_deleted = c.is_deleted
         )
         for c in capacidades
     ]
@@ -100,6 +101,7 @@ def obtener_por_id(id: int, db: Session) -> CapacityAssessmentsBase | None:
                 approval_request_id=c.approval_request_id,   
                 pillar_id=c.pillar_id,
                 pillar=c.pillar.name if c.pillar else None,
+                is_deleted = c.is_deleted,
             )
 
 def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
@@ -271,6 +273,7 @@ def obtener_por_guid(guid: str, db: Session) -> CapacityAssessmentsBase | None:
         url_sharepoint_ec=c.url_sharepoint_ec,
         pillar_id=c.pillar_id,
         pillar=c.pillar.name if c.pillar else None,
+        is_deleted = c.is_deleted
         
         
     )    
@@ -439,6 +442,7 @@ def actualizar(id: int, payload: CapacityAssessmentsCreate, db: Session, usuario
         registro.persons_id = payload.persons_id
         registro.capacity_assessments_states_id = payload.capacity_assessments_states_id
         registro.modality_id = payload.modality_id
+        registro.is_deleted = payload.is_deleted
 
         db.commit()
         db.refresh(registro)
