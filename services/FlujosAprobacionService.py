@@ -195,6 +195,7 @@ def listar_flujos_aprobacion(db: Session) -> list[FlujosAprobacionBase]:
                     label_aprobacion=r.approved_label,
                     label_ajuste=r.adjustment_label,
                     asigna_revisor=r.assign_reviewer,
+                    habilita_delegacion=r.enable_delegation,
                     label_pendiente=r.pending_label,
                     days_for_approval=r.days_for_approval,
                 )
@@ -236,6 +237,7 @@ def obtener_flujo_aprobacion_por_id(flow_id: int, db: Session) -> Optional[Flujo
                 label_aprobacion=r.approved_label,
                 label_ajuste=r.adjustment_label,
                 asigna_revisor=r.assign_reviewer,
+                habilita_delegacion=r.enable_delegation,
                 label_pendiente=r.pending_label,
                 days_for_approval=r.days_for_approval,
             )
@@ -402,6 +404,7 @@ def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase]
                 assign_reviewer=ruta.asigna_revisor if ruta.asigna_revisor is not None else False,
                 pending_label=ruta.label_pendiente,
                 days_for_approval=ruta.days_for_approval,
+                enable_delegation=ruta.habilita_delegacion if ruta.habilita_delegacion is not None else False
             ))
         else:
             ruta_actual = rutas_actuales_por_id[ruta.id_ruta]
@@ -413,6 +416,7 @@ def _actualizar_rutas_flujo(id_flujo: int, rutas: list[FlujosAprobacionRutaBase]
             ruta_actual.assign_reviewer = ruta.asigna_revisor if ruta.asigna_revisor is not None else False
             ruta_actual.pending_label = ruta.label_pendiente
             ruta_actual.days_for_approval = ruta.days_for_approval
+            ruta_actual.enable_delegation = ruta.habilita_delegacion if ruta.habilita_delegacion is not None else False
     db.commit()
 
 

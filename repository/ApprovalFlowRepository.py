@@ -17,6 +17,14 @@ def obtener_paso(step_id: int, db: Session, solo_activo: bool = False) -> Approv
         query = query.filter(ApprovalFlowStep.active == True)
     return query.first()
 
+def obtener_siguientes_pasos(approval_flow_id: int, paso_actual: int, db: Session, solo_activo: bool = False) -> list[ApprovalFlowStep] | None:
+    query = db.query(ApprovalFlowStep).filter(
+        ApprovalFlowStep.approval_flow_id == approval_flow_id,
+        ApprovalFlowStep.step_order == (paso_actual + 1),
+        ApprovalFlowStep.active == True
+    )
+    return query.order_by(ApprovalFlowStep.step_order).all()
+
 def obtener_paso_requiere_ajuste(flujo_aprobacion_id: int, id_rol: int, paso_actual: int, db: Session) -> ApprovalFlowStep | None:
     paso_requiere_ajuste = (
         db.query(ApprovalFlowStep)

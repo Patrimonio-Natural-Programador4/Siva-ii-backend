@@ -11,6 +11,7 @@ class AccionSolicitudAprobacionCapacidad(BaseModel):
     id_usuario_ajuste: Optional[int] = None
     id_rol_aprobacion_ajuste: Optional[int] = None
     orden_actual: Optional[int] = None
+    roles_asignados: Optional[list] = None
 
     class Config:
         from_attributes = True
