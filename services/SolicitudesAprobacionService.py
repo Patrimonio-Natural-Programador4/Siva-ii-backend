@@ -457,6 +457,7 @@ def validar_usuarios_disponibles_asignar(historial_pendiente, db: Session) -> li
                     "email": user.user.email,
                 }
                 for user in aprobacion.approval_role.role_users
+                if user.active is True
             ]
         })
         
@@ -951,4 +952,3 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
     except Exception as e:
         logging.error(f"Error al actualizar ruta: {e}")
         raise
-
