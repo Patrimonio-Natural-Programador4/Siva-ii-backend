@@ -608,7 +608,8 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> R
                 if not usuario.guid_msft:
                     usuario.guid_msft = respuestaUsuarioInvitado["user_id"]
                 logging.info(f"Usuario invitado gestionado en AD con ID: {usuario.guid_msft}")
-                
+            db.commit()
+            db.refresh(usuario)
         respuesta.solicitud_exitosa = True
         respuesta.mensaje = 'Usuario actualizado correctamente'
         return respuesta
