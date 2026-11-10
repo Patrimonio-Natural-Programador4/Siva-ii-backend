@@ -128,8 +128,14 @@ class Agreements(Base):
     disbursement: Mapped[list["Disbursement"]] = relationship("Disbursement", back_populates="agreement")
     # agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="agreement")
 
-    previous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies')
+    #previous_study: Mapped[Optional['PreviousStudies']] = relationship('PreviousStudies')
     acquisitions_agreement: Mapped["Acquisitions"] = relationship("Acquisitions", back_populates="agreement")
     
     program: Mapped['Programs'] = relationship('Programs')
     
+    #
+    
+    previous_study: Mapped[Optional['PreviousStudies']] = relationship(
+        'PreviousStudies',
+        foreign_keys=[prevou_study_id],
+    )

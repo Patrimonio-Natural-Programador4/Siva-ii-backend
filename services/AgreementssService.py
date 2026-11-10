@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.orm import Session
 
-from dto.agreementDTO import AgreementsBase, AgreementsCreateBase
+from dto.agreementDTO import AgreementsBase, AgreementsCreateBase,AgreementsListBase
 from dto.ResponseRequest import ResponseRequest
 from entity.agreements import Agreements
 from repository import AgreementRepository,UsuariosRepository
@@ -16,7 +16,7 @@ def listar(db: Session) -> list[AgreementsBase]:
         AgreementsBase(
             id=int(a.id),
             name=a.name,
-            code=a.code,
+            codee=a.code,
             local=a.local,
             description=a.description,
             value=a.value,
@@ -98,6 +98,22 @@ def listar(db: Session) -> list[AgreementsBase]:
         )
         for a in agreements
     ]
+
+
+
+
+def listar_acuerdos(db: Session) -> list[AgreementsListBase]:
+    agreements = AgreementRepository.listar(db)
+    return [
+        AgreementsListBase(
+            id=int(a.id),
+            name=a.name,
+            codee=a.code,
+            description=a.description,
+        )
+        for a in agreements
+    ]
+
 
 
 def obtener_por_id(id: int, db: Session) -> AgreementsBase | None:

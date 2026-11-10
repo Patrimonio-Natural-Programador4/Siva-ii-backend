@@ -50,7 +50,8 @@ class PreviousStudiesBase(BaseModel):
     agreetment_id: Optional[int] = None
     objetivos: list[dict] | None = None
     desembolsos: list[dict] | None = None
-    
+    framework_agreement_id : Optional[int] = None  
+    framework_agreement : Optional[str] = None
 
 
     class Config:
@@ -90,6 +91,8 @@ class PreviousStudiesCreate(BaseModel):
      agreement_type_id :  Optional[int] = None  
      objetivos: list[ObjetivoDTO] | None = None
      desembolsos: list[DesembolsoDTO] | None = None
+     framework_agreement_id : Optional[int] = None  
+     is_specifi_minute: Optional[bool]= None
      
 
 class PreviousStudiesListDTO(BaseModel):

@@ -169,3 +169,11 @@ class AgreementsCreateBase(BaseModel):
     justification: Optional[str] = None  
     scope: Optional[str] = None 
     prevou_study_id: Optional[int] = None
+
+
+
+class AgreementsListBase(BaseModel):
+    id: Optional[int] = None
+    name: Optional[str] = None
+    codee: Optional[str] =Field(None, serialization_alias="codee")
+    description: Optional[str] = None
