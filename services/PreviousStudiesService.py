@@ -171,6 +171,8 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         #
         nuevo_estudio_previo.modality_id = previous_studies.modality_id
         nuevo_estudio_previo.agreement_type_id = previous_studies.agreement_type_id
+        nuevo_estudio_previo.is_specifi_minute = previous_studies.is_specifi_minute
+        nuevo_estudio_previo.framework_agreement_id = previous_studies.framework_agreement_id
 
         db.add(nuevo_estudio_previo)
         db.flush()
@@ -511,6 +513,8 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         registro.contributions_fpn = payload.contributions_fpn
         registro.estimated_term = payload.estimated_term
         registro.program_id = payload.program_id
+        registro.is_specifi_minute = payload.is_specifi_minute
+        registro.framework_agreement_id = payload.framework_agreement_id
 
         if payload.objetivos or payload.desembolsos:
             acuerdo = AgreementRepository.obtener_por_id_estudio_previo(registro.id, db)
@@ -652,7 +656,7 @@ def obtener_formato_ep(guid: str, db: Session):
         
 
 
-        return generar_formato_ep(diccionario, estudios_previos.code)
+        return generar_formato_ep(diccionario, estudios_previos) # estudios_previos.code
         
         
 

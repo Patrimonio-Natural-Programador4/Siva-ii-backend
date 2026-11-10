@@ -5,14 +5,21 @@ from dto.agreementDTO import AgreementsBase,AgreementsCreateBase
 from sqlalchemy.exc import SQLAlchemyError
 from exceptions import PruebaNotFoundError
 from services import PreviousStudiesService
+from sqlalchemy.orm import Session, joinedload
+from entity.agreement_types import AgreementTypes
 
 
 def listar(db: Session):
     return (
-        db.query(Agreements).order_by(Agreements.code.asc()).all() )  
+        db.query(Agreements)
+        .join(AgreementTypes, Agreements.agreement_type_id == AgreementTypes.id)
+        .filter(AgreementTypes.is_frame.is_(True))
+        .order_by(Agreements.code.asc())
+        .all()
+    )
 
 
-from sqlalchemy.orm import Session, joinedload
+
 
 def obtener_por_id(id: int, db: Session) -> Agreements | None:
     try:

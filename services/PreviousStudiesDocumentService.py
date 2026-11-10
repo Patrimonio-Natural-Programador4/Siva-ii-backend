@@ -12,6 +12,7 @@ from docx.text.paragraph import Paragraph
 
 from config import STORAGE_PATH
 from services.TdrDocumentService import PATRON_HTML, html_a_texto, reemplazar_en_parrafo
+from entity.previous_studies import PreviousStudies
 
 
 def construir_objetivos_actividades_productos(productos) -> str:
@@ -116,10 +117,44 @@ def insertar_tabla_desembolsos(documento, parrafo, desembolsos) -> None:
     parrafo._p.getparent().remove(parrafo._p)
 
 
-def generar_formato_ep(diccionario: dict[str, object], code: str) -> Path:
+def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> Path:   #code: str
+    
+    code = Ep.code
+
+    modalities = {
+        1: "SUBACUERDO",
+        2: "CONVENIO",
+        3: "CONVENIO DE COEJECUCION",
+        4: "ACUERDO MARCO"
+    }
+    
+    ActaEspecífica = 2
+    
     base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
-    directorio = base / "soportes" / "acuerdos" / "estudios_previos"
-    plantilla = directorio / "template" / "plantilla_estudios_previos.docx"
+   
+    
+    base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
+
+    directorio = base / "soportes" / "acuerdos" / "estudios_previos" / "template"
+    #"plantilla_estudios_previos.docx"
+    doc = ""
+    
+    
+    if   Ep.modality_id == 4 :
+        #print("EPCCP4")
+        doc = "EPCCP4"
+        plantilla = directorio / "EPCCP4.docx"
+    elif   Ep.modality_id == 1 :  
+        #print ("EPSAP4")
+        doc = "EPSAP4"
+        plantilla = directorio / "EPSAP4.docx"
+    else :
+        #print ("Aqui   ")
+        doc="default"
+        plantilla = directorio / "plantilla_estudios_previos.docx"
+        
+        
+    
     documento = Document(str(plantilla))
     valores = {
         marcador.removeprefix("<<").removesuffix(">>"): html_a_texto(
@@ -158,7 +193,7 @@ def generar_formato_ep(diccionario: dict[str, object], code: str) -> Path:
         caracter if caracter.isalnum() or caracter in "-_" else "_"
         for caracter in str(code)
     )
-    salida = directorio / "formato" / f"ep_{codigo_archivo}.docx"
+    salida = directorio / "formato" / f"ep_{codigo_archivo}_{doc}.docx"
     salida.parent.mkdir(parents=True, exist_ok=True)
     documento.save(str(salida))
     return salida
