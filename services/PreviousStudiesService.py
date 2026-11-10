@@ -222,12 +222,16 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
                 f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_previous_studies}"
             )
 
+
+        usuario_lider_pilar = UsuariosRepository.obtener_por_person_id(nuevo_estudio_previo.capacity_assessment.pillar.person_id, db)
+
         id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
             id_categoria_aprobacion,
             nuevo_estudio_previo.id,
             usuario.id,
             nuevo_estudio_previo.code, #code 
             db,
+            usuario_lider_pilar.id if usuario_lider_pilar else None,
             id_programa=nuevo_estudio_previo.program_id 
         )
 
@@ -631,6 +635,7 @@ def obtener_formato_ep(guid: str, db: Session):
             desembolsos = AgreementsProductsRepository.obtener_desembolsos_por_id_agreement(agreetment.id, db)
         diccionario = {
             "<<DESEMBOLSOS>>": desembolsos,
+            "<<RIESGOS>>": estudios_previos.risks or [],
             "<<OBJETIVOS_ACTIVIDADES_PRODUCTOS>>": obtejivos_actividades_productos,
             "<<ANTECEDENTES>>": estudios_previos.precedents,
             "<<JUSTIFICACION>>": estudios_previos.justification,

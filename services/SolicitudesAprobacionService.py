@@ -142,7 +142,7 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
                     id_rol_aprobacion,
                     id_ruta,
                     db,
-                    id_supervisor if es_supervisor else None,
+                    id_supervisor if es_supervisor or id_supervisor is not None else None,
                     label_pendiente,
                 )
         else:

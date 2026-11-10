@@ -148,12 +148,16 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
                 f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_CAPACITY_ASSESSMENT}"
             )
 
+        usuario_lider_pilar = UsuariosRepository.obtener_por_person_id(nueva_capacidad.pillar.person_id, db)
+
+
         id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
             id_categoria_aprobacion,
             nueva_capacidad.id,
             usuario.id,
             nueva_capacidad.guid,
             db,
+            usuario_lider_pilar.id if usuario_lider_pilar else None,
             id_programa=capacity_assessment.program_id
         )
 

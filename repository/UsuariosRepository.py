@@ -178,3 +178,13 @@ def guardar(db: Session) -> None:
         db.rollback()
         logging.error(f"Failed to commit user transaction: {str(e)}")
         raise PruebaNotFoundError(str(e))
+
+def obtener_por_person_id(person_id: int, db: Session) -> Users:
+    try:
+        usuario = db.query(Users).filter(Users.person_id == person_id).first()
+        if not usuario:
+            raise PruebaNotFoundError(f"Usuario with person_id {person_id} not found")
+        return usuario
+    except Exception as e:
+        logging.error(f"Failed to get user by person_id: {str(e)}")
+        raise PruebaNotFoundError(str(e))
