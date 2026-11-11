@@ -61,14 +61,14 @@ def listar_agreements(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-"""
+
 @router.get('/listar')
-def listar( db: DbSession, user_oid: str = Depends(get_current_user_oid)):
-    acuerdos = AgreementssService.listar( db)
+def listar_acuerdos( db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+    acuerdos = AgreementssService.listar_acuerdos( db)
     if not acuerdos:
         raise HTTPException(status_code=404, detail='Error al listar acuerdos')
     return acuerdos
-"""
+
 
 @router.get('/{id}')
 def listar(id, db: DbSession, user_oid: str = Depends(get_current_user_oid)):

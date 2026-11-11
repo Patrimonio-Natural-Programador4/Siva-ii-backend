@@ -142,7 +142,7 @@ def crear_solicitud_aprobacion(id_categoria_aprobacion: int, id_registro_asociad
                     id_rol_aprobacion,
                     id_ruta,
                     db,
-                    id_supervisor if es_supervisor else None,
+                    id_supervisor if es_supervisor or id_supervisor is not None else None,
                     label_pendiente,
                 )
         else:
@@ -211,7 +211,7 @@ def obtener_usuario_aprobo(id_usuario: int, db: Session) -> str | None:
         (usuario.other_last_name or "")
     ).strip()
 
-def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: int, db: Session, id_supervisor: int = None, label_pendiente: str = None) -> None:
+def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: int, db: Session, id_supervisor: int = None, label_pendiente: str = None, origin_user_id: int = None, origin_approval_rol_id: int = None) -> None:
     try:
         print(f"Asignando siguiente paso para la solicitud {id_solicitud}")
         solicitud_historial = ApprovalRequestHistory(
@@ -223,7 +223,9 @@ def asignar_siguiente_paso(id_solicitud: int, id_rol_aprobacion: int, id_ruta: i
             comments=None,
             step_id=id_ruta,
             user_id=id_supervisor,
-            state_label=label_pendiente
+            state_label=label_pendiente,
+            origin_user_id=origin_user_id,
+            origin_approval_rol_id=origin_approval_rol_id
         )
         asignar_usuario_aprobo_si_aplica(solicitud_historial, db)
         db.add(solicitud_historial)
@@ -339,6 +341,8 @@ def validar_habilitar_acciones_solicitud_aprobacion(id_registro_asociado: int, i
             "usuarios_disponibles_ajustes": usuarios_disponibles_ajustes,
             "habilitar_solicitar_ajustes": bool(usuarios_disponibles_ajustes),
             "id_estado_solicitud": historial_pendiente.approval_status_id,
+            "Asigna revisor": flujo_ruta.assign_reviewer if flujo_ruta else False,
+            "roles_disponibles_asignar": validar_usuarios_disponibles_asignar(historial_pendiente, db) if flujo_ruta.assign_reviewer else "[]"
         }
         return ResponseRequest(
             solicitud_exitosa=True,
@@ -412,7 +416,8 @@ def validar_habilitar_acciones_solicitud_aprobacion(id_registro_asociado: int, i
                 "id_estado_aprobacion_ruta": solicitudHistorial.approval_status_step_id,
                 "usuarios_disponibles_ajustes": usuarios_disponibles_ajustes,
                 "habilitar_solicitar_ajustes": False if solicitudHistorial.approval_status_id == ESTADO_APROBACION_AJUSTES and usuario_actual.id == solicitudHistorial.user_id else True,
-                "id_estado_solicitud": solicitudHistorial.approval_status_id
+                "id_estado_solicitud": solicitudHistorial.approval_status_id,
+                "asigna_revisor": flujoRuta.assign_reviewer if flujoRuta else False
             }
             respuesta = ResponseRequest(solicitud_exitosa=True, mensaje=json.dumps(content))
         elif solicitudHistorial.approval_status_id == ESTADO_APROBACION_AJUSTES and flujoRuta.step_order == 1 and str(user_oid).strip() == str(guid_solicitante).strip():
@@ -432,6 +437,31 @@ def validar_habilitar_acciones_solicitud_aprobacion(id_registro_asociado: int, i
 
     return respuesta
 
+def validar_usuarios_disponibles_asignar(historial_pendiente, db: Session) -> list[dict]:
+    asignaciones = []
+    approval_next_step = ApprovalFlowRepository.obtener_siguientes_pasos(
+        historial_pendiente.approval_workflow_id, historial_pendiente.step_order, db
+    )
+
+    for aprobacion in approval_next_step:
+        asignaciones.append({
+            "rol": aprobacion.approval_role.name,
+            "rol_id": aprobacion.approval_role_id,
+            "users": [
+                {
+                    "user_id": user.user.id,
+                    "name": " ".join(
+                        part for part in [user.user.first_name, user.user.other_name, user.user.last_name, user.user.other_last_name]
+                        if part
+                    ),
+                    "email": user.user.email,
+                }
+                for user in aprobacion.approval_role.role_users
+                if user.active is True
+            ]
+        })
+        
+    return asignaciones
 
 def obtener_asignaciones_responsable(id_solicitud_aprobacion: int, user_oid: str, db: Session) -> list[dict]:
     usuario_actual = UsuariosRepository.obtener_por_guid_msft(user_oid, db)
@@ -442,7 +472,7 @@ def obtener_asignaciones_responsable(id_solicitud_aprobacion: int, user_oid: str
     if not solicitud:
         return []
 
-    pendientes = ApprovalRequestHistoryRepository.obtener_asignaciones_revisor(
+    pendientes = ApprovalRequestHistoryRepository.obtener_delegacion_revisor(
         id_solicitud_aprobacion, solicitud.approval_workflow_id, db
     )
 
@@ -665,6 +695,8 @@ def _actualizar_ruta_paralela(
             received_at=now,
             step_id=paso_revision.step_id,
             state_label=paso_revision.pending_label,
+            origin_user_id=ruta_pendiente.user_id,
+            origin_approval_rol_id=ruta_pendiente.approval_role_id
         ))
         solicitud.current_step = orden
         solicitud.approval_status_id = ESTADO_APROBACION_PENDIENTE
@@ -698,6 +730,8 @@ def _actualizar_ruta_paralela(
             received_at=now,
             step_id=paso_ajuste.step_id,
             state_label="Ajustar solicitud",
+            origin_user_id=ruta_pendiente.user_id,
+            origin_approval_rol_id=ruta_pendiente.approval_role_id
         ))
         solicitud.current_step = paso_ajuste.step_order
         solicitud.approval_status_id = ESTADO_APROBACION_AJUSTES
@@ -748,6 +782,16 @@ def _actualizar_ruta_paralela(
     solicitud.current_step = siguiente_orden
     solicitud.approval_status_id = ESTADO_APROBACION_PENDIENTE
     for id_rol, id_ruta, es_supervisor, _, _, label_pendiente in pasos_siguientes:
+        usuario_asignado = next(
+            (
+                usuario["user_id"]
+                for rol in (accion.roles_asignados or [])
+                if rol.get("rol_id") == id_rol
+                for usuario in (rol.get("users") or [])
+                if usuario.get("user_id") is not None
+            ),
+            id_supervisor if es_supervisor else None,
+        )
         db.add(ApprovalRequestHistory(
             approval_request_id=solicitud.approval_request_id,
             approval_role_id=id_rol,
@@ -755,8 +799,10 @@ def _actualizar_ruta_paralela(
             created_at=now,
             received_at=now,
             step_id=id_ruta,
-            user_id=id_supervisor if es_supervisor else None,
+            user_id=usuario_asignado,
             state_label=label_pendiente,
+            origin_user_id=ruta_pendiente.user_id,
+            origin_approval_rol_id=ruta_pendiente.approval_role_id
         ))
     db.commit()
     respuesta.solicitud_exitosa = True
@@ -833,7 +879,9 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                             id_ruta,
                             db,
                             id_supervisor,
-                            label_pendiente
+                            label_pendiente,
+                            solicitudRuta.user_id,
+                            solicitudRuta.approval_role_id
                         )
                         respuesta.mensaje = "EN_PROCESO"
                 elif accion.tipo_accion == "AJUSTAR":
@@ -862,7 +910,9 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         id_ruta,
                         db,
                         id_usuario_aprobacion,
-                        'Ajustar solicitud'
+                        'Ajustar solicitud',
+                        solicitudRuta.user_id,
+                        solicitudRuta.approval_role_id
                     )
                     respuesta.mensaje = "AJUSTES"
                 elif accion.tipo_accion == "SOLICITUD_AJUSTADA":
@@ -891,7 +941,10 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
                         siguientePaso.approval_role_id,
                         siguientePaso.step_id,
                         db,
-                        id_supervisor
+                        id_supervisor,
+                        '',
+                        solicitudRuta.user_id,
+                        solicitudRuta.approval_role_id
                     )
                     respuesta.mensaje = "EN_PROCESO"
                 respuesta.solicitud_exitosa = True
@@ -899,5 +952,3 @@ def actualizar_ruta(accion: AccionSolicitudAprobacion, id_categoria: int, id_usu
     except Exception as e:
         logging.error(f"Error al actualizar ruta: {e}")
         raise
-
-

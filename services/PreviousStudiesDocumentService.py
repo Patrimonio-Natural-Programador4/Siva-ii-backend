@@ -12,6 +12,7 @@ from docx.text.paragraph import Paragraph
 
 from config import STORAGE_PATH
 from services.TdrDocumentService import PATRON_HTML, html_a_texto, reemplazar_en_parrafo
+from entity.previous_studies import PreviousStudies
 
 
 def construir_objetivos_actividades_productos(productos) -> str:
@@ -116,17 +117,120 @@ def insertar_tabla_desembolsos(documento, parrafo, desembolsos) -> None:
     parrafo._p.getparent().remove(parrafo._p)
 
 
-def generar_formato_ep(diccionario: dict[str, object], code: str) -> Path:
+def insertar_tabla_riesgos(documento, parrafo, riesgos) -> None:
+    def buscar_tabla_riesgos(tablas):
+        for candidata in tablas:
+            encabezados = [celda.text.strip().upper() for celda in candidata.rows[0].cells[:2]]
+            if len(encabezados) == 2 and encabezados[0].startswith("RIESGOS") and encabezados[1] == "COMO MITIGARLO":
+                return candidata
+            for fila in candidata.rows:
+                for celda in fila.cells:
+                    encontrada = buscar_tabla_riesgos(celda.tables)
+                    if encontrada is not None:
+                        return encontrada
+        return None
+
+    tabla = buscar_tabla_riesgos(documento.tables)
+    tabla_existente = tabla is not None
+    if tabla_existente:
+        for fila in list(tabla.rows[1:]):
+            tabla._tbl.remove(fila._tr)
+    else:
+        tabla = documento.add_table(rows=1, cols=2)
+
+    tabla.autofit = False
+    seccion = documento.sections[0]
+    ancho = seccion.page_width - seccion.left_margin - seccion.right_margin
+    anchos = (int(ancho * 0.4), int(ancho * 0.6))
+    for columna, ancho_columna in zip(tabla.columns, anchos):
+        columna.width = ancho_columna
+
+    propiedades = tabla._tbl.tblPr
+    bordes_actuales = propiedades.find(qn("w:tblBorders"))
+    if bordes_actuales is not None:
+        propiedades.remove(bordes_actuales)
+    bordes = OxmlElement("w:tblBorders")
+    for lado in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        borde = OxmlElement(f"w:{lado}")
+        borde.set(qn("w:val"), "single")
+        borde.set(qn("w:sz"), "4")
+        borde.set(qn("w:color"), "000000")
+        bordes.append(borde)
+    propiedades.append(bordes)
+
+    for celda, titulo in zip(tabla.rows[0].cells, ("RIESGOS", "COMO MITIGARLO")):
+        celda.text = titulo
+        celda.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        celda.paragraphs[0].runs[0].bold = True
+        fondo = OxmlElement("w:shd")
+        fondo.set(qn("w:fill"), "D9D9D9")
+        celda._tc.get_or_add_tcPr().append(fondo)
+    repetir = OxmlElement("w:tblHeader")
+    tabla.rows[0]._tr.get_or_add_trPr().append(repetir)
+
+    if riesgos:
+        for riesgo in riesgos:
+            celdas = tabla.add_row().cells
+            celdas[0].text = html_a_texto(getattr(riesgo, "risk", None) or "")
+            celdas[1].text = html_a_texto(getattr(riesgo, "mitigation", None) or "")
+    else:
+        tabla.add_row().cells[0].text = "Sin riesgos registrados"
+
+    for fila in tabla.rows:
+        for celda, ancho_celda in zip(fila.cells, anchos):
+            celda.width = ancho_celda
+            celda.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+    if not tabla_existente:
+        parrafo._p.addprevious(tabla._tbl)
+    parrafo._p.getparent().remove(parrafo._p)
+
+
+def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> Path:   #code: str
+    
+    code = Ep.code
+
+    modalities = {
+        1: "SUBACUERDO",
+        2: "CONVENIO",
+        3: "CONVENIO DE COEJECUCION",
+        4: "ACUERDO MARCO"
+    }
+    
+    ActaEspecífica = 2
+    
     base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
-    directorio = base / "soportes" / "acuerdos" / "estudios_previos"
-    plantilla = directorio / "template" / "plantilla_estudios_previos.docx"
+   
+    
+    base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
+
+    directorio = base / "soportes" / "acuerdos" / "estudios_previos" / "template"
+    #"plantilla_estudios_previos.docx"
+    doc = ""
+    
+    
+    if   Ep.modality_id == 4 :
+        #print("EPCCP4")
+        doc = "EPCCP4"
+        plantilla = directorio / "EPCCP4.docx"
+    elif   Ep.modality_id == 1 :  
+        #print ("EPSAP4")
+        doc = "EPSAP4"
+        plantilla = directorio / "EPSAP4.docx"
+    else :
+        #print ("Aqui   ")
+        doc="default"
+        plantilla = directorio / "plantilla_estudios_previos.docx"
+        
+        
+    
     documento = Document(str(plantilla))
     valores = {
         marcador.removeprefix("<<").removesuffix(">>"): html_a_texto(
            str(valor) if valor is not None else ""
         )
         for marcador, valor in diccionario.items()
-        if marcador != "<<DESEMBOLSOS>>"
+          if marcador not in {"<<DESEMBOLSOS>>", "<<RIESGOS>>"}
     }
     valores_html = {
         marcador.removeprefix("<<").removesuffix(">>"): valor
@@ -149,6 +253,11 @@ def generar_formato_ep(diccionario: dict[str, object], code: str) -> Path:
                     raise ValueError("El marcador <<DESEMBOLSOS>> debe estar en un parrafo independiente")
                 insertar_tabla_desembolsos(documento, parrafo, diccionario["<<DESEMBOLSOS>>"])
                 continue
+            if "<<RIESGOS>>" in parrafo.text and "<<RIESGOS>>" in diccionario:
+                if parrafo.text.strip() != "<<RIESGOS>>":
+                    raise ValueError("El marcador <<RIESGOS>> debe estar en un parrafo independiente")
+                insertar_tabla_riesgos(documento, parrafo, diccionario["<<RIESGOS>>"])
+                continue
             for fragmento in parrafo.runs:
                 if "<<ALCANCE>>" in fragmento.text and "<<ALCANCE>>" not in fragmento.text:
                     fragmento.text = fragmento.text.replace("<<ALCANCE>>", "<<ALCANCE>>")
@@ -158,7 +267,7 @@ def generar_formato_ep(diccionario: dict[str, object], code: str) -> Path:
         caracter if caracter.isalnum() or caracter in "-_" else "_"
         for caracter in str(code)
     )
-    salida = directorio / "formato" / f"ep_{codigo_archivo}.docx"
+    salida = directorio / "formato" / f"ep_{codigo_archivo}_{doc}.docx"
     salida.parent.mkdir(parents=True, exist_ok=True)
     documento.save(str(salida))
     return salida

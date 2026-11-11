@@ -23,5 +23,6 @@ class AccionSolicitudAprobacion(BaseModel):
     orden_actual: Optional[int] = None
     id_usuarios_mencion: Optional[list] = None
     estudio_previo: Optional[PreviousStudiesCreate] = None
+    roles_asignados: Optional[list] = None
     class Config:
         from_attributes = True

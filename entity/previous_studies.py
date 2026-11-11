@@ -30,6 +30,8 @@ class PreviousStudies(Base):
         ForeignKeyConstraint(['persons_id'], ['persons.id'], name='fk_previous_studies_persons'),
         ForeignKeyConstraint(['previous_studies_states_id'], ['previous_studies_states.id'], name='fk_previous_studies_previous_studies_states'),
         ForeignKeyConstraint(['program_id'], ['programs.id'], name='fk_previous_studies_programs'),
+        
+        ForeignKeyConstraint(['framework_agreement_id'], ['agreements.id'], name='fk_previous_studies_agreements'),
         PrimaryKeyConstraint('id', name='previous_studies_pkey')
     )
 
@@ -59,6 +61,9 @@ class PreviousStudies(Base):
     previous_studies_states_id: Mapped[Optional[int]] = mapped_column(Integer)
     agreement_type_id: Mapped[Optional[int]] = mapped_column(Integer)
     modality_id: Mapped[Optional[int]] = mapped_column(Integer)
+    is_specifi_minute:  Mapped[Boolean] = mapped_column(Boolean, nullable=True)
+    framework_agreement_id: Mapped[Optional[int]] = mapped_column(Integer)
+    
 
     app_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests", back_populates="previous_studies")
     implementers: Mapped["Implementers"] = relationship("Implementers") #back populates debe coincidir con el nombre de la contraparte
@@ -72,3 +77,8 @@ class PreviousStudies(Base):
     disbursements: Mapped[list["Disbursement"]] = relationship("Disbursement")
     # agreement_products: Mapped[list["AgreementsProducts"]] = relationship("AgreementsProducts", back_populates="previous_study")
     risks: Mapped[list["Risks"]] = relationship("Risks", back_populates="previous_study")
+    
+    framework_agreement: Mapped[Optional["Agreements"]] = relationship(
+        "Agreements",
+        foreign_keys=[framework_agreement_id],
+    )

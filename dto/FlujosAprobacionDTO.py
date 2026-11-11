@@ -34,6 +34,7 @@ class FlujosAprobacionRutaBase(BaseModel):
     asigna_revisor: Optional[bool] = None
     label_pendiente: Optional[str] = None
     days_for_approval: Optional[int] = None
+    habilita_delegacion: Optional[bool] = None
 
 
 class FlujosAprobacionBase(BaseModel):

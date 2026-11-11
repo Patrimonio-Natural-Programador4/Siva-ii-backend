@@ -171,6 +171,8 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         #
         nuevo_estudio_previo.modality_id = previous_studies.modality_id
         nuevo_estudio_previo.agreement_type_id = previous_studies.agreement_type_id
+        nuevo_estudio_previo.is_specifi_minute = previous_studies.is_specifi_minute
+        nuevo_estudio_previo.framework_agreement_id = previous_studies.framework_agreement_id
 
         db.add(nuevo_estudio_previo)
         db.flush()
@@ -220,12 +222,16 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
                 f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_previous_studies}"
             )
 
+
+        usuario_lider_pilar = UsuariosRepository.obtener_por_person_id(nuevo_estudio_previo.capacity_assessment.pillar.person_id, db)
+
         id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
             id_categoria_aprobacion,
             nuevo_estudio_previo.id,
             usuario.id,
             nuevo_estudio_previo.code, #code 
             db,
+            usuario_lider_pilar.id if usuario_lider_pilar else None,
             id_programa=nuevo_estudio_previo.program_id 
         )
 
@@ -511,6 +517,8 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         registro.contributions_fpn = payload.contributions_fpn
         registro.estimated_term = payload.estimated_term
         registro.program_id = payload.program_id
+        registro.is_specifi_minute = payload.is_specifi_minute
+        registro.framework_agreement_id = payload.framework_agreement_id
 
         if payload.objetivos or payload.desembolsos:
             acuerdo = AgreementRepository.obtener_por_id_estudio_previo(registro.id, db)
@@ -627,6 +635,7 @@ def obtener_formato_ep(guid: str, db: Session):
             desembolsos = AgreementsProductsRepository.obtener_desembolsos_por_id_agreement(agreetment.id, db)
         diccionario = {
             "<<DESEMBOLSOS>>": desembolsos,
+            "<<RIESGOS>>": estudios_previos.risks or [],
             "<<OBJETIVOS_ACTIVIDADES_PRODUCTOS>>": obtejivos_actividades_productos,
             "<<ANTECEDENTES>>": estudios_previos.precedents,
             "<<JUSTIFICACION>>": estudios_previos.justification,
@@ -652,7 +661,7 @@ def obtener_formato_ep(guid: str, db: Session):
         
 
 
-        return generar_formato_ep(diccionario, estudios_previos.code)
+        return generar_formato_ep(diccionario, estudios_previos) # estudios_previos.code
         
         
 
