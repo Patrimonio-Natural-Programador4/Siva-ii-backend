@@ -35,7 +35,7 @@ def list_acquisitions(db: Session) -> list[AcquisitionsBase]:
             contract_code=a.contractt.code if a.contractt else None,
             pad_id=a.pad_id,
             pid_id=a.pid_id,
-            pad_name=a.pid.pad if a.pid else None,
+            pad_name=a.pid.pad_codigo if a.pid else None,
             contract_id=a.contract_id,
             rubro_id=a.rubro_id,
             status_id=a.status_id,
@@ -103,7 +103,7 @@ def get_acquisition_by_id(id: int, db: Session) -> AcquisitionsBase | None:
         contract_code=a.contractt.code if a.contractt else None,
         pad_id=a.pad_id,
         pid_id=a.pid_id,
-        pad_name=a.pid.pad if a.pid else None,
+        pad_name=a.pid.pad_codigo if a.pid else None,
         contract_id=a.contract_id,
         rubro_id=a.rubro_id,
         status_id=a.status_id,
@@ -150,16 +150,16 @@ def create_acquisition(acquisition: AcquisitionsCreate, db: Session, usuario_gui
         if not usuario:
             raise Exception("Usuario no encontrado")
 
-        if not acquisition.process_number or not acquisition.type or not acquisition.activity_id \
+        if not acquisition.process_number  or not acquisition.activity_id \
            or not acquisition.expense_category_id or not acquisition.purchase_type_id:
             return ResponseRequest(
                 solicitud_exitosa=False,
-                mensaje='process_number, type, activity_id, expense_category_id y purchase_type_id son obligatorios'
+                mensaje='process_number,  activity_id, expense_category_id y purchase_type_id son obligatorios'
             )
 
         nueva_adquisicion = AcquisitionsEntity()
         nueva_adquisicion.process_number = acquisition.process_number
-        nueva_adquisicion.type = acquisition.type
+        nueva_adquisicion.type = acquisition.type or  '0'
         nueva_adquisicion.description = acquisition.description
         nueva_adquisicion.numero_contrato_temporal = acquisition.numero_contrato_temporal
         nueva_adquisicion.status = acquisition.status
@@ -244,7 +244,7 @@ def update_acquisition(id: int, payload: AcquisitionsCreate, db: Session, usuari
             return ResponseRequest(solicitud_exitosa=False, mensaje='Adquisición no encontrada')
 
         registro.process_number = payload.process_number
-        registro.type = payload.type
+        registro.type = payload.type  or '0'
         registro.description = payload.description
         registro.numero_contrato_temporal = payload.numero_contrato_temporal
         registro.status = payload.status

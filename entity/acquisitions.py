@@ -17,6 +17,9 @@ from entity.expense_categories import ExpenseCategories
 from entity.pads import Pads
 from entity.Pidss import Pids
 from entity.purchase_types import PurchaseTypes
+from entity.general_categories import GeneralCategories
+from entity.padstatus import PadStatus
+from entity.kfw_observations import KfwObservations
 
 
 class Acquisitions(Base):
@@ -24,12 +27,7 @@ class Acquisitions(Base):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='acquisitions_pkey'),
         #foranea
-        ForeignKeyConstraint
-        (
-            ["activity_id"], 
-            ["activities.id"],
-            name="acquisitions_activity_id_foreign",
-        ),
+        ForeignKeyConstraint(["activity_id"], ["activities.id"],name="acquisitions_activity_id_foreign",),
         ForeignKeyConstraint(["agreement_id"], ["agreements.id"],name="acquisitions_agreement_id_foreign"),
         ForeignKeyConstraint(["code_id"], ["codes.id"],name="acquisitions_code_id_foreign"),
         ForeignKeyConstraint(["contractt_id"], ["contracts.id"],name="acquisitions_contractt_id_foreign"),
@@ -37,6 +35,9 @@ class Acquisitions(Base):
         ForeignKeyConstraint(["pad_id"], ["pads.id"],name="acquisitions_pad_id_foreign"),
         ForeignKeyConstraint(["pid_id"], ["pids.id"],name="acquisitions_pid_id_foreign"),
         ForeignKeyConstraint(["purchase_type_id"], ["purchase_types.id"],name="acquisitions_purchase_type_id_foreign"),
+        ForeignKeyConstraint(["general_cat_id"], ["general_categories.id"],name="acquisitions_general_cat_id_foreign"),
+        ForeignKeyConstraint(["status_id"], ["padstatus.id"],name="acquisitions_padstatus_id_foreign"),
+        ForeignKeyConstraint(["kfw_id"], ["kfw_observations.id"],name="acquisitions_kfw_observations_id_foreign"),  
     )
 
     id: Mapped[int] =                   mapped_column(BigInteger, primary_key=True)
@@ -105,3 +106,6 @@ class Acquisitions(Base):
     pad: Mapped["Pads"] = relationship("Pads", back_populates="acquisitions_pad")
     pid: Mapped["Pids"] = relationship("Pids", back_populates="acquisitions_pid")
     purchase_type: Mapped["PurchaseTypes"] = relationship("PurchaseTypes", back_populates="acquisitions_purchase_type")
+    general_categories: Mapped["GeneralCategories"] = relationship("GeneralCategories", back_populates="acquisitions_general_categories")
+    pad_status: Mapped["PadStatus"] = relationship("PadStatus", back_populates="acquisitions_pad_status")
+    kfw_observations: Mapped["KfwObservations"] = relationship("KfwObservations", back_populates="acquisitions_kfw_observations")
