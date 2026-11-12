@@ -187,8 +187,11 @@ def insertar_tabla_riesgos(documento, parrafo, riesgos) -> None:
 
 
 def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> Path:   #code: str
-    
+    print("  ACaa")
     code = Ep.code
+    ca = Ep.capacity_assessment              # relación PreviousStudies -> CapacityAssessments
+    pillar_id = ca.pillar_id if ca else None # capacity_assessment_id es Optional
+    es_pilar_4 = pillar_id == 4
 
     modalities = {
         1: "SUBACUERDO",
@@ -198,9 +201,7 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
     }
     
     ActaEspecífica = 2
-    
-    base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
-   
+    es_acta = Ep.agreement_type_id == ActaEspecífica
     
     base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
 
@@ -208,30 +209,39 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
     #"plantilla_estudios_previos.docx"
     doc = ""
     
+    modalities = {
+        1: "SUBACUERDO",
+        2: "CONVENIO",
+        3: "CONVENIO DE COEJECUCION",
+        4: "ACUERDO MARCO"
+    }
     
-    if   Ep.modality_id == 3 :
-        #print("EPCCP4")
-        doc = "EPCCP4"
-        plantilla = directorio / "EPCCP4.docx"
-    elif   Ep.modality_id == 1 :  
-        #print ("EPSAP4")
-        doc = "EPSAP4"
-        plantilla = directorio / "EPSAP4.docx"
-    elif   Ep.modality_id == 4 :  
-            #print ("EPSAP4")
-            doc = "EPAM"
-            plantilla = directorio / "EPAM.docx"
-    elif   Ep.modality_id == 2 :  
-                #print ("EPCP4")
-                doc = "EPCP4"
-                plantilla = directorio / "EPCP4.docx"
-    else :
-        #print ("Aqui   ")
-        doc="default"
-        plantilla = directorio / "plantilla_estudios_previos.docx"
+    PLANTILLAS = {
+        #Modalida,Pilar 4,  acta específica
+        (4, True, False): "EPAM",
+        (3, True, False): "EPCCP4",
+        (1, True, False): "EPSAP4",
+        (2, True, False): "EPCP4",
+        #############################
+        (3, True, True): "EPAECCP4",
+        (1, True, True): "EPAESAP4",
+        (2, True, True): "EPAECP4",
+        (3, False,False): "EPCC",
+        (2, False,False): "EPC",
+        (3, False,True): "EPAECC",
+        (1, False,True): "EPAESA",
+        (2, False,True): "EPAEC",
+    }
         
+    doc = PLANTILLAS.get((Ep.modality_id, bool(es_pilar_4), es_acta))
+    if doc is None:
+        raise ValueError(
+            f"No hay plantilla para modalidad={Ep.modality_id}, "
+            f"pilar4={es_pilar_4}, acta={es_acta}"
+        )
+
+    plantilla = directorio / f"{doc}.docx"
         
-    
     documento = Document(str(plantilla))
     valores = {
         marcador.removeprefix("<<").removesuffix(">>"): html_a_texto(
