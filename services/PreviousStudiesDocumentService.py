@@ -209,7 +209,7 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
     doc = ""
     
     
-    if   Ep.modality_id == 4 :
+    if   Ep.modality_id == 3 :
         #print("EPCCP4")
         doc = "EPCCP4"
         plantilla = directorio / "EPCCP4.docx"
@@ -217,6 +217,14 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
         #print ("EPSAP4")
         doc = "EPSAP4"
         plantilla = directorio / "EPSAP4.docx"
+    elif   Ep.modality_id == 4 :  
+            #print ("EPSAP4")
+            doc = "EPAM"
+            plantilla = directorio / "EPAM.docx"
+    elif   Ep.modality_id == 2 :  
+                #print ("EPCP4")
+                doc = "EPCP4"
+                plantilla = directorio / "EPCP4.docx"
     else :
         #print ("Aqui   ")
         doc="default"
