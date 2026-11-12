@@ -47,6 +47,7 @@ class Pids(Base):
     usd_cop_rate: Mapped[float] = mapped_column(Numeric, nullable=True)
     eur_cop_rate: Mapped[float] = mapped_column(Numeric, nullable=True)
     sicof_code: Mapped[str] = mapped_column(String(255), nullable=True)
+    pad_codigo: Mapped[Optional[str]] = mapped_column("pad", CITEXT, nullable=True)
 
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))

@@ -1,4 +1,4 @@
-from controllers import AcquisitionsController, AgreementsController, AgreementsProductsController, DisbursementController, DisbursementStateController, SolicitudesAprobacionController, TdrController, ViajesController
+from controllers import AcquisitionsController, AgreementsController, AgreementsProductsController, DisbursementController, DisbursementStateController, KfwObservationsController, SolicitudesAprobacionController, TdrController, ViajesController
 #from controllers import WordParametersController
 import os
 
@@ -31,6 +31,10 @@ from controllers import ContractsController
 from controllers import ProductsStateController
 from controllers import RisksController
 from controllers import PillarsControllers
+from controllers import ActivitiesController
+from controllers import GeneralCategoriesController
+from controllers import PadStatusController
+
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from starlette.staticfiles import StaticFiles
@@ -205,7 +209,10 @@ def register_routes(app: FastAPI):
     app.include_router( AgreementsProductsController.router , dependencies=auth_dependency)   
     app.include_router( AcquisitionsController.router , dependencies=auth_dependency)  
     app.include_router( RisksController.router , dependencies=auth_dependency)   
-              
+    app.include_router( ActivitiesController.router , dependencies=auth_dependency)  
+    app.include_router( GeneralCategoriesController.router , dependencies=auth_dependency) 
+    app.include_router( PadStatusController.router , dependencies=auth_dependency)   
+    app.include_router( KfwObservationsController.router , dependencies=auth_dependency)            
          
     app.include_router( ContractsController.router , dependencies=auth_dependency)    
     app.include_router( PillarsControllers.router , dependencies=auth_dependency)    

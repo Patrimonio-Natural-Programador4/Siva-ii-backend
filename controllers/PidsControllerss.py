@@ -14,6 +14,6 @@ router = APIRouter(
 
 
 @router.get('')
-def listar_programas(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+def listar_pids(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return PidsServicee.listar(db)
 

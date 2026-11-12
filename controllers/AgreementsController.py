@@ -13,7 +13,7 @@ from dependencies.auth_dependency import get_current_user_oid
 from fastapi.encoders import jsonable_encoder
 from dto.ResponseRequest import ResponseRequest
 
-# Inicialización del router de FastAPI
+
 router = APIRouter(prefix='/agreements', tags=['Agreements'])
 
 @router.get('/listados', response_model=List[Listados])
