@@ -663,6 +663,8 @@ def obtener_formato_ep(guid: str, db: Session):
             "<<APORTE_FPN_LETRAS>>": num2words(estudios_previos.contributions_fpn, lang="es_CO"),
             "<<APORTES_EI>>": f"{estudios_previos.contributions_ei:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
             "<<APORTES_EI_LETRAS>>": num2words(estudios_previos.contributions_ei, lang="es_CO"),
+            "<<CONTACTO_EI>>": estudios_previos.contact_ei,
+            "<<INTEGRANTES_EI>>": estudios_previos.participants_ei,
             "<<VALOR_EJECUTA_EI>>": f"{estudios_previos.total_value_executes_ei:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
             "<<VALOR_EJECUTA_EI_LETRAS>>": num2words(estudios_previos.total_value_executes_ei, lang="es_CO"),
             "<<VALOR_EJECUTA_FPN>>": f"{estudios_previos.total_value_executes_fpn:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),

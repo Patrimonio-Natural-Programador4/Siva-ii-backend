@@ -1,5 +1,5 @@
 import logging
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 from entity.model_has_roles import ModelHasRoles
 from entity.users import Users
@@ -119,7 +119,10 @@ def reemplazar_programas_usuario(
  
 def obtener_por_correo(correo: str, db: Session) -> Users:
     try:
-        usuario = db.query(Users).filter(Users.email == correo).first()
+        correo = correo.strip().lower()
+        usuario = db.query(Users).filter(
+            func.lower(Users.email) == correo
+        ).first()
         if not usuario:
             print(f"Usuario with email {correo} not found")
             return None
