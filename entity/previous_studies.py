@@ -63,6 +63,9 @@ class PreviousStudies(Base):
     modality_id: Mapped[Optional[int]] = mapped_column(Integer)
     is_specifi_minute:  Mapped[Boolean] = mapped_column(Boolean, nullable=True)
     framework_agreement_id: Mapped[Optional[int]] = mapped_column(Integer)
+    contact_ei:Mapped[Optional[str]] = mapped_column(Text)
+    participants_ei:Mapped[Optional[str]] = mapped_column(Text)
+
     
 
     app_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests", back_populates="previous_studies")

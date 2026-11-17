@@ -19,6 +19,8 @@ class PreviousStudiesBase(BaseModel):
     term: Optional[str] = None
     obligations: Optional[str] = None
     supervisor: Optional[str] = None
+    contact_ei: Optional[str] = None
+    participants_ei: Optional[str] = None
     user_session: Optional[int] = None
     create_date: Optional[datetime] = None
     total_value: Optional[int] = None
@@ -66,6 +68,8 @@ class PreviousStudiesCreate(BaseModel):
      term: Optional[str] = None
      obligations: Optional[str] = None
      supervisor: Optional[str] = None
+     contact_ei: Optional[str] = None
+     participants_ei: Optional[str] = None
      user_session: Optional[int] = None
      create_date: Optional[datetime] = None
      total_value: Optional[int] = None
@@ -157,4 +161,3 @@ class PreviousStudiesListDTO(BaseModel):
     class Config:
         from_attributes = True
    
-

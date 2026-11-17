@@ -36,6 +36,20 @@
 
    ```
 
+## Contacto e integrantes EI de estudios previos
+
+Los formularios de estudios previos aceptan "Contacto EI" (`contact_ei`) e
+"Integrantes EI" (`participants_ei`) como texto libre opcional. Se guardan en
+las columnas del mismo nombre de `previous_studies` mediante POST/PUT y se
+devuelven en las consultas de listado general, por ID y de detalle por GUID.
+El detalle de aprobacion tambien muestra ambos campos.
+
+Ejecutar `alembic upgrade head` antes de usar estos campos: la revision
+`c8e14ab6d932` convierte las columnas existentes de entero a texto y conserva
+sus valores. Omitir los campos al actualizar conserva el contenido; enviar
+`null` o una cadena vacia permite limpiarlo. El downgrade a entero falla si
+hay texto no numerico; no se descarta ni transforma ese contenido.
+
 ## Objetivos, actividades y productos de estudios previos
 
 Los endpoints `POST /estudios-previos` y `PUT /estudios-previos/{guid}` aceptan

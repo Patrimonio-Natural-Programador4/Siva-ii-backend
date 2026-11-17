@@ -51,6 +51,8 @@ def listar(db: Session) -> list[PreviousStudiesBase]:
             term=e.term,
             obligations= e.obligations,
             supervisor = e.supervisor,
+            contact_ei=e.contact_ei,
+            participants_ei=e.participants_ei,
             user_session=e.user_session,
             create_date=e.create_date,
             total_value= e.total_value,
@@ -94,6 +96,8 @@ def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | Non
             term=e.term,
             obligations= e.obligations,
             supervisor = e.supervisor,
+            contact_ei=e.contact_ei,
+            participants_ei=e.participants_ei,
             user_session=e.user_session,
             create_date=e.create_date,
             total_value= e.total_value,
@@ -153,6 +157,8 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.term = previous_studies.term
         nuevo_estudio_previo.obligations = previous_studies.obligations
         nuevo_estudio_previo.supervisor = previous_studies.supervisor
+        nuevo_estudio_previo.contact_ei = previous_studies.contact_ei
+        nuevo_estudio_previo.participants_ei = previous_studies.participants_ei
         nuevo_estudio_previo.user_session = usuario.id
         nuevo_estudio_previo.create_date = datetime.now().replace(tzinfo=None)
         nuevo_estudio_previo.total_value = previous_studies.total_value
@@ -328,6 +334,8 @@ def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
        term=e.term,
        obligations= e.obligations,
        supervisor = e.supervisor,
+       contact_ei=e.contact_ei,
+       participants_ei=e.participants_ei,
        user_session=e.user_session,
        create_date=e.create_date,
        total_value= e.total_value,
@@ -506,6 +514,10 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         registro.term = payload.term
         registro.obligations = payload.obligations
         registro.supervisor = payload.supervisor
+        if "contact_ei" in payload.model_fields_set:
+            registro.contact_ei = payload.contact_ei
+        if "participants_ei" in payload.model_fields_set:
+            registro.participants_ei = payload.participants_ei
         registro.total_value = payload.total_value
         registro.contributions_ei = payload.contributions_ei
         registro.total_value_executes_fpn = payload.total_value_executes_fpn
