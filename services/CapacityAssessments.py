@@ -157,7 +157,7 @@ def crear(capacity_assessment: CapacityAssessmentsCreate, db: Session, usuario_g
             usuario.id,
             nueva_capacidad.guid,
             db,
-            usuario_lider_pilar.id if usuario_lider_pilar else None,
+            None,
             id_programa=capacity_assessment.program_id
         )
 
