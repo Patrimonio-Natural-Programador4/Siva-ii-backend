@@ -1,22 +1,34 @@
-#SERVICE ESTUDIOS PREVIOS
+# SERVICE ESTUDIOS PREVIOS
 
 import logging
 import uuid
 from datetime import datetime, date
 from sqlalchemy.orm import Session
 
-from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacionCapacidad
+from dto.AccionesSolicitudAprobacionCapacidadDTO import (
+    AccionSolicitudAprobacionCapacidad,
+)
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
-from dto.PreviousStudiesDTO import PreviousStudiesBase, PreviousStudiesCreate, PreviousStudiesListDTO
+from dto.PreviousStudiesDTO import (
+    PreviousStudiesBase,
+    PreviousStudiesCreate,
+    PreviousStudiesListDTO,
+)
 from dto.ResponseRequest import ResponseRequest
 from entity.implementers import Implementers
 from entity.persons import Persons
-from entity.previous_studies import PreviousStudies as PreviousStudiesEntity 
+from entity.previous_studies import PreviousStudies as PreviousStudiesEntity
 from exceptions import PruebaNotFoundError
-from repository import AgreementRepository, AgreementsProductsRepository, PreviousStudiesRepository, UsuariosRepository
+from repository import (
+    AgreementRepository,
+    AgreementsProductsRepository,
+    PreviousStudiesRepository,
+    UsuariosRepository,
+)
 from services import PreviousStudiesService
 from services import SolicitudesAprobacionService
-#NOTIFUCACIONES
+
+# NOTIFUCACIONES
 from fastapi import BackgroundTasks
 from jinja2 import Environment, FileSystemLoader
 from entity.users import Users
@@ -26,130 +38,173 @@ from dto.agreementDTO import AgreementsCreateBase
 from services import AgreementssService
 from services import AgreementsProductsService
 from services import DisbursementsService
-from services.PreviousStudiesDocumentService import construir_objetivos_actividades_productos, generar_formato_ep
+from services.PreviousStudiesDocumentService import (
+    construir_objetivos_actividades_productos,
+    generar_formato_ep,
+)
 from num2words import num2words
 from dto.CapacityAssessmentsDTO import CapacityAssessmentsCreate
 from services import CapacityAssessments
 
-
-
-CATEGORIA_APROBACION_previous_studies = "APP_EP"  #APP_EP
-ID_ESTADO_REVISION = 2   # Revisión
-ID_ESTADO_AJUSTES = 3   # Solicitud de ajustes
+CATEGORIA_APROBACION_previous_studies = "APP_EP"  # APP_EP
+ID_ESTADO_REVISION = 2  # Revisión
+ID_ESTADO_AJUSTES = 3  # Solicitud de ajustes
 ID_ESTADO_APROBADO = 5  # Aprobado
 
 
 def listar(db: Session) -> list[PreviousStudiesBase]:
     estudios = PreviousStudiesRepository.listar(db)
     return [
-       PreviousStudiesBase(
+        PreviousStudiesBase(
             id=int(e.id),
             precedents=e.precedents,
             justification=e.justification,
             scope=e.scope,
             overall_objective=e.overall_objective,
             term=e.term,
-            obligations= e.obligations,
-            supervisor = e.supervisor,
+            obligations=e.obligations,
+            supervisor=e.supervisor,
             contact_ei=e.contact_ei,
             participants_ei=e.participants_ei,
             user_session=e.user_session,
             create_date=e.create_date,
-            total_value= e.total_value,
-            contributions_ei= e.contributions_ei,
+            total_value=e.total_value,
+            contributions_ei=e.contributions_ei,
             total_value_executes_fpn=e.total_value_executes_fpn,
-            total_value_executes_ei= e.total_value_executes_ei,
-            contributions_fpn = e.contributions_fpn,
-            estimated_term=e.estimated_term,           
+            total_value_executes_ei=e.total_value_executes_ei,
+            contributions_fpn=e.contributions_fpn,
+            estimated_term=e.estimated_term,
             previous_studies_states_id=e.previous_studies_states_id,
-            prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
+            prev_studies_state=(
+                e.prev_studies_state.state if e.prev_studies_state else None
+            ),
             approval_request_id=e.approval_request_id,
-            guid=e.guid,                                          # <-- agregado
+            guid=e.guid,  # <-- agregado
             app_request=e.app_request.name if e.app_request else None,
             implementer_id=e.implementer_id,
-            implementers=e.implementers.acronym if (e.implementers and hasattr(e.implementers, 'acronym')) else None,
+            implementers=(
+                e.implementers.acronym
+                if (e.implementers and hasattr(e.implementers, "acronym"))
+                else None
+            ),
             persons_id=e.persons_id,
             persons=(
-                " ".join(p for p in [e.persons.first_name, e.persons.other_name, e.persons.last_name, e.persons.other_last_name] if p)
-                if e.persons else None
+                " ".join(
+                    p
+                    for p in [
+                        e.persons.first_name,
+                        e.persons.other_name,
+                        e.persons.last_name,
+                        e.persons.other_last_name,
+                    ]
+                    if p
+                )
+                if e.persons
+                else None
             ),
             capacity_assessment_id=e.capacity_assessment_id,
-            capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
+            capacity_assessment=(
+                e.capacity_assessment.name if e.capacity_assessment else None
+            ),
             program_id=e.program_id,
-            programs =e.programs.description if e.programs else None,
-            codde =e.code 
-            
+            programs=e.programs.description if e.programs else None,
+            codde=e.code,
         )
         for e in estudios
     ]
-    
+
+
 def obtener_est_previo_por_id(id: int, db: Session) -> PreviousStudiesBase | None:
     e = PreviousStudiesRepository.obtener_por_id(id, db)
     if not e:
         return None
     return PreviousStudiesBase(
-            id=int(e.id),
-            precedents=e.precedents,
-            justification=e.justification,
-            scope=e.scope,
-            overall_objective=e.overall_objective,
-            term=e.term,
-            obligations= e.obligations,
-            supervisor = e.supervisor,
-            contact_ei=e.contact_ei,
-            participants_ei=e.participants_ei,
-            user_session=e.user_session,
-            create_date=e.create_date,
-            total_value= e.total_value,
-            contributions_ei= e.contributions_ei,
-            total_value_executes_fpn=e.total_value_executes_fpn,
-            total_value_executes_ei= e.total_value_executes_ei,
-            contributions_fpn = e.contributions_fpn,
-            estimated_term=e.estimated_term,           
-            previous_studies_states_id=e.previous_studies_states_id,
-            prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
-            approval_request_id=e.approval_request_id,
-            guid=e.guid,                                          # <-- agregado
-            app_request=e.app_request.name if e.app_request else None,
-            implementer_id=e.implementer_id,
-            implementers=e.implementers.acronym if (e.implementers and hasattr(e.implementers, 'acronym')) else None,
-            persons_id=e.persons_id,
-            persons=(
-                " ".join(p for p in [e.persons.first_name, e.persons.other_name, e.persons.last_name, e.persons.other_last_name] if p)
-                if e.persons else None
-            ),
-            capacity_assessment_id=e.capacity_assessment_id,
-            capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
-            program_id=e.program_id,
-            programs =e.programs.description if e.programs else None,
-            codde =e.code 
-                            
-            )   
-    
+        id=int(e.id),
+        precedents=e.precedents,
+        justification=e.justification,
+        scope=e.scope,
+        overall_objective=e.overall_objective,
+        term=e.term,
+        obligations=e.obligations,
+        supervisor=e.supervisor,
+        contact_ei=e.contact_ei,
+        participants_ei=e.participants_ei,
+        user_session=e.user_session,
+        create_date=e.create_date,
+        total_value=e.total_value,
+        contributions_ei=e.contributions_ei,
+        total_value_executes_fpn=e.total_value_executes_fpn,
+        total_value_executes_ei=e.total_value_executes_ei,
+        contributions_fpn=e.contributions_fpn,
+        estimated_term=e.estimated_term,
+        previous_studies_states_id=e.previous_studies_states_id,
+        prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
+        approval_request_id=e.approval_request_id,
+        guid=e.guid,  # <-- agregado
+        app_request=e.app_request.name if e.app_request else None,
+        implementer_id=e.implementer_id,
+        implementers=(
+            e.implementers.acronym
+            if (e.implementers and hasattr(e.implementers, "acronym"))
+            else None
+        ),
+        persons_id=e.persons_id,
+        persons=(
+            " ".join(
+                p
+                for p in [
+                    e.persons.first_name,
+                    e.persons.other_name,
+                    e.persons.last_name,
+                    e.persons.other_last_name,
+                ]
+                if p
+            )
+            if e.persons
+            else None
+        ),
+        capacity_assessment_id=e.capacity_assessment_id,
+        capacity_assessment=(
+            e.capacity_assessment.name if e.capacity_assessment else None
+        ),
+        program_id=e.program_id,
+        programs=e.programs.description if e.programs else None,
+        codde=e.code,
+    )
 
 
-def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest: # background_tasks
+def crearEstudioPrevio(
+    previous_studies: PreviousStudiesCreate,
+    db: Session,
+    usuario_guid: str,
+    background_tasks: BackgroundTasks,
+) -> ResponseRequest:  # background_tasks
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
-        
-        #print("previous_studies create  aquiii " , previous_studies)
+
+        # print("previous_studies create  aquiii " , previous_studies)
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
             raise Exception("Usuario no encontrado")
-        
+
         if previous_studies.capacity_assessment_id:
-            existe_estudio = db.query(PreviousStudiesEntity).filter(
-                PreviousStudiesEntity.capacity_assessment_id == previous_studies.capacity_assessment_id
-            ).first()
+            existe_estudio = (
+                db.query(PreviousStudiesEntity)
+                .filter(
+                    PreviousStudiesEntity.capacity_assessment_id
+                    == previous_studies.capacity_assessment_id
+                )
+                .first()
+            )
             if existe_estudio:
                 return ResponseRequest(
                     solicitud_exitosa=False,
-                    mensaje=f"Esta evaluación de capacidades ya tiene un estudio previo ({existe_estudio.code})"
+                    mensaje=f"Esta evaluación de capacidades ya tiene un estudio previo ({existe_estudio.code})",
                 )
         fecha_actual = date.today()
-        estudios_previos=PreviousStudiesRepository.numero_estudios_previos(db)
-        
-        nuevo_estudio_previo = PreviousStudiesEntity()  
+        estudios_previos = PreviousStudiesRepository.numero_estudios_previos(db)
+
+        nuevo_estudio_previo = PreviousStudiesEntity()
         nuevo_estudio_previo.precedents = previous_studies.precedents
         nuevo_estudio_previo.justification = previous_studies.justification
         nuevo_estudio_previo.scope = previous_studies.scope
@@ -163,13 +218,21 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.create_date = datetime.now().replace(tzinfo=None)
         nuevo_estudio_previo.total_value = previous_studies.total_value
         nuevo_estudio_previo.contributions_ei = previous_studies.contributions_ei
-        nuevo_estudio_previo.total_value_executes_fpn = previous_studies.total_value_executes_fpn
-        nuevo_estudio_previo.total_value_executes_ei = previous_studies.total_value_executes_ei
-        nuevo_estudio_previo.previous_studies_states_id= previous_studies.previous_studies_states_id
+        nuevo_estudio_previo.total_value_executes_fpn = (
+            previous_studies.total_value_executes_fpn
+        )
+        nuevo_estudio_previo.total_value_executes_ei = (
+            previous_studies.total_value_executes_ei
+        )
+        nuevo_estudio_previo.previous_studies_states_id = (
+            previous_studies.previous_studies_states_id
+        )
         nuevo_estudio_previo.approval_request_id = previous_studies.approval_request_id
         nuevo_estudio_previo.implementer_id = previous_studies.implementer_id
         nuevo_estudio_previo.persons_id = previous_studies.persons_id
-        nuevo_estudio_previo.capacity_assessment_id = previous_studies.capacity_assessment_id
+        nuevo_estudio_previo.capacity_assessment_id = (
+            previous_studies.capacity_assessment_id
+        )
         nuevo_estudio_previo.contributions_fpn = previous_studies.contributions_fpn
         nuevo_estudio_previo.estimated_term = previous_studies.estimated_term
         nuevo_estudio_previo.program_id = previous_studies.program_id
@@ -178,7 +241,9 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
         nuevo_estudio_previo.modality_id = previous_studies.modality_id
         nuevo_estudio_previo.agreement_type_id = previous_studies.agreement_type_id
         nuevo_estudio_previo.is_specifi_minute = previous_studies.is_specifi_minute
-        nuevo_estudio_previo.framework_agreement_id = previous_studies.framework_agreement_id
+        nuevo_estudio_previo.framework_agreement_id = (
+            previous_studies.framework_agreement_id
+        )
 
         db.add(nuevo_estudio_previo)
         db.flush()
@@ -196,16 +261,33 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
             prevou_study_id=nuevo_estudio_previo.id,
             modality_id=nuevo_estudio_previo.modality_id,
             agreement_type_id=nuevo_estudio_previo.agreement_type_id,
-            code=nuevo_estudio_previo.capacity_assessment.code if nuevo_estudio_previo.capacity_assessment else None,
+            code=(
+                nuevo_estudio_previo.capacity_assessment.code
+                if nuevo_estudio_previo.capacity_assessment
+                else None
+            ),
         )
-        resultado_acuerdo = AgreementssService.crear_agreement(agreement, db, confirmar=False)
-        
-        preciosStudieUpted = CapacityAssessments.actualizar_estado(previous_studies.capacity_assessment_id,db,usuario_guid)
-        
-        if not preciosStudieUpted.solicitud_exitosa or preciosStudieUpted.identity is None:
-                    raise ValueError(preciosStudieUpted.mensaje or "No se pudo actualizar el estado de la evaluacion de capacidades")
-        
-        if not resultado_acuerdo.solicitud_exitosa or resultado_acuerdo.identity is None:
+        resultado_acuerdo = AgreementssService.crear_agreement(
+            agreement, db, confirmar=False
+        )
+
+        preciosStudieUpted = CapacityAssessments.actualizar_estado(
+            previous_studies.capacity_assessment_id, db, usuario_guid
+        )
+
+        if (
+            not preciosStudieUpted.solicitud_exitosa
+            or preciosStudieUpted.identity is None
+        ):
+            raise ValueError(
+                preciosStudieUpted.mensaje
+                or "No se pudo actualizar el estado de la evaluacion de capacidades"
+            )
+
+        if (
+            not resultado_acuerdo.solicitud_exitosa
+            or resultado_acuerdo.identity is None
+        ):
             raise ValueError(resultado_acuerdo.mensaje or "No se pudo crear el acuerdo")
         productos_nuevos = {}
         if previous_studies.objetivos:
@@ -214,49 +296,78 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
             )
         if previous_studies.desembolsos:
             DisbursementsService.guardar_desembolsos(
-                resultado_acuerdo.identity, previous_studies.desembolsos, productos_nuevos, db
+                resultado_acuerdo.identity,
+                previous_studies.desembolsos,
+                productos_nuevos,
+                db,
             )
 
         db.commit()
         db.refresh(nuevo_estudio_previo)
 
-        id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(
-            CATEGORIA_APROBACION_previous_studies, db
+        id_categoria_aprobacion = (
+            SolicitudesAprobacionService.obtener_categoria_aprobacion(
+                CATEGORIA_APROBACION_previous_studies, db
+            )
         )
         if not id_categoria_aprobacion:
             raise Exception(
                 f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_previous_studies}"
             )
 
+        usuario_lider_pilar = UsuariosRepository.obtener_por_person_id(
+            nuevo_estudio_previo.capacity_assessment.pillar.person_id, db
+        )
 
-        usuario_lider_pilar = UsuariosRepository.obtener_por_person_id(nuevo_estudio_previo.capacity_assessment.pillar.person_id, db)
-
-        id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
-            id_categoria_aprobacion,
-            nuevo_estudio_previo.id,
-            usuario.id,
-            nuevo_estudio_previo.code, #code 
-            db,
-            usuario_lider_pilar.id if usuario_lider_pilar else None,
-            id_programa=nuevo_estudio_previo.program_id 
+        id_solicitud_aprobacion = (
+            SolicitudesAprobacionService.crear_solicitud_aprobacion(
+                id_categoria_aprobacion,
+                nuevo_estudio_previo.id,
+                usuario.id,
+                nuevo_estudio_previo.code,  # code
+                db,
+                usuario_lider_pilar.id if usuario_lider_pilar else None,
+                id_programa=nuevo_estudio_previo.program_id,
+            )
         )
 
         nuevo_estudio_previo.approval_request_id = id_solicitud_aprobacion
         db.commit()
         db.refresh(nuevo_estudio_previo)
-        
-        
-        # INICIO NOTIFICACION 
-        
-        template_data={
-             "capacity_assessment": nuevo_estudio_previo.capacity_assessment.name if nuevo_estudio_previo.capacity_assessment else nuevo_estudio_previo.code,
+
+        # INICIO NOTIFICACION
+
+        template_data = {
+            "capacity_assessment": (
+                nuevo_estudio_previo.capacity_assessment.name
+                if nuevo_estudio_previo.capacity_assessment
+                else nuevo_estudio_previo.code
+            ),
             "estado": "Enviado a aprobación",
             "persons": (
-                " ".join(p for p in [nuevo_estudio_previo.persons.first_name, nuevo_estudio_previo.persons.other_name, nuevo_estudio_previo.persons.last_name, nuevo_estudio_previo.persons.other_last_name] if p)
-                if nuevo_estudio_previo.persons else None
+                " ".join(
+                    p
+                    for p in [
+                        nuevo_estudio_previo.persons.first_name,
+                        nuevo_estudio_previo.persons.other_name,
+                        nuevo_estudio_previo.persons.last_name,
+                        nuevo_estudio_previo.persons.other_last_name,
+                    ]
+                    if p
+                )
+                if nuevo_estudio_previo.persons
+                else None
             ),
-            "implementers": nuevo_estudio_previo.implementers.acronym if nuevo_estudio_previo.implementers else None,
-            "programs": nuevo_estudio_previo.programs.description if nuevo_estudio_previo.programs else None,
+            "implementers": (
+                nuevo_estudio_previo.implementers.acronym
+                if nuevo_estudio_previo.implementers
+                else None
+            ),
+            "programs": (
+                nuevo_estudio_previo.programs.description
+                if nuevo_estudio_previo.programs
+                else None
+            ),
             "precedents": nuevo_estudio_previo.precedents,
             "justification": nuevo_estudio_previo.justification,
             "scope": nuevo_estudio_previo.scope,
@@ -270,54 +381,52 @@ def crearEstudioPrevio(previous_studies: PreviousStudiesCreate, db: Session, usu
             "total_value_executes_fpn": nuevo_estudio_previo.total_value_executes_fpn,
             "total_value_executes_ei": nuevo_estudio_previo.total_value_executes_ei,
             "total_value": nuevo_estudio_previo.total_value,
-            "comentarios": "",  
-            
+            "comentarios": "",
         }
-        
-        env = Environment(loader=FileSystemLoader(''))
-        template = env.get_template('templates/notificacion_est_previos.html')
+
+        env = Environment(loader=FileSystemLoader(""))
+        template = env.get_template("templates/notificacion_est_previos.html")
         html_out = template.render(**template_data)
-        
+
         # Obtener destinatarios de correo
         destinatarios = []
         if nuevo_estudio_previo.persons_id:
-            persona = db.query(Persons).filter(Persons.id == nuevo_estudio_previo.persons_id).first()
+            persona = (
+                db.query(Persons)
+                .filter(Persons.id == nuevo_estudio_previo.persons_id)
+                .first()
+            )
             if persona and persona.email:
                 destinatarios.append(persona.email)
-        
-            
-        if usuario.email and usuario.email  not in destinatarios:
+
+        if usuario.email and usuario.email not in destinatarios:
             destinatarios.append(usuario.email)
-            
-        to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
-            
+
+        to_recipients = [
+            {"emailAddress": {"address": correo}} for correo in destinatarios
+        ]
+
         if to_recipients:
-                        background_tasks.add_task(
-                            NotificacionesService.solicitud_viaje,
-                            f"Solicitud de estudio previo {nuevo_estudio_previo.code} enviada por aprobación",
-                            to_recipients,
-                            html_out,
-                            "",
-                            "",
-                            db
-                        )   
-        # FIN NOTIFICACION 
+            background_tasks.add_task(
+                NotificacionesService.solicitud_viaje,
+                f"Solicitud de estudio previo {nuevo_estudio_previo.code} enviada por aprobación",
+                to_recipients,
+                html_out,
+                "",
+                "",
+                db,
+            )
+        # FIN NOTIFICACION
         respuesta.identity = nuevo_estudio_previo.id
         respuesta.mensaje = "Estudio previo creado exitosamente"
-        
-        
-        
+
         return respuesta
 
     except Exception as e:
         logging.error(f"Error al crear estudio previo: {e}")
-        print('el error es:', e)
+        print("el error es:", e)
         db.rollback()
-        return ResponseRequest(
-            solicitud_exitosa=False,
-            mensaje=str(e)
-        )
-        
+        return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))
 
 
 def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
@@ -326,46 +435,71 @@ def obtener_por_guid(guid: str, db: Session) -> PreviousStudiesBase | None:
         return None
     agreetment = AgreementRepository.obtener_por_id_estudio_previo(e.id, db)
     return PreviousStudiesBase(
-       id=int(e.id),
-       precedents=e.precedents,
-       justification=e.justification,
-       scope=e.scope,
-       overall_objective=e.overall_objective,
-       term=e.term,
-       obligations= e.obligations,
-       supervisor = e.supervisor,
-       contact_ei=e.contact_ei,
-       participants_ei=e.participants_ei,
-       user_session=e.user_session,
-       create_date=e.create_date,
-       total_value= e.total_value,
-       contributions_ei= e.contributions_ei,
-       total_value_executes_fpn=e.total_value_executes_fpn,
-       total_value_executes_ei= e.total_value_executes_ei,
-       contributions_fpn = e.contributions_fpn,
-       estimated_term=e.estimated_term,           
-       previous_studies_states_id=e.previous_studies_states_id,
-       prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
-       approval_request_id=e.approval_request_id,
-       guid=e.guid,
-       app_request=e.app_request.name if e.app_request else None,
-       implementer_id=e.implementer_id,
-       implementers=e.implementers.acronym if (e.implementers and hasattr(e.implementers, 'acronym')) else None,
-       persons_id=e.persons_id,
-       persons=(
-                " ".join(p for p in [e.persons.first_name, e.persons.other_name, e.persons.last_name, e.persons.other_last_name] if p)
-                if e.persons else None
-            ),
-       capacity_assessment_id=e.capacity_assessment_id,
-       capacity_assessment=e.capacity_assessment.name if e.capacity_assessment else None,
-       program_id=e.program_id,
-       programs =e.programs.description if e.programs else None,
-       codde =e.code,
-       agreetment_id=agreetment.id if agreetment else None,
-       objetivos=AgreementsProductsService.obtener_objetivos(agreetment.id, db) if agreetment else [],
-       desembolsos=DisbursementsService.obtener_desembolsos(agreetment.id, db) if agreetment else [],
+        id=int(e.id),
+        precedents=e.precedents,
+        justification=e.justification,
+        scope=e.scope,
+        overall_objective=e.overall_objective,
+        term=e.term,
+        obligations=e.obligations,
+        supervisor=e.supervisor,
+        contact_ei=e.contact_ei,
+        participants_ei=e.participants_ei,
+        user_session=e.user_session,
+        create_date=e.create_date,
+        total_value=e.total_value,
+        contributions_ei=e.contributions_ei,
+        total_value_executes_fpn=e.total_value_executes_fpn,
+        total_value_executes_ei=e.total_value_executes_ei,
+        contributions_fpn=e.contributions_fpn,
+        estimated_term=e.estimated_term,
+        previous_studies_states_id=e.previous_studies_states_id,
+        prev_studies_state=e.prev_studies_state.state if e.prev_studies_state else None,
+        approval_request_id=e.approval_request_id,
+        guid=e.guid,
+        app_request=e.app_request.name if e.app_request else None,
+        implementer_id=e.implementer_id,
+        implementers=(
+            e.implementers.acronym
+            if (e.implementers and hasattr(e.implementers, "acronym"))
+            else None
+        ),
+        persons_id=e.persons_id,
+        persons=(
+            " ".join(
+                p
+                for p in [
+                    e.persons.first_name,
+                    e.persons.other_name,
+                    e.persons.last_name,
+                    e.persons.other_last_name,
+                ]
+                if p
+            )
+            if e.persons
+            else None
+        ),
+        capacity_assessment_id=e.capacity_assessment_id,
+        capacity_assessment=(
+            e.capacity_assessment.name if e.capacity_assessment else None
+        ),
+        program_id=e.program_id,
+        programs=e.programs.description if e.programs else None,
+        codde=e.code,
+        agreetment_id=agreetment.id if agreetment else None,
+        objetivos=(
+            AgreementsProductsService.obtener_objetivos(agreetment.id, db)
+            if agreetment
+            else []
+        ),
+        desembolsos=(
+            DisbursementsService.obtener_desembolsos(agreetment.id, db)
+            if agreetment
+            else []
+        ),
     )
-    
+
+
 def listar_previous_studies_por_usuario_sp(
     db: Session,
     usuario_guid: str,
@@ -374,18 +508,18 @@ def listar_previous_studies_por_usuario_sp(
     filtro: str,
     programa: int,
 ) -> list[PreviousStudiesListDTO]:
-   
+
     return PreviousStudiesRepository.listar_previous_studies_por_usuario_sp(
         usuario_guid, db, page, estado, filtro, programa
     )
-    
+
+
 def procesar_accion_solicitud_aprobacion(
     accion: AccionSolicitudAprobacion,
     usuario_guid: str,
     id_categoria: int,
     db: Session,
     background_tasks: BackgroundTasks,
-    
 ) -> ResponseRequest:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
@@ -393,14 +527,19 @@ def procesar_accion_solicitud_aprobacion(
             raise PruebaNotFoundError("Usuario no encontrado")
 
         respuesta = SolicitudesAprobacionService.actualizar_ruta(
-            accion, id_categoria, usuario.id, db,
+            accion,
+            id_categoria,
+            usuario.id,
+            db,
             id_supervisor=None,
-            identity=accion.estudio_previo.id
+            identity=accion.estudio_previo.id,
         )
 
         if respuesta.solicitud_exitosa:
-            estudio_db = PreviousStudiesRepository.obtener_por_guid_id_solicitud_aprobacion(
-                accion.estudio_previo.guid, accion.id_solicitud_aprobacion, db
+            estudio_db = (
+                PreviousStudiesRepository.obtener_por_guid_id_solicitud_aprobacion(
+                    accion.estudio_previo.guid, accion.id_solicitud_aprobacion, db
+                )
             )
             if not estudio_db:
                 raise PruebaNotFoundError("Estudio previo no encontrado")
@@ -413,10 +552,10 @@ def procesar_accion_solicitud_aprobacion(
                 estudio_db.previous_studies_states_id = ID_ESTADO_AJUSTES
 
             db.commit()
-            db.refresh(estudio_db)   
-            
-           # INCIO notificacion 
-           
+            db.refresh(estudio_db)
+
+            # INCIO notificacion
+
             nombres_estado = {
                 ID_ESTADO_APROBADO: "Aprobado",
                 ID_ESTADO_REVISION: "En revision",
@@ -427,14 +566,32 @@ def procesar_accion_solicitud_aprobacion(
             )
 
             template_data = {
-                "capacity_assessment": estudio_db.capacity_assessment.name if estudio_db.capacity_assessment else estudio_db.code,
+                "capacity_assessment": (
+                    estudio_db.capacity_assessment.name
+                    if estudio_db.capacity_assessment
+                    else estudio_db.code
+                ),
                 "estado": estado_nombre,
                 "persons": (
-                    " ".join(p for p in [estudio_db.persons.first_name, estudio_db.persons.other_name, estudio_db.persons.last_name, estudio_db.persons.other_last_name] if p)
-                    if estudio_db.persons else None
+                    " ".join(
+                        p
+                        for p in [
+                            estudio_db.persons.first_name,
+                            estudio_db.persons.other_name,
+                            estudio_db.persons.last_name,
+                            estudio_db.persons.other_last_name,
+                        ]
+                        if p
+                    )
+                    if estudio_db.persons
+                    else None
                 ),
-                "implementers": estudio_db.implementers.acronym if estudio_db.implementers else None,
-                "programs": estudio_db.programs.description if estudio_db.programs else None,
+                "implementers": (
+                    estudio_db.implementers.acronym if estudio_db.implementers else None
+                ),
+                "programs": (
+                    estudio_db.programs.description if estudio_db.programs else None
+                ),
                 "precedents": estudio_db.precedents,
                 "justification": estudio_db.justification,
                 "scope": estudio_db.scope,
@@ -451,20 +608,26 @@ def procesar_accion_solicitud_aprobacion(
                 "comentarios": getattr(accion, "comentarios", ""),
             }
 
-            env = Environment(loader=FileSystemLoader(''))
-            template = env.get_template('templates/notificacion_est_previos.html')
+            env = Environment(loader=FileSystemLoader(""))
+            template = env.get_template("templates/notificacion_est_previos.html")
             html_out = template.render(**template_data)
 
             destinatarios = []
             if estudio_db.persons_id:
-                persona = db.query(Persons).filter(Persons.id == estudio_db.persons_id).first()
+                persona = (
+                    db.query(Persons)
+                    .filter(Persons.id == estudio_db.persons_id)
+                    .first()
+                )
                 if persona and persona.email:
                     destinatarios.append(persona.email)
 
             if usuario.email and usuario.email not in destinatarios:
                 destinatarios.append(usuario.email)
 
-            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            to_recipients = [
+                {"emailAddress": {"address": correo}} for correo in destinatarios
+            ]
 
             if to_recipients:
                 background_tasks.add_task(
@@ -474,30 +637,43 @@ def procesar_accion_solicitud_aprobacion(
                     html_out,
                     "",
                     "",
-                    db
+                    db,
                 )
-        
+
         # FIN  notificacion
-   
+
         return respuesta
     except Exception as e:
         logging.error(f"Error al procesar acción de aprobación de estudio previo: {e}")
         return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))
-    
-    
-    
-def obtener_por_guid_id_solicitud_aprobacion(guid: str, id_solicitud_aprobacion: int, db: Session) -> PreviousStudiesEntity | None:
+
+
+def obtener_por_guid_id_solicitud_aprobacion(
+    guid: str, id_solicitud_aprobacion: int, db: Session
+) -> PreviousStudiesEntity | None:
     try:
-        return db.query(PreviousStudiesEntity).filter(
-            PreviousStudiesEntity.guid == guid,
-            PreviousStudiesEntity.approval_request_id == id_solicitud_aprobacion
-        ).first()
+        return (
+            db.query(PreviousStudiesEntity)
+            .filter(
+                PreviousStudiesEntity.guid == guid,
+                PreviousStudiesEntity.approval_request_id == id_solicitud_aprobacion,
+            )
+            .first()
+        )
     except Exception as e:
-        logging.error(f"Failed to get PreviousStudies by guid and approval_request_id: {str(e)}")
-        raise PruebaNotFoundError(str(e))    
-    
-    
-def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_guid: str, background_tasks: BackgroundTasks) -> ResponseRequest:
+        logging.error(
+            f"Failed to get PreviousStudies by guid and approval_request_id: {str(e)}"
+        )
+        raise PruebaNotFoundError(str(e))
+
+
+def actualizar(
+    id: int,
+    payload: PreviousStudiesCreate,
+    db: Session,
+    usuario_guid: str,
+    background_tasks: BackgroundTasks,
+) -> ResponseRequest:
     try:
         usuario = UsuariosRepository.obtener_por_guid_msft(usuario_guid.strip(), db)
         if not usuario:
@@ -505,7 +681,9 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
 
         registro = PreviousStudiesRepository.obtener_por_id(id, db)
         if not registro:
-            return ResponseRequest(solicitud_exitosa=False, mensaje='Estudio previo no encontrado')
+            return ResponseRequest(
+                solicitud_exitosa=False, mensaje="Estudio previo no encontrado"
+            )
 
         registro.precedents = payload.precedents
         registro.justification = payload.justification
@@ -535,7 +713,9 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         if payload.objetivos or payload.desembolsos:
             acuerdo = AgreementRepository.obtener_por_id_estudio_previo(registro.id, db)
             if not acuerdo:
-                raise ValueError("El estudio previo no tiene un acuerdo asociado para guardar los productos")
+                raise ValueError(
+                    "El estudio previo no tiene un acuerdo asociado para guardar los productos"
+                )
             productos_nuevos = {}
             if payload.objetivos:
                 productos_nuevos = AgreementsProductsService.guardar_objetivos(
@@ -550,21 +730,25 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
         db.refresh(registro)
 
         if payload.enviar_aprobacion:
-            id_categoria_aprobacion = SolicitudesAprobacionService.obtener_categoria_aprobacion(
-                CATEGORIA_APROBACION_previous_studies, db
+            id_categoria_aprobacion = (
+                SolicitudesAprobacionService.obtener_categoria_aprobacion(
+                    CATEGORIA_APROBACION_previous_studies, db
+                )
             )
             if not id_categoria_aprobacion:
                 raise Exception(
                     f"No se encontró la categoría de aprobación con el código {CATEGORIA_APROBACION_previous_studies}"
                 )
 
-            id_solicitud_aprobacion = SolicitudesAprobacionService.crear_solicitud_aprobacion(
-                id_categoria_aprobacion,
-                registro.id,
-                usuario.id,
-                registro.code,
-                db,
-                id_programa=registro.program_id
+            id_solicitud_aprobacion = (
+                SolicitudesAprobacionService.crear_solicitud_aprobacion(
+                    id_categoria_aprobacion,
+                    registro.id,
+                    usuario.id,
+                    registro.code,
+                    db,
+                    id_programa=registro.program_id,
+                )
             )
 
             registro.approval_request_id = id_solicitud_aprobacion
@@ -574,14 +758,32 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
             # INICIO NOTIFICACION
 
             template_data = {
-                "capacity_assessment": registro.capacity_assessment.name if registro.capacity_assessment else registro.code,
+                "capacity_assessment": (
+                    registro.capacity_assessment.name
+                    if registro.capacity_assessment
+                    else registro.code
+                ),
                 "estado": "Enviado a aprobación",
                 "persons": (
-                    " ".join(p for p in [registro.persons.first_name, registro.persons.other_name, registro.persons.last_name, registro.persons.other_last_name] if p)
-                    if registro.persons else None
+                    " ".join(
+                        p
+                        for p in [
+                            registro.persons.first_name,
+                            registro.persons.other_name,
+                            registro.persons.last_name,
+                            registro.persons.other_last_name,
+                        ]
+                        if p
+                    )
+                    if registro.persons
+                    else None
                 ),
-                "implementers": registro.implementers.acronym if registro.implementers else None,
-                "programs": registro.programs.description if registro.programs else None,
+                "implementers": (
+                    registro.implementers.acronym if registro.implementers else None
+                ),
+                "programs": (
+                    registro.programs.description if registro.programs else None
+                ),
                 "precedents": registro.precedents,
                 "justification": registro.justification,
                 "scope": registro.scope,
@@ -598,20 +800,24 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
                 "comentarios": "",
             }
 
-            env = Environment(loader=FileSystemLoader(''))
-            template = env.get_template('templates/notificacion_est_previos.html')
+            env = Environment(loader=FileSystemLoader(""))
+            template = env.get_template("templates/notificacion_est_previos.html")
             html_out = template.render(**template_data)
 
             destinatarios = []
             if registro.persons_id:
-                persona = db.query(Persons).filter(Persons.id == registro.persons_id).first()
+                persona = (
+                    db.query(Persons).filter(Persons.id == registro.persons_id).first()
+                )
                 if persona and persona.email:
                     destinatarios.append(persona.email)
 
             if usuario.email and usuario.email not in destinatarios:
                 destinatarios.append(usuario.email)
 
-            to_recipients = [{"emailAddress": {"address": correo}} for correo in destinatarios]
+            to_recipients = [
+                {"emailAddress": {"address": correo}} for correo in destinatarios
+            ]
 
             if to_recipients:
                 background_tasks.add_task(
@@ -621,30 +827,53 @@ def actualizar(id: int, payload: PreviousStudiesCreate, db: Session, usuario_gui
                     html_out,
                     "",
                     "",
-                    db
+                    db,
                 )
 
             # FIN NOTIFICACION
 
-        return ResponseRequest(solicitud_exitosa=True, mensaje='Estudio previo actualizado exitosamente', identity=registro.id)
+        return ResponseRequest(
+            solicitud_exitosa=True,
+            mensaje="Estudio previo actualizado exitosamente",
+            identity=registro.id,
+        )
     except Exception as e:
         db.rollback()
         logging.error(f"Error al actualizar estudio previo: {e}")
         return ResponseRequest(solicitud_exitosa=False, mensaje=str(e))
+
 
 def obtener_formato_ep(guid: str, db: Session):
     try:
         estudios_previos = PreviousStudiesRepository.obtener_por_guid(guid, db)
         if not estudios_previos:
             raise PruebaNotFoundError("Estudio previo no encontrado")
-        evaluacion_capacidades = estudios_previos.capacity_assessment if estudios_previos else None
-        agreetment = AgreementRepository.obtener_por_id_estudio_previo(estudios_previos.id, db) if estudios_previos else None
+        evaluacion_capacidades = (
+            estudios_previos.capacity_assessment if estudios_previos else None
+        )
+        agreetment = (
+            AgreementRepository.obtener_por_id_estudio_previo(estudios_previos.id, db)
+            if estudios_previos
+            else None
+        )
         obtejivos_actividades_productos = ""
         desembolsos = []
+        pilar = evaluacion_capacidades.pillar if evaluacion_capacidades else None
+        lider = pilar.person if pilar else None
         if agreetment:
-            productos = AgreementsProductsRepository.obtener_por_id_agreement(agreetment.id, db) if agreetment else []
-            obtejivos_actividades_productos = construir_objetivos_actividades_productos(productos)
-            desembolsos = AgreementsProductsRepository.obtener_desembolsos_por_id_agreement(agreetment.id, db)
+            productos = (
+                AgreementsProductsRepository.obtener_por_id_agreement(agreetment.id, db)
+                if agreetment
+                else []
+            )
+            obtejivos_actividades_productos = construir_objetivos_actividades_productos(
+                productos
+            )
+            desembolsos = (
+                AgreementsProductsRepository.obtener_desembolsos_por_id_agreement(
+                    agreetment.id, db
+                )
+            )
         diccionario = {
             "<<DESEMBOLSOS>>": desembolsos,
             "<<RIESGOS>>": estudios_previos.risks or [],
@@ -657,35 +886,105 @@ def obtener_formato_ep(guid: str, db: Session):
             "<<PLAZO_LETRAS>>": num2words(estudios_previos.term, lang="es_CO"),
             "<<OBLIGACIONES>>": estudios_previos.obligations,
             "<<FUNCIONES_SUPERVISOR>>": estudios_previos.supervisor,
-            "<<VALOR_TOTAL>>": f"{estudios_previos.total_value:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
-            "<<VALOR_TOTAL_LETRAS>>": num2words(estudios_previos.total_value, lang="es_CO"),
-            "<<APORTE_FPN>>": f"{estudios_previos.contributions_fpn:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
-            "<<APORTE_FPN_LETRAS>>": num2words(estudios_previos.contributions_fpn, lang="es_CO"),
-            "<<APORTES_EI>>": f"{estudios_previos.contributions_ei:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
-            "<<APORTES_EI_LETRAS>>": num2words(estudios_previos.contributions_ei, lang="es_CO"),
+            "<<VALOR_TOTAL>>": f"{estudios_previos.total_value:,.2f}".replace(",", "#")
+            .replace(".", ",")
+            .replace("#", "."),
+            "<<VALOR_TOTAL_LETRAS>>": num2words(
+                estudios_previos.total_value, lang="es_CO"
+            ),
+            "<<APORTE_FPN>>": f"{estudios_previos.contributions_fpn:,.2f}".replace(
+                ",", "#"
+            )
+            .replace(".", ",")
+            .replace("#", "."),
+            "<<APORTE_FPN_LETRAS>>": num2words(
+                estudios_previos.contributions_fpn, lang="es_CO"
+            ),
+            "<<APORTES_EI>>": f"{estudios_previos.contributions_ei:,.2f}".replace(
+                ",", "#"
+            )
+            .replace(".", ",")
+            .replace("#", "."),
+            "<<APORTES_EI_LETRAS>>": num2words(
+                estudios_previos.contributions_ei, lang="es_CO"
+            ),
             "<<CONTACTO_EI>>": estudios_previos.contact_ei,
             "<<INTEGRANTES_EI>>": estudios_previos.participants_ei,
-            "<<VALOR_EJECUTA_EI>>": f"{estudios_previos.total_value_executes_ei:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
-            "<<VALOR_EJECUTA_EI_LETRAS>>": num2words(estudios_previos.total_value_executes_ei, lang="es_CO"),
-            "<<VALOR_EJECUTA_FPN>>": f"{estudios_previos.total_value_executes_fpn:,.2f}".replace(",", "#").replace(".", ",").replace("#", "."),
-            "<<VALOR_EJECUTA_FPN_LETRAS>>": num2words(estudios_previos.total_value_executes_fpn, lang="es_CO"),
-            "<<NOMBRE_EI>>": estudios_previos.implementers.name if estudios_previos.implementers else "",
-            "<<ACRONIMO_EI>>": estudios_previos.implementers.acronym if estudios_previos.implementers else ""
+            "<<VALOR_EJECUTA_EI>>": f"{estudios_previos.total_value_executes_ei:,.2f}".replace(
+                ",", "#"
+            )
+            .replace(".", ",")
+            .replace("#", "."),
+            "<<VALOR_EJECUTA_EI_LETRAS>>": num2words(
+                estudios_previos.total_value_executes_ei, lang="es_CO"
+            ),
+            "<<VALOR_EJECUTA_FPN>>": f"{estudios_previos.total_value_executes_fpn:,.2f}".replace(
+                ",", "#"
+            )
+            .replace(".", ",")
+            .replace("#", "."),
+            "<<VALOR_EJECUTA_FPN_LETRAS>>": num2words(
+                estudios_previos.total_value_executes_fpn, lang="es_CO"
+            ),
+            "<<NOMBRE_EI>>": (
+                estudios_previos.implementers.name
+                if estudios_previos.implementers
+                else ""
+            ),
+            "<<ACRONIMO_EI>>": (
+                estudios_previos.implementers.acronym
+                if estudios_previos.implementers
+                else ""
+            ),
+            "<<PILLAR>>": (
+                evaluacion_capacidades.pillar_id
+                if evaluacion_capacidades.pillar_id
+                else ""
+            ),
+            "<<PILLAR_DESCRIPTION>>": (
+                evaluacion_capacidades.pillar.description
+                if evaluacion_capacidades.pillar.description
+                else ""
+            ),
+            "<<PILLAR_LEADER>>": (
+                " ".join(
+                    p
+                    for p in [
+                        lider.first_name,
+                        lider.other_name,
+                        lider.last_name,
+                        lider.other_last_name,
+                    ]
+                    if p
+                )
+                if lider
+                else ""
+            ),
+            "<<PILLAR_LEADER_EMAIL>>": (lider.email if lider.email else ""),
+            "<<EI_CONTACTO_REP_LEGAL>>": (
+                estudios_previos.contact_ei if estudios_previos.contact_ei else ""
+            ),
+            "<<EI_INTEGRANTES>>": (
+                estudios_previos.participants_ei
+                if estudios_previos.participants_ei
+                else ""
+            ),
+            "<<PID>>": (
+                evaluacion_capacidades.pid.name
+                if evaluacion_capacidades.pid.name
+                else ""
+            ),
+            # "<< ACTIVIDAD >>":(),
+            #  "<< RUBRO_CORTO >>":(),
+            #  "<<DETALLE_CONTRAPARTIDA>>":(),
         }
-        
 
-
-        return generar_formato_ep(diccionario, estudios_previos) # estudios_previos.code
-        
-        
-
+        return generar_formato_ep(
+            diccionario, estudios_previos
+        )  # estudios_previos.code
 
     except PruebaNotFoundError:
         raise
     except Exception as e:
         logging.error(f"Error al obtener formato EP por guid: {str(e)}")
         raise
-
-
-
-    
