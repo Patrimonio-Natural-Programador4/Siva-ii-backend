@@ -201,7 +201,7 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
     }
     
     ActaEspecífica = 2
-    es_acta = Ep.agreement_type_id == ActaEspecífica
+    es_acta = Ep.agreement_type_id == ActaEspecífica or Ep.agreement_type_id == 7
     
     base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
 
