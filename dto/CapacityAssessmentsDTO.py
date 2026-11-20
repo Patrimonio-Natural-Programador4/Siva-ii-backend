@@ -10,39 +10,37 @@ class CapacityAssessmentsBase(BaseModel):
     name: Optional[str] = None
     observation: Optional[str] = None
     approximate_value: Optional[int] = None
-    guid: Optional[UUID] = None  
+    guid: Optional[UUID] = None
     user_session: Optional[int] = None
     create_date: Optional[datetime] = None
     policy_approval_date: Optional[date] = None
     document_signature_date: Optional[date] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    codigo: Optional[str] = None 
+    codigo: Optional[str] = None
     programa: Optional[str] = None
-    program_id: Optional[int] = None        
+    program_id: Optional[int] = None
     pid: Optional[str] = None
-    pid_id: Optional[int] = None             
+    pid_id: Optional[int] = None
     implementer: Optional[str] = None
-    implementer_id: Optional[int] = None      
+    implementer_id: Optional[int] = None
     aproval_request: Optional[str] = None
-    approval_request_id:  Optional[int] = None
+    approval_request_id: Optional[int] = None
     person: Optional[str] = None
-    persons_id: Optional[int] = None          
+    persons_id: Optional[int] = None
     capacity_assessments_state: Optional[str] = None
-    capacity_assessments_states_id: Optional[int] = None  
-    modality_id: Optional[int] = None  
-    modalitie:Optional[str] = None  
-    url_sharepoint_ec:Optional[str] =None
+    capacity_assessments_states_id: Optional[int] = None
+    modality_id: Optional[int] = None
+    modalitie: Optional[str] = None
+    url_sharepoint_ec: Optional[str] = None
     implementer: Optional[str] = None
-    implementer_type: Optional[str] = None   
-    pillar_id: Optional[int] = None  
+    implementer_type: Optional[str] = None
+    pillar_id: Optional[int] = None
     pillar: Optional[str] = None
-    is_deleted: Optional[bool]= None
+    is_deleted: Optional[bool] = None
 
     class Config:
         from_attributes = True
-
-
 
 
 class CapacityAssessmentsCreate(BaseModel):
@@ -51,7 +49,7 @@ class CapacityAssessmentsCreate(BaseModel):
     approximate_value: Optional[int] = None
     policy_approval_date: Optional[date] = None
     document_signature_date: Optional[date] = None
-    user_session:Optional[int] = None
+    user_session: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     create_date: Optional[datetime] = None
@@ -62,17 +60,13 @@ class CapacityAssessmentsCreate(BaseModel):
     persons_id: Optional[int] = None
     capacity_assessments_states_id: Optional[int] = None
     modality_id: Optional[int] = None
-    approval_request_id:  Optional[int] = None
-    enviar_aprobacion: Optional[bool] = False 
-    pillar_id:  Optional[int] = None
-    is_deleted: Optional[bool]= None
-    
+    approval_request_id: Optional[int] = None
+    enviar_aprobacion: Optional[bool] = False
+    pillar_id: Optional[int] = None
+    is_deleted: Optional[bool] = None
 
     class Config:
         from_attributes = True
-
-
-   
 
 
 class CapacityAssessmentListSP(BaseModel):
@@ -104,12 +98,16 @@ class CapacityAssessmentListSP(BaseModel):
     step_order_actual_request: Optional[int] = None
     guid_msft_adjustment: Optional[UUID] = None
     total_records: Optional[int] = None
-    is_deleted: Optional[bool]= None
+    is_deleted: Optional[bool] = None
 
     class Config:
         from_attributes = True
-        
-        
-        
+
+
 class UrlSharepointUpdate(BaseModel):
     url_sharepoint_ec: Optional[str] = None
+
+
+class codigo_numero_mayor(BaseModel):
+    id: Optional[int] = None
+    code: Optional[str] = None

@@ -35,11 +35,15 @@ def construir_objetivos_actividades_productos(productos) -> str:
     bloques = []
     objetivos = sorted(hijos.get(None, []) + hijos.get(0, []), key=clave_orden)
     for numero_objetivo, objetivo in enumerate(objetivos, start=1):
-        bloques.append(parrafo(f"Objetivo espec\u00edfico {numero_objetivo}.", objetivo))
+        bloques.append(
+            parrafo(f"Objetivo espec\u00edfico {numero_objetivo}.", objetivo)
+        )
         numero_producto = 0
         actividades = sorted(hijos.get(objetivo.id, []), key=clave_orden)
         for numero_actividad, actividad in enumerate(actividades, start=1):
-            bloques.append(parrafo(f"Actividad {numero_objetivo}.{numero_actividad}.", actividad))
+            bloques.append(
+                parrafo(f"Actividad {numero_objetivo}.{numero_actividad}.", actividad)
+            )
             for producto in sorted(hijos.get(actividad.id, []), key=clave_orden):
                 numero_producto += 1
                 bloques.append(parrafo(f"Producto {numero_producto}.", producto))
@@ -49,7 +53,9 @@ def construir_objetivos_actividades_productos(productos) -> str:
 def insertar_tabla_desembolsos(documento, parrafo, desembolsos) -> None:
     grupos = {}
     for desembolso, producto in desembolsos:
-        grupo = grupos.setdefault(desembolso.id, {"desembolso": desembolso, "productos": {}})
+        grupo = grupos.setdefault(
+            desembolso.id, {"desembolso": desembolso, "productos": {}}
+        )
         grupo["productos"].setdefault(producto.id, producto)
 
     tabla = documento.add_table(rows=1, cols=2)
@@ -77,15 +83,31 @@ def insertar_tabla_desembolsos(documento, parrafo, desembolsos) -> None:
     tabla.rows[0]._tr.get_or_add_trPr().append(repetir)
 
     def moneda(valor):
-        return "$ " + f"{valor:,.2f}".replace(",", "#").replace(".", ",").replace("#", ".")
+        return "$ " + f"{valor:,.2f}".replace(",", "#").replace(".", ",").replace(
+            "#", "."
+        )
 
     total = Decimal("0")
-    grupos_ordenados = sorted(grupos.values(), key=lambda grupo: (
-        grupo["desembolso"].number_disbursement is None,
-        grupo["desembolso"].number_disbursement or 0,
-        grupo["desembolso"].id,
-    ))
-    ordinales = {1: "PRIMER", 2: "SEGUNDO", 3: "TERCER", 4: "CUARTO", 5: "QUINTO", 6: "SEXTO", 7: "SÉPTIMO", 8: "OCTAVO", 9: "NOVENO", 10: "DÉCIMO"}
+    grupos_ordenados = sorted(
+        grupos.values(),
+        key=lambda grupo: (
+            grupo["desembolso"].number_disbursement is None,
+            grupo["desembolso"].number_disbursement or 0,
+            grupo["desembolso"].id,
+        ),
+    )
+    ordinales = {
+        1: "PRIMER",
+        2: "SEGUNDO",
+        3: "TERCER",
+        4: "CUARTO",
+        5: "QUINTO",
+        6: "SEXTO",
+        7: "SÉPTIMO",
+        8: "OCTAVO",
+        9: "NOVENO",
+        10: "DÉCIMO",
+    }
     for indice, grupo in enumerate(grupos_ordenados, start=1):
         desembolso = grupo["desembolso"]
         numero = desembolso.number_disbursement
@@ -96,9 +118,15 @@ def insertar_tabla_desembolsos(documento, parrafo, desembolsos) -> None:
         titulo.add_run(f"{ordinales.get(numero, str(numero))} DESEMBOLSO").bold = True
         for producto in grupo["productos"].values():
             texto = productos_celda.add_paragraph()
-            texto.add_run(f"Producto {producto.code if producto.code is not None else producto.id}: ").bold = True
+            texto.add_run(
+                f"Producto {producto.code if producto.code is not None else producto.id}: "
+            ).bold = True
             texto.add_run(html_a_texto(producto.product or ""))
-        valor = Decimal(str(desembolso.value)) if desembolso.value is not None else Decimal("0")
+        valor = (
+            Decimal(str(desembolso.value))
+            if desembolso.value is not None
+            else Decimal("0")
+        )
         total += valor
         monto_celda.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
         monto_celda.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -120,8 +148,14 @@ def insertar_tabla_desembolsos(documento, parrafo, desembolsos) -> None:
 def insertar_tabla_riesgos(documento, parrafo, riesgos) -> None:
     def buscar_tabla_riesgos(tablas):
         for candidata in tablas:
-            encabezados = [celda.text.strip().upper() for celda in candidata.rows[0].cells[:2]]
-            if len(encabezados) == 2 and encabezados[0].startswith("RIESGOS") and encabezados[1] == "COMO MITIGARLO":
+            encabezados = [
+                celda.text.strip().upper() for celda in candidata.rows[0].cells[:2]
+            ]
+            if (
+                len(encabezados) == 2
+                and encabezados[0].startswith("RIESGOS")
+                and encabezados[1] == "COMO MITIGARLO"
+            ):
                 return candidata
             for fila in candidata.rows:
                 for celda in fila.cells:
@@ -186,38 +220,40 @@ def insertar_tabla_riesgos(documento, parrafo, riesgos) -> None:
     parrafo._p.getparent().remove(parrafo._p)
 
 
-def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> Path:   #code: str
+def generar_formato_ep(
+    diccionario: dict[str, object], Ep: PreviousStudies
+) -> Path:  # code: str
     print("  ACaa")
     code = Ep.code
-    ca = Ep.capacity_assessment              # relación PreviousStudies -> CapacityAssessments
-    pillar_id = ca.pillar_id if ca else None # capacity_assessment_id es Optional
+    ca = Ep.capacity_assessment  # relación PreviousStudies -> CapacityAssessments
+    pillar_id = ca.pillar_id if ca else None  # capacity_assessment_id es Optional
     es_pilar_4 = pillar_id == 4
 
     modalities = {
         1: "SUBACUERDO",
         2: "CONVENIO",
         3: "CONVENIO DE COEJECUCION",
-        4: "ACUERDO MARCO"
+        4: "ACUERDO MARCO",
     }
-    
+
     ActaEspecífica = 2
     es_acta = Ep.agreement_type_id == ActaEspecífica or Ep.agreement_type_id == 7
     
     base = Path(STORAGE_PATH or Path(__file__).resolve().parents[1])
 
     directorio = base / "soportes" / "acuerdos" / "estudios_previos" / "template"
-    #"plantilla_estudios_previos.docx"
+    # "plantilla_estudios_previos.docx"
     doc = ""
-    
+
     modalities = {
         1: "SUBACUERDO",
         2: "CONVENIO",
         3: "CONVENIO DE COEJECUCION",
-        4: "ACUERDO MARCO"
+        4: "ACUERDO MARCO",
     }
-    
+
     PLANTILLAS = {
-        #Modalida,Pilar 4,  acta específica
+        # Modalida,Pilar 4,  acta específica
         (4, True, False): "EPAM",
         (3, True, False): "EPCCP4",
         (1, True, False): "EPSAP4",
@@ -225,14 +261,14 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
         #############################
         (3, True, True): "EPAECCP4",
         (1, True, True): "EPAESAP4",
-        (2, True, True): "EPAECP4",
-        (3, False,False): "EPCC",
-        (2, False,False): "EPC",
-        (3, False,True): "EPAECC",
-        (1, False,True): "EPAESA",
-        (2, False,True): "EPAEC",
+        (2, True, True): "EPAECP4",  # falta plantilla
+        (3, False, False): "EPCC",  # PENDIENTE CAMPOS
+        (2, False, False): "EPC",  # falta plantilla
+        (3, False, True): "EPAECC",
+        (1, False, True): "EPAESA",
+        (2, False, True): "EPAEC",
     }
-        
+
     doc = PLANTILLAS.get((Ep.modality_id, bool(es_pilar_4), es_acta))
     if doc is None:
         raise ValueError(
@@ -241,14 +277,14 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
         )
 
     plantilla = directorio / f"{doc}.docx"
-        
+
     documento = Document(str(plantilla))
     valores = {
         marcador.removeprefix("<<").removesuffix(">>"): html_a_texto(
-           str(valor) if valor is not None else ""
+            str(valor) if valor is not None else ""
         )
         for marcador, valor in diccionario.items()
-          if marcador not in {"<<DESEMBOLSOS>>", "<<RIESGOS>>"}
+        if marcador not in {"<<DESEMBOLSOS>>", "<<RIESGOS>>"}
     }
     valores_html = {
         marcador.removeprefix("<<").removesuffix(">>"): valor
@@ -258,8 +294,12 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
     partes = [documento.part]
     for seccion in documento.sections:
         for contenedor in (
-            seccion.header, seccion.first_page_header, seccion.even_page_header,
-            seccion.footer, seccion.first_page_footer, seccion.even_page_footer,
+            seccion.header,
+            seccion.first_page_header,
+            seccion.even_page_header,
+            seccion.footer,
+            seccion.first_page_footer,
+            seccion.even_page_footer,
         ):
             if not contenedor.is_linked_to_previous and contenedor.part not in partes:
                 partes.append(contenedor.part)
@@ -268,17 +308,28 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
             parrafo = Paragraph(elemento, parte)
             if "<<DESEMBOLSOS>>" in parrafo.text and "<<DESEMBOLSOS>>" in diccionario:
                 if parrafo.text.strip() != "<<DESEMBOLSOS>>":
-                    raise ValueError("El marcador <<DESEMBOLSOS>> debe estar en un parrafo independiente")
-                insertar_tabla_desembolsos(documento, parrafo, diccionario["<<DESEMBOLSOS>>"])
+                    raise ValueError(
+                        "El marcador <<DESEMBOLSOS>> debe estar en un parrafo independiente"
+                    )
+                insertar_tabla_desembolsos(
+                    documento, parrafo, diccionario["<<DESEMBOLSOS>>"]
+                )
                 continue
             if "<<RIESGOS>>" in parrafo.text and "<<RIESGOS>>" in diccionario:
                 if parrafo.text.strip() != "<<RIESGOS>>":
-                    raise ValueError("El marcador <<RIESGOS>> debe estar en un parrafo independiente")
+                    raise ValueError(
+                        "El marcador <<RIESGOS>> debe estar en un parrafo independiente"
+                    )
                 insertar_tabla_riesgos(documento, parrafo, diccionario["<<RIESGOS>>"])
                 continue
             for fragmento in parrafo.runs:
-                if "<<ALCANCE>>" in fragmento.text and "<<ALCANCE>>" not in fragmento.text:
-                    fragmento.text = fragmento.text.replace("<<ALCANCE>>", "<<ALCANCE>>")
+                if (
+                    "<<ALCANCE>>" in fragmento.text
+                    and "<<ALCANCE>>" not in fragmento.text
+                ):
+                    fragmento.text = fragmento.text.replace(
+                        "<<ALCANCE>>", "<<ALCANCE>>"
+                    )
             reemplazar_en_parrafo(parrafo, valores, valores_html)
 
     codigo_archivo = "".join(
@@ -289,5 +340,3 @@ def generar_formato_ep(diccionario: dict[str, object], Ep: PreviousStudies) -> P
     salida.parent.mkdir(parents=True, exist_ok=True)
     documento.save(str(salida))
     return salida
-
-    

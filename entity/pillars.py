@@ -1,44 +1,73 @@
-#ENTITY ESTUDIOS PREVIOS
+# ENTITY ESTUDIOS PREVIOS
 
 import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from sqlalchemy.orm import declarative_base
-from database.database import Base 
+from database.database import Base
 import uuid
 
-from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, Text, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint,Date, String, UniqueConstraint, Uuid, text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    Text,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    PrimaryKeyConstraint,
+    Date,
+    String,
+    UniqueConstraint,
+    Uuid,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import CITEXT, TIMESTAMP
+
 # from entity.persons import Persons
+
+if TYPE_CHECKING:
+    from entity.persons import Persons
 
 
 class Pillars(Base):
-    __tablename__ = 'pillars'
+    __tablename__ = "pillars"
     __table_args__ = (
-        CheckConstraint("color::text = ANY (ARRAY['neutral'::character varying::text, 'lime'::character varying::text, 'blue'::character varying::text, 'gray'::character varying::text, 'red'::character varying::text, 'green'::character varying::text, 'yellow'::character varying::text, 'indigo'::character varying::text, 'purple'::character varying::text, 'pink'::character varying::text, 'slate'::character varying::text, 'orange'::character varying::text, 'amber'::character varying::text, 'teal'::character varying::text, 'sky'::character varying::text])", name='pillars_color_check'),
-        PrimaryKeyConstraint('id', name='pillars_pkey'),
-        UniqueConstraint('name', name='pillars_name_unique'),
-        ForeignKeyConstraint(["person_id"], ["persons.id"],name="fk_pillars_persons"),
+        CheckConstraint(
+            "color::text = ANY (ARRAY['neutral'::character varying::text, 'lime'::character varying::text, 'blue'::character varying::text, 'gray'::character varying::text, 'red'::character varying::text, 'green'::character varying::text, 'yellow'::character varying::text, 'indigo'::character varying::text, 'purple'::character varying::text, 'pink'::character varying::text, 'slate'::character varying::text, 'orange'::character varying::text, 'amber'::character varying::text, 'teal'::character varying::text, 'sky'::character varying::text])",
+            name="pillars_color_check",
+        ),
+        PrimaryKeyConstraint("id", name="pillars_pkey"),
+        UniqueConstraint("name", name="pillars_name_unique"),
+        ForeignKeyConstraint(["person_id"], ["persons.id"], name="fk_pillars_persons"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(CITEXT, nullable=False)
-    color: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("'gray'::character varying"))
+    color: Mapped[str] = mapped_column(
+        String(255), nullable=False, server_default=text("'gray'::character varying")
+    )
     description: Mapped[Optional[str]] = mapped_column(CITEXT)
-    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
+    created_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP(precision=6)
+    )
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        TIMESTAMP(precision=6)
+    )
     person_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    
 
-#     activities: Mapped[list['Activities']] = relationship('Activities', back_populates='pillar')
-#     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='pillar')
-#     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='pillar')
+    #     activities: Mapped[list['Activities']] = relationship('Activities', back_populates='pillar')
+    #     agreements: Mapped[list['Agreements']] = relationship('Agreements', back_populates='pillar')
+    #     contracts: Mapped[list['Contracts']] = relationship('Contracts', back_populates='pillar')
 
-# Relaciones simples
-    contracts_pillar: Mapped[list["Contracts"]] = relationship("Contracts", back_populates="pillar")    
-    
+    # Relaciones simples
+    contracts_pillar: Mapped[list["Contracts"]] = relationship(
+        "Contracts", back_populates="pillar"
+    )
+
     capacity_assessments_pilar: Mapped[list["CapacityAssessments"]] = relationship(
-       "CapacityAssessments", back_populates="pillar"
-   )
-    
+        "CapacityAssessments", back_populates="pillar"
+    )
+
     person: Mapped["Persons"] = relationship("Persons")

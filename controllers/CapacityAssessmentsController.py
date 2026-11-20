@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException,Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import status
 from typing import Optional
@@ -14,7 +14,10 @@ from requests import Session
 from database.database import DbSession, get_db
 from dependencies.auth_dependency import get_current_user_oid
 from dto import DocumentsTypesAgreements
-from dto.CapacityAssessmentsDTO import CapacityAssessmentsBase,CapacityAssessmentsCreate
+from dto.CapacityAssessmentsDTO import (
+    CapacityAssessmentsBase,
+    CapacityAssessmentsCreate,
+)
 from dto.ResponseRequest import ResponseRequest
 from entity.implementers import Implementers
 from entity.modalities import Modalities
@@ -22,36 +25,41 @@ from entity.pads import Pads
 from entity.programs import Programs
 from entity.persons import Persons
 from entity.capacity_assessments import CapacityAssessments as CapacityAssessmentsEntity
-from entity.capacity_assessments_states import CapacityAssessmentsStates as CapacityAssessmentsStatesEntity
+from entity.capacity_assessments_states import (
+    CapacityAssessmentsStates as CapacityAssessmentsStatesEntity,
+)
 
-from services import CapacityAssessments 
+from services import CapacityAssessments
 from services import SolicitudesAprobacionService
 from dto.CapacityAssessmentsDTO import CapacityAssessmentListSP
-from dto.AccionesSolicitudAprobacionCapacidadDTO import AccionSolicitudAprobacionCapacidad
+from dto.AccionesSolicitudAprobacionCapacidadDTO import (
+    AccionSolicitudAprobacionCapacidad,
+)
 from dto.AccionesSolicitudAprobacionDTO import AccionSolicitudAprobacion
 from dto.CapacityAssessmentsDTO import UrlSharepointUpdate
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from dto.AttachmentAgreementDTO import AttachmentAgreementCreate, AttachmentAgreementResponse, AttachmentAgreementUpdate
-from services import  AttachmentAgreementService
+from dto.AttachmentAgreementDTO import (
+    AttachmentAgreementCreate,
+    AttachmentAgreementResponse,
+    AttachmentAgreementUpdate,
+)
+from services import AttachmentAgreementService
 from repository import AttachmentAgreementRepository
 from fastapi.responses import FileResponse
 from entity.attachment_agreement import Attachment_Agreement
-
-
-
 
 CATEGORIA_APROBACION = "APP_EC"
 
 
 router = APIRouter(
-    prefix='/evaluaciones-de-capacidades',
-    tags=['EvaluacionesDeCapacidades']
+    prefix="/evaluaciones-de-capacidades", tags=["EvaluacionesDeCapacidades"]
 )
 
 
-@router.get('')
+@router.get("")
 def listar(db: DbSession, user_oid: str = Depends(get_current_user_oid)):
     return CapacityAssessments.listar(db)
+
 
 @router.get("/filtro")
 def listar_capacity_assessments_filtro(
@@ -66,11 +74,23 @@ def listar_capacity_assessments_filtro(
         return CapacityAssessments.listar_capacity_assessments_por_usuario_sp(
             db, user_oid, page, estado, filtro, programa
         )
-       
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-     
-  
+
+
+@router.get("/codigo_numero_mayor")
+def codigo_numero_mayor(
+    db: DbSession,
+    user_oid: str = Depends(get_current_user_oid),
+):
+    try:
+        mayor = CapacityAssessments.codigo_numero_mayor(db)
+        return mayor
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/filtro-test")
 def listar_capacity_assessments_filtro_test(
     db: DbSession,
@@ -87,28 +107,40 @@ def listar_capacity_assessments_filtro_test(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get('/{id}')
-def obtener_por_id(id: int, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+
+@router.get("/{id}")
+def obtener_por_id(
+    id: int, db: DbSession, user_oid: str = Depends(get_current_user_oid)
+):
     pad = CapacityAssessments.obtener_por_id(id, db)
     if not pad:
-        raise HTTPException(status_code=404, detail='evaluacion de capacidades  no encontrado')
+        raise HTTPException(
+            status_code=404, detail="evaluacion de capacidades  no encontrado"
+        )
     return pad
 
 
-@router.post('', response_model=ResponseRequest)
-def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession,background_tasks: BackgroundTasks,  user_oid: str = Depends(get_current_user_oid)):
-    try:      
-        response_request = CapacityAssessments.crear(payload, db, user_oid,background_tasks)
+@router.post("", response_model=ResponseRequest)
+def crear_programa(
+    payload: CapacityAssessmentsCreate,
+    db: DbSession,
+    background_tasks: BackgroundTasks,
+    user_oid: str = Depends(get_current_user_oid),
+):
+    try:
+        response_request = CapacityAssessments.crear(
+            payload, db, user_oid, background_tasks
+        )
         if response_request.solicitud_exitosa:
             return JSONResponse(
                 content=response_request.model_dump(),
-                status_code=status.HTTP_201_CREATED
+                status_code=status.HTTP_201_CREATED,
             )
-        if response_request.solicitud_exitosa==False:
-                   return JSONResponse(
-                       content=response_request.model_dump(),
-                       status_code=status.HTTP_422_UNPROCESSABLE_CONTENT
-                   )       
+        if response_request.solicitud_exitosa == False:
+            return JSONResponse(
+                content=response_request.model_dump(),
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            )
     except HTTPException as e:
         print(f"HTTPException: {e.detail}")
         raise e
@@ -116,38 +148,64 @@ def crear_programa(payload: CapacityAssessmentsCreate, db: DbSession,background_
         print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put('/{guid}', response_model=ResponseRequest)
-def actualizar(guid: str, payload: CapacityAssessmentsCreate, db: DbSession,background_tasks: BackgroundTasks,  user_oid: str = Depends(get_current_user_oid)):
-    print(' payload', payload)
+
+@router.put("/{guid}", response_model=ResponseRequest)
+def actualizar(
+    guid: str,
+    payload: CapacityAssessmentsCreate,
+    db: DbSession,
+    background_tasks: BackgroundTasks,
+    user_oid: str = Depends(get_current_user_oid),
+):
+    print(" payload", payload)
     try:
         evaluacion_db = CapacityAssessments.obtener_por_guid(guid, db)
         if not evaluacion_db:
-            raise HTTPException(status_code=404, detail='Evaluación de capacidades no encontrada')
-        response_request = CapacityAssessments.actualizar(evaluacion_db.id, payload, db, user_oid,background_tasks)
+            raise HTTPException(
+                status_code=404, detail="Evaluación de capacidades no encontrada"
+            )
+        response_request = CapacityAssessments.actualizar(
+            evaluacion_db.id, payload, db, user_oid, background_tasks
+        )
         return JSONResponse(
             content=response_request.dict(),
-            status_code=status.HTTP_200_OK if response_request.solicitud_exitosa else status.HTTP_400_BAD_REQUEST
+            status_code=(
+                status.HTTP_200_OK
+                if response_request.solicitud_exitosa
+                else status.HTTP_400_BAD_REQUEST
+            ),
         )
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))   
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get('/{guid}/detalle')
-def obtener_por_guid(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+
+@router.get("/{guid}/detalle")
+def obtener_por_guid(
+    guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)
+):
     evaluacion = CapacityAssessments.obtener_por_guid(guid, db)
     if not evaluacion:
-        raise HTTPException(status_code=404, detail='Evaluación de capacidades no encontrada')
+        raise HTTPException(
+            status_code=404, detail="Evaluación de capacidades no encontrada"
+        )
     return evaluacion
 
 
-@router.get('/{guid}/validar_acciones_aprobacion')
-def validar_acciones_solicitud_aprobacion(guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)):
+@router.get("/{guid}/validar_acciones_aprobacion")
+def validar_acciones_solicitud_aprobacion(
+    guid: str, db: DbSession, user_oid: str = Depends(get_current_user_oid)
+):
     try:
         evaluacion = CapacityAssessments.obtener_por_guid(guid, db)
         if not evaluacion:
-            raise HTTPException(status_code=404, detail='Evaluación de capacidades no encontrada')
-        id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(CATEGORIA_APROBACION, db)
+            raise HTTPException(
+                status_code=404, detail="Evaluación de capacidades no encontrada"
+            )
+        id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(
+            CATEGORIA_APROBACION, db
+        )
         respuesta = SolicitudesAprobacionService.validar_habilitar_acciones_solicitud_aprobacion(
             evaluacion.id, id_categoria, user_oid, db
         )
@@ -158,34 +216,28 @@ def validar_acciones_solicitud_aprobacion(guid: str, db: DbSession, user_oid: st
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
-
-
-@router.post('/{guid}/accion_solicitud_aprobacion', response_model=ResponseRequest)
+@router.post("/{guid}/accion_solicitud_aprobacion", response_model=ResponseRequest)
 def accion_solicitud_aprobacion(
     guid: str,
     accion: AccionSolicitudAprobacionCapacidad,
     db: DbSession,
-    background_tasks: BackgroundTasks, 
+    background_tasks: BackgroundTasks,
     user_oid: str = Depends(get_current_user_oid),
-    
 ):
-  
+
     try:
-        
+
         evaluacion_db = CapacityAssessments.obtener_por_guid(guid, db)
         if not evaluacion_db:
             raise HTTPException(
                 status_code=404,
-                detail='Evaluación de capacidades no encontrada',
+                detail="Evaluación de capacidades no encontrada",
             )
 
         accion.id_evaluacion = evaluacion_db.id
         accion.id_solicitud_aprobacion = evaluacion_db.approval_request_id
-        id_categoria = (
-            SolicitudesAprobacionService.obtener_categoria_aprobacion(
-                CATEGORIA_APROBACION, db
-            )
+        id_categoria = SolicitudesAprobacionService.obtener_categoria_aprobacion(
+            CATEGORIA_APROBACION, db
         )
 
         respuesta = CapacityAssessments.procesar_accion_solicitud_aprobacion(
@@ -200,19 +252,17 @@ def accion_solicitud_aprobacion(
                 else status.HTTP_400_BAD_REQUEST
             ),
         )
-       
+
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
-    
-    
- 
-    
-def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSession) -> bytes:
- 
+
+
+def generar_pdf_solicitud(
+    evaluacion_db: CapacityAssessmentsEntity, db: DbSession
+) -> bytes:
+
     if os.name == "nt" and hasattr(os, "add_dll_directory"):
         tesseract_path = r"C:\Program Files\Tesseract-OCR"
         if os.path.isdir(tesseract_path):
@@ -223,66 +273,109 @@ def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSessio
 
     from weasyprint import HTML
 
-    
-    
     # PROGRAMA
     programa_name = "N/A"
     if evaluacion_db.program_id:
-        program = db.query(Programs).filter(Programs.id == evaluacion_db.program_id).first()
+        program = (
+            db.query(Programs).filter(Programs.id == evaluacion_db.program_id).first()
+        )
         if program:
             programa_name = program.name
 
-    #PAD
+    # PAD
     pad_name = "N/A"
     if evaluacion_db.pid_id:
         pid = db.query(Pads).filter(Pads.id == evaluacion_db.pid_id).first()
         if pid:
             pad_name = pid.name
-            
-    #IMPLEMENTER
+
+    # IMPLEMENTER
     implementer_name = "N/A"
     if evaluacion_db.implementer_id:
-        implementer = db.query(Implementers).filter(Implementers.id == evaluacion_db.implementer_id).first()
+        implementer = (
+            db.query(Implementers)
+            .filter(Implementers.id == evaluacion_db.implementer_id)
+            .first()
+        )
         if implementer:
-           implementer_name = implementer.acronym
-         
-    #MODALIDAD
+            implementer_name = implementer.acronym
+
+    # MODALIDAD
     modalitie_name = "N/A"
     if evaluacion_db.modality_id:
-        modalitie = db.query(Modalities).filter(Modalities.id == evaluacion_db.modality_id).first()
+        modalitie = (
+            db.query(Modalities)
+            .filter(Modalities.id == evaluacion_db.modality_id)
+            .first()
+        )
         if modalitie:
             modalitie_name = modalitie.name
-    
-    #ESTADO EVALUACION DE CAPACIDAD
+
+    # ESTADO EVALUACION DE CAPACIDAD
     capacity_assessments_state_name = "N/A"
     if evaluacion_db.capacity_assessments_states_id:
-        estado_evaluacion = db.query(CapacityAssessmentsStatesEntity).filter(CapacityAssessmentsStatesEntity.id == evaluacion_db.capacity_assessments_states_id).first()
+        estado_evaluacion = (
+            db.query(CapacityAssessmentsStatesEntity)
+            .filter(
+                CapacityAssessmentsStatesEntity.id
+                == evaluacion_db.capacity_assessments_states_id
+            )
+            .first()
+        )
         if estado_evaluacion:
             capacity_assessments_state_name = estado_evaluacion.state
 
-
     # RESPONSABLE
-    
+
     responsable_name = "N/A"
     if evaluacion_db.persons_id:
-        person = db.query(Persons).filter(Persons.id == evaluacion_db.persons_id).first()
+        person = (
+            db.query(Persons).filter(Persons.id == evaluacion_db.persons_id).first()
+        )
         if person:
-             fullname= "{fname}  {lname} {olname}".format(fname = person.first_name, lname =person.last_name, olname =person.other_last_name)
-             responsable_name = fullname
-    
-       
-    
-    # FECHAS 
-    start_date = evaluacion_db.start_date.strftime("%Y-%m-%d") if evaluacion_db.start_date else ""
-    end_date = evaluacion_db.end_date.strftime("%Y-%m-%d") if evaluacion_db.end_date else ""
-    policy_approval_date = evaluacion_db.policy_approval_date.strftime("%Y-%m-%d") if evaluacion_db.policy_approval_date else ""
-    document_signature_date = evaluacion_db.document_signature_date.strftime("%Y-%m-%d") if evaluacion_db.document_signature_date else ""
+            fullname = "{fname}  {lname} {olname}".format(
+                fname=person.first_name,
+                lname=person.last_name,
+                olname=person.other_last_name,
+            )
+            responsable_name = fullname
 
-   # VALOS
-    approximate_value = f"{evaluacion_db.approximate_value:,.0f}" if evaluacion_db.approximate_value else "0"
-    
+    # FECHAS
+    start_date = (
+        evaluacion_db.start_date.strftime("%Y-%m-%d")
+        if evaluacion_db.start_date
+        else ""
+    )
+    end_date = (
+        evaluacion_db.end_date.strftime("%Y-%m-%d") if evaluacion_db.end_date else ""
+    )
+    policy_approval_date = (
+        evaluacion_db.policy_approval_date.strftime("%Y-%m-%d")
+        if evaluacion_db.policy_approval_date
+        else ""
+    )
+    document_signature_date = (
+        evaluacion_db.document_signature_date.strftime("%Y-%m-%d")
+        if evaluacion_db.document_signature_date
+        else ""
+    )
+
+    # VALOS
+    approximate_value = (
+        f"{evaluacion_db.approximate_value:,.0f}"
+        if evaluacion_db.approximate_value
+        else "0"
+    )
+
     # Logo local
-    logo_path = Path(__file__).parent.parent.parent / "siva-ii-frontend" / "public" / "images" / "logos" / "logo_patrimonio.png"
+    logo_path = (
+        Path(__file__).parent.parent.parent
+        / "siva-ii-frontend"
+        / "public"
+        / "images"
+        / "logos"
+        / "logo_patrimonio.png"
+    )
     logo_uri = ""
     if logo_path.is_file():
         logo_uri = logo_path.as_uri()
@@ -315,13 +408,17 @@ def generar_pdf_solicitud(evaluacion_db: CapacityAssessmentsEntity, db: DbSessio
 
 @router.get("/{guid}/pdf_solicitud/documento")
 def obtener_pdf_solicitud(
-    guid: str, 
+    guid: str,
     db: DbSession,
-    descargar:bool = Query(False),
+    descargar: bool = Query(False),
     user_oid: str = Depends(get_current_user_oid),
-    ):
+):
     try:
-        evaluacion_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        evaluacion_db = (
+            db.query(CapacityAssessmentsEntity)
+            .filter(CapacityAssessmentsEntity.guid == guid)
+            .first()
+        )
         if not evaluacion_db:
             raise HTTPException(status_code=404, detail="Evaluación no encontrada")
 
@@ -332,15 +429,17 @@ def obtener_pdf_solicitud(
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(filename)}"}
+            headers={
+                "Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(filename)}"
+            },
         )
     except HTTPException as e:
         raise e
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 
 @router.patch("/{guid}/url-sharepoint", response_model=ResponseRequest)
@@ -355,97 +454,132 @@ def actualizar_url_sharepoint(
     )
     return JSONResponse(
         content=response_request.dict(),
-        status_code=status.HTTP_200_OK if response_request.solicitud_exitosa
-        else status.HTTP_400_BAD_REQUEST,
+        status_code=(
+            status.HTTP_200_OK
+            if response_request.solicitud_exitosa
+            else status.HTTP_400_BAD_REQUEST
+        ),
     )
-  
+
 
 @router.post("/{guid}/documento_asociado", response_model=ResponseRequest)
 def subir_documento_asociado(
-    guid: str,
-    documento: AttachmentAgreementCreate,
-    db: DbSession
+    guid: str, documento: AttachmentAgreementCreate, db: DbSession
 ):
     try:
-        evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
-        if not evaluacion_capacidad_db:
-            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrado")
-            
-        nombre_archivo = AttachmentAgreementService.guardar_documento_evaluacion_capacidad(
-            codigo_evaluacion_capacidad=evaluacion_capacidad_db.code,
-            base64_data=documento.base64_data,
-            db=db,
-            capacity_assessments_id=evaluacion_capacidad_db.id,
-            nombre_original=documento.attachment_name,
-            documents_types_agreements_id=documento.documents_types_agreements_id,
-            observaciones=documento.observations
+        evaluacion_capacidad_db = (
+            db.query(CapacityAssessmentsEntity)
+            .filter(CapacityAssessmentsEntity.guid == guid)
+            .first()
         )
-        
+        if not evaluacion_capacidad_db:
+            raise HTTPException(
+                status_code=404, detail="Evaluación de capacidad no encontrado"
+            )
+
+        nombre_archivo = (
+            AttachmentAgreementService.guardar_documento_evaluacion_capacidad(
+                codigo_evaluacion_capacidad=evaluacion_capacidad_db.code,
+                base64_data=documento.base64_data,
+                db=db,
+                capacity_assessments_id=evaluacion_capacidad_db.id,
+                nombre_original=documento.attachment_name,
+                documents_types_agreements_id=documento.documents_types_agreements_id,
+                observaciones=documento.observations,
+            )
+        )
+
         return ResponseRequest(
             solicitud_exitosa=True,
             mensaje="Documento guardado exitosamente",
-            identity=evaluacion_capacidad_db.id
+            identity=evaluacion_capacidad_db.id,
         )
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-    
-@router.get("/{guid}/documentos_asociados", response_model=list[AttachmentAgreementResponse])
+
+@router.get(
+    "/{guid}/documentos_asociados", response_model=list[AttachmentAgreementResponse]
+)
 def listar_documentos_asociados(guid: str, db: DbSession):
     try:
-        #print ('documentos_asociados')
-        evaluacion_capacidades_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        # print ('documentos_asociados')
+        evaluacion_capacidades_db = (
+            db.query(CapacityAssessmentsEntity)
+            .filter(CapacityAssessmentsEntity.guid == guid)
+            .first()
+        )
         if not evaluacion_capacidades_db:
-            raise HTTPException(status_code=404, detail="Evaluación capacidad no encontrada")
-            
-        
-        registros = AttachmentAgreementRepository.list_attachment_agreement_by_capacity_assessments_id(evaluacion_capacidades_db.id, db)
-        print("total registros  " ,  len(registros))
-        
-          
-        
+            raise HTTPException(
+                status_code=404, detail="Evaluación capacidad no encontrada"
+            )
+
+        registros = AttachmentAgreementRepository.list_attachment_agreement_by_capacity_assessments_id(
+            evaluacion_capacidades_db.id, db
+        )
+        print("total registros  ", len(registros))
+
         return [
             AttachmentAgreementResponse(
                 id=r.id,
                 attachment_name=r.attachment_name,
                 documents_types_agreements_id=r.documents_types_agreements_id,
-                document_type_description=(                                   
-                    r.documents_types_agreements.description                  
-                    if r.documents_types_agreements else None                 
-                ),                                                            
-                observations=r.observations    
-            ) for r in registros
+                document_type_description=(
+                    r.documents_types_agreements.description
+                    if r.documents_types_agreements
+                    else None
+                ),
+                observations=r.observations,
+            )
+            for r in registros
         ]
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-    
+
 @router.get("/{guid}/archivo/{attachment_id}")
 def descargar_archivo_asociado(
-    guid: str, 
-    attachment_id: int, 
+    guid: str,
+    attachment_id: int,
     db: DbSession,
     descargar: bool = Query(False),
     user_oid: str = Depends(get_current_user_oid),
-    ):
-    
+):
+
     try:
-        evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        evaluacion_capacidad_db = (
+            db.query(CapacityAssessmentsEntity)
+            .filter(CapacityAssessmentsEntity.guid == guid)
+            .first()
+        )
         if not evaluacion_capacidad_db:
-            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrada")
+            raise HTTPException(
+                status_code=404, detail="Evaluación de capacidad no encontrada"
+            )
 
-        registro = db.query(Attachment_Agreement).filter(
-            Attachment_Agreement.id == attachment_id,
-            Attachment_Agreement.capacity_assessments_id == evaluacion_capacidad_db.id
-        ).first()
+        registro = (
+            db.query(Attachment_Agreement)
+            .filter(
+                Attachment_Agreement.id == attachment_id,
+                Attachment_Agreement.capacity_assessments_id
+                == evaluacion_capacidad_db.id,
+            )
+            .first()
+        )
 
-        if not registro or not registro.path_document or not os.path.exists(registro.path_document):
+        if (
+            not registro
+            or not registro.path_document
+            or not os.path.exists(registro.path_document)
+        ):
             raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
         return FileResponse(
@@ -457,21 +591,25 @@ def descargar_archivo_asociado(
         raise e
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
+
+
 @router.put("/{guid}/documentos/{id_documento}", response_model=ResponseRequest)
 def actualizar_documento(
-    guid: str,
-    id_documento: int,
-    payload: AttachmentAgreementUpdate,
-    db: DbSession
+    guid: str, id_documento: int, payload: AttachmentAgreementUpdate, db: DbSession
 ):
     try:
-        evaluacion_capacidad_db = db.query(CapacityAssessmentsEntity).filter(CapacityAssessmentsEntity.guid == guid).first()
+        evaluacion_capacidad_db = (
+            db.query(CapacityAssessmentsEntity)
+            .filter(CapacityAssessmentsEntity.guid == guid)
+            .first()
+        )
         if not evaluacion_capacidad_db:
-            raise HTTPException(status_code=404, detail="Evaluación de capacidad no encontrada")
+            raise HTTPException(
+                status_code=404, detail="Evaluación de capacidad no encontrada"
+            )
 
         AttachmentAgreementService.actualizar_documento_evaluacion_capacidad(
             codigo_evaluacion_capacidad=evaluacion_capacidad_db.code,
@@ -482,13 +620,13 @@ def actualizar_documento(
             base64_data=payload.base64_data,
             documents_types_agreements_id=payload.documents_types_agreements_id,
             observaciones=payload.observations,
-            campos_enviados=set(payload.model_dump(exclude_unset=True).keys())
+            campos_enviados=set(payload.model_dump(exclude_unset=True).keys()),
         )
 
         return ResponseRequest(
             solicitud_exitosa=True,
             mensaje="Documento actualizado exitosamente",
-            identity=id_documento
+            identity=id_documento,
         )
     except HTTPException:
         raise
@@ -496,5 +634,6 @@ def actualizar_documento(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
