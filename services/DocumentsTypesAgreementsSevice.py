@@ -2,100 +2,135 @@ import logging
 import traceback
 from sqlalchemy.orm import Session
 from exceptions import PruebaCreationError, PruebaNotFoundError
-from dto.DocumentsTypesAgreements import DocumentsTypesAgreementsBase, DocumentsTypesAgreementsListBase,DocumentsTypesAgreementsUpdateBase,DocumentsTypesAgreementsCreateBase
+from dto.DocumentsTypesAgreements import (
+    DocumentsTypesAgreementsBase,
+    DocumentsTypesAgreementsListBase,
+    DocumentsTypesAgreementsUpdateBase,
+    DocumentsTypesAgreementsCreateBase,
+)
 from repository import DocumentsTypesAgreementsRepository
 from dto.ResponseRequest import ResponseRequest
 from entity.documents_types_agreements import DocumentsTypesAgreements
 
 
-def listar(db: Session,documents_approval_id:int |None=None) -> list[DocumentsTypesAgreementsListBase]:
-    tipo_documentos= DocumentsTypesAgreementsRepository.listar(db,documents_approval_id)
+def listar(
+    db: Session, documents_approval_id: int | None = None
+) -> list[DocumentsTypesAgreementsListBase]:
+    tipo_documentos = DocumentsTypesAgreementsRepository.listar(
+        db, documents_approval_id
+    )
+    print("DOC", documents_approval_id)
     return [
         DocumentsTypesAgreementsListBase(
-            id = int(d.id),
-            description= d.description,
-            number= d.number,
+            id=int(d.id),
+            description=d.description,
+            number=d.number,
             code=d.code,
             template=d.template,
-            template_path= d.template_path,
+            template_path=d.template_path,
             documents_approval_id=d.documents_approval_id,
-            documents_approval=d.documents_approval.name if d.documents_approval else None,
+            documents_approval=(
+                d.documents_approval.name if d.documents_approval else None
+            ),
             is_required=d.is_required,
             is_active=d.is_active,
-            
         )
-        
         for d in tipo_documentos
     ]
-    
-    
-    
-    '''if documents_approval_id is not  None:
+
+    """if documents_approval_id is not  None:
         query = query.filter(
             DocumentsTypesAgreements.documents_approval_id== documents_approval_id
         )
         
     return query.order_by(DocumentsTypesAgreements.id).all()
-    '''
-    
-def crear_tipo_doc(payload: DocumentsTypesAgreementsBase, db: Session) -> ResponseRequest:
+    """
+
+
+def crear_tipo_doc(
+    payload: DocumentsTypesAgreementsBase, db: Session
+) -> ResponseRequest:
     try:
-        existente = DocumentsTypesAgreementsRepository.obtener_por_template(payload.template or '', db)
+        existente = DocumentsTypesAgreementsRepository.obtener_por_template(
+            payload.template or "", db
+        )
         if existente:
-            return ResponseRequest(mensaje='Ya existe un tipo de documento con ese nombre', solicitud_exitosa=False)
+            return ResponseRequest(
+                mensaje="Ya existe un tipo de documento con ese nombre",
+                solicitud_exitosa=False,
+            )
         nuevo = DocumentsTypesAgreements(
-            is_required =payload.is_required,
+            is_required=payload.is_required,
             description=payload.description,
             number=payload.number,
             code=payload.code,
             template=payload.template,
-            template_path =payload.template_path,
+            template_path=payload.template_path,
             is_active=payload.is_active,
-            documents_approval_id=payload.documents_approval_id, 
+            documents_approval_id=payload.documents_approval_id,
         )
         creado = DocumentsTypesAgreementsRepository.crear_Tipos_Doc_Acu(nuevo, db)
         return ResponseRequest(
-            mensaje='Tipo de documento creado exitosamente', 
-            identity=int(creado.id), 
-            solicitud_exitosa=True
+            mensaje="Tipo de documento creado exitosamente",
+            identity=int(creado.id),
+            solicitud_exitosa=True,
         )
     except Exception as e:
         logging.error(f"Error creating program: {str(e)}")
         return ResponseRequest(
-            mensaje='Error al crear el tipo de documento', 
-            solicitud_exitosa=False
+            mensaje="Error al crear el tipo de documento", solicitud_exitosa=False
         )
-    
-def obtener_tipo_doc_acu_por_id(id: int, db: Session) -> DocumentsTypesAgreementsBase | None:
+
+
+def obtener_tipo_doc_acu_por_id(
+    id: int, db: Session
+) -> DocumentsTypesAgreementsBase | None:
     doc = DocumentsTypesAgreementsRepository.obtener_Tipos_Doc_Acu_por_id(id, db)
 
     if not doc:
         return None
 
     return DocumentsTypesAgreementsBase(
-    id=int(doc.id),
-    is_required=doc.is_required,
-    description=doc.description,
-    number=doc.number,
-    code=doc.code,
-    template=doc.template,
-    template_path=doc.template_path,
-    is_active=doc.is_active,
-    documents_approval=doc.documents_approval.name if  doc.documents_approval else None,
-)
-    
-def editar_tipo_doc_acu(id: int, payload: DocumentsTypesAgreementsUpdateBase, db: Session) -> ResponseRequest:
+        id=int(doc.id),
+        is_required=doc.is_required,
+        description=doc.description,
+        number=doc.number,
+        code=doc.code,
+        template=doc.template,
+        template_path=doc.template_path,
+        is_active=doc.is_active,
+        documents_approval=(
+            doc.documents_approval.name if doc.documents_approval else None
+        ),
+    )
+
+
+def editar_tipo_doc_acu(
+    id: int, payload: DocumentsTypesAgreementsUpdateBase, db: Session
+) -> ResponseRequest:
     try:
 
-        tipo_doc_acu_db = DocumentsTypesAgreementsRepository.obtener_Tipos_Doc_Acu_por_id(id, db)
+        tipo_doc_acu_db = (
+            DocumentsTypesAgreementsRepository.obtener_Tipos_Doc_Acu_por_id(id, db)
+        )
         if not tipo_doc_acu_db:
-            return ResponseRequest(mensaje='Tipo de documento no encontrado', solicitud_exitosa=False)
+            return ResponseRequest(
+                mensaje="Tipo de documento no encontrado", solicitud_exitosa=False
+            )
 
-        template_nuevo = (payload.template or '').strip()
-        if template_nuevo and template_nuevo.lower() != (tipo_doc_acu_db.template or '').lower():
-            existente = DocumentsTypesAgreementsRepository.obtener_por_template(template_nuevo, db)
+        template_nuevo = (payload.template or "").strip()
+        if (
+            template_nuevo
+            and template_nuevo.lower() != (tipo_doc_acu_db.template or "").lower()
+        ):
+            existente = DocumentsTypesAgreementsRepository.obtener_por_template(
+                template_nuevo, db
+            )
             if existente:
-                return ResponseRequest(mensaje='Ya existe un tipo de documento con ese nombre de plantilla', solicitud_exitosa=False)
+                return ResponseRequest(
+                    mensaje="Ya existe un tipo de documento con ese nombre de plantilla",
+                    solicitud_exitosa=False,
+                )
 
         tipo_doc_acu_db.is_required = payload.is_required
         tipo_doc_acu_db.description = payload.description
@@ -106,13 +141,17 @@ def editar_tipo_doc_acu(id: int, payload: DocumentsTypesAgreementsUpdateBase, db
         tipo_doc_acu_db.is_active = payload.is_active
         tipo_doc_acu_db.documents_approval_id = payload.documents_approval_id
 
-        actualizado = DocumentsTypesAgreementsRepository.actualizar_Tipos_Doc_Acu(tipo_doc_acu_db, db)
-        return ResponseRequest(mensaje='Tipo de documento actualizado exitosamente', identity=id, solicitud_exitosa=True)
+        actualizado = DocumentsTypesAgreementsRepository.actualizar_Tipos_Doc_Acu(
+            tipo_doc_acu_db, db
+        )
+        return ResponseRequest(
+            mensaje="Tipo de documento actualizado exitosamente",
+            identity=id,
+            solicitud_exitosa=True,
+        )
 
     except Exception as e:
         logging.error(f"Error updating tipo documento acuerdo: {str(e)}")
-        return ResponseRequest(mensaje='Error al actualizar el tipo de documento', solicitud_exitosa=False)
-        
-    
-    
-    
+        return ResponseRequest(
+            mensaje="Error al actualizar el tipo de documento", solicitud_exitosa=False
+        )
