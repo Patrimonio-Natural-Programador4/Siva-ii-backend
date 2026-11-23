@@ -1,13 +1,25 @@
-name: Deploy Backend - Developp
+
+name: Deploy Backend - Development and Production
 
 on:
   push:
     branches:
       - developp
+      - production
+
+# Evita despliegues simultáneos sobre el mismo ambiente.
+concurrency:
+  group: backend-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+
+  # ==========================================
+  # AMBIENTE DE DESARROLLO
+  # ==========================================
+  deploy-development:
     name: Deploy Backend to Development
+    if: github.ref == 'refs/heads/developp'
     runs-on: [self-hosted, Linux, X64, siva-ii-backend]
 
     steps:
@@ -16,58 +28,65 @@ jobs:
 
       - name: Verify runner
         run: |
+          echo "Environment: DEVELOPMENT"
           echo "Runner: $RUNNER_NAME"
           echo "Workspace: $GITHUB_WORKSPACE"
           whoami
           pwd
 
-      - name: Sync backend to development server
+      - name: Verify environment
+        run: |
+          test -d /opt/apps/devsiva2
+          test -f /opt/apps/devsiva2/docker-compose.yml
+          test -f /opt/apps/devsiva2/back/.env
+
+      - name: Sync backend to development
         run: |
           rsync -av --delete \
             --exclude='.git' \
             --exclude='.env' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
+            --exclude='venv' \
+            --exclude='.history' \
+            --exclude='.vscode' \
             ./ /opt/apps/devsiva2/back/
 
       - name: Verify deployed files
         run: |
           cd /opt/apps/devsiva2/back
 
-          echo "Contenido desplegado:"
-          ls -la
-
-          echo "Dockerfile:"
-          ls -l Dockerfile
-
-          echo "Alembic:"
-          ls -l alembic.ini
+          test -f Dockerfile
+          test -f requirements.txt
+          test -f alembic.ini
           test -d migrations
-
-          echo "Variables de entorno:"
           test -f .env
+
+          echo "Development files verified"
 
       - name: Build backend Docker image
         run: |
           cd /opt/apps/devsiva2
-          docker compose build --no-cache back
+          docker compose build back
 
       - name: Verify database connectivity
         run: |
           cd /opt/apps/devsiva2
 
-          docker compose run --rm back python -c "
+          docker compose run --rm --no-deps back python -c "
           import socket
           host = 'host.docker.internal'
           port = 5432
           ip = socket.gethostbyname(host)
+          print(f'PostgreSQL host: {ip}')
           socket.create_connection((host, port), 5)
+          print('Database TCP connection successful')
           "
 
       - name: Run database migrations
         run: |
           cd /opt/apps/devsiva2
-          docker compose run --rm back alembic upgrade head
+          docker compose run --rm --no-deps back alembic upgrade head
 
       - name: Restart backend container
         run: |
@@ -76,8 +95,104 @@ jobs:
 
       - name: Verify backend container
         run: |
-          docker ps --filter "name=devapi-back"
+          cd /opt/apps/devsiva2
 
-          echo "Últimos logs:"
+          docker compose ps back
+
+          test "$(docker inspect devapi-back \
+            --format '{{.State.Status}}')" = "running"
+
+          echo "Last backend logs:"
           docker logs --tail 50 devapi-back
 
+  # ==========================================
+  # AMBIENTE DE PRODUCCION
+  # ==========================================
+  deploy-production:
+    name: Deploy Backend to Production
+    if: github.ref == 'refs/heads/production'
+    runs-on: [self-hosted, Linux, X64, siva-ii-backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify runner
+        run: |
+          echo "Environment: PRODUCTION"
+          echo "Runner: $RUNNER_NAME"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          whoami
+          pwd
+
+      - name: Verify production environment
+        run: |
+          test -d /opt/apps/siva2
+          test -f /opt/apps/siva2/docker-compose.yml
+          test -f /opt/apps/siva2/back/.env
+
+      - name: Sync backend to production
+        run: |
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='.env' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='venv' \
+            --exclude='.history' \
+            --exclude='.vscode' \
+            ./ /opt/apps/siva2/back/
+
+      - name: Verify deployed files
+        run: |
+          cd /opt/apps/siva2/back
+
+          test -f Dockerfile
+          test -f requirements.txt
+          test -f alembic.ini
+          test -d migrations
+          test -f .env
+
+          echo "Production files verified"
+
+      - name: Build backend Docker image
+        run: |
+          cd /opt/apps/siva2
+          docker compose build back
+
+      - name: Verify database connectivity
+        run: |
+          cd /opt/apps/siva2
+
+          docker compose run --rm --no-deps back python -c "
+          from database.database import engine
+          from sqlalchemy import text
+
+          with engine.connect() as connection:
+              result = connection.execute(
+                  text('SELECT current_database(), current_user')
+              )
+              print('Database connection successful:', result.fetchone())
+          "
+
+      - name: Run database migrations
+        run: |
+          cd /opt/apps/siva2
+          docker compose run --rm --no-deps back alembic upgrade head
+
+      - name: Restart backend container
+        run: |
+          cd /opt/apps/siva2
+          docker compose up -d --force-recreate back
+
+      - name: Verify backend container
+        run: |
+          cd /opt/apps/siva2
+
+          docker compose ps back
+
+          test "$(docker inspect siva2-back \
+            --format '{{.State.Status}}')" = "running"
+
+          echo "Last backend logs:"
+          docker logs --tail 50 siva2-back
