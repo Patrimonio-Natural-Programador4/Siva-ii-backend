@@ -73,6 +73,9 @@ def listar_capacity_assessments_por_usuario_sp(
     programa: int = -1,
 ) -> list[CapacityAssessmentListSP]:
     try:
+
+        #Se requiere ajustar
+        
         query = text("""
     SELECT sp.*, p.first_name, p.other_name, p.last_name, p.other_last_name
     FROM list_capacity_assesstment(
