@@ -2,6 +2,8 @@ from typing import Optional
 import uuid
 from pydantic import BaseModel, Field
 from datetime import date
+
+
 class UsuariosBase(BaseModel):
     guid: uuid.UUID
     guid_msft: Optional[uuid.UUID] = None
@@ -15,8 +17,10 @@ class UsuariosBase(BaseModel):
     other_last_name: Optional[str] = None
     position: Optional[str] = None
     full_name: Optional[str] = None
+
     class Config:
         from_attributes = True
+
 
 class UsuariosCreateBase(BaseModel):
     guid_msft: uuid.UUID | None = None
@@ -36,12 +40,14 @@ class UsuariosCreateBase(BaseModel):
     is_guest: Optional[bool] = None
     delegados_ids: list[int] = Field(default_factory=list)
 
+
 class UsuariosEdicionBase(BaseModel):
     guid: uuid.UUID
     first_name: str
     last_name: str
     identification_type: int
     identification_number: int
+    id: int
     email: str
     is_active: bool
     other_name: Optional[str] = None

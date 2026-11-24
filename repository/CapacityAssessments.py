@@ -73,16 +73,11 @@ def listar_capacity_assessments_por_usuario_sp(
     programa: int = -1,
 ) -> list[CapacityAssessmentListSP]:
     try:
-        query = text("""
-    SELECT sp.*, p.first_name, p.other_name, p.last_name, p.other_last_name
-    FROM list_capacity_assesstment(
-        :guid_usuario_msft, :page, :v_status, :filtro, :v_program
-    ) sp
-    LEFT JOIN persons p ON p.id = sp.persons_id
-""").bindparams(bindparam("v_status", type_=ARRAY(Integer)))
-
+        programa = programa if programa is not None else -1
         result = db.execute(
-            query,
+            text("""
+             SELECT * FROM list_capacity_assesstment(:guid_usuario_msft, :page, :v_status, :filtro, :v_program) 
+           """),
             {
                 "guid_usuario_msft": guid_usuario_msft,
                 "page": page,
@@ -92,7 +87,7 @@ def listar_capacity_assessments_por_usuario_sp(
             },
         ).fetchall()
 
-        return [
+        evaluacion = [
             CapacityAssessmentListSP(
                 guid=row[0],  # guid
                 name=row[1],  # name
@@ -110,10 +105,7 @@ def listar_capacity_assessments_por_usuario_sp(
                 pid_id=row[13],  # pid_id
                 pad_name=row[14],  # pad_name
                 persons_id=row[15],  # persons_id
-                persons_name=" ".join(
-                    x for x in [row[29], row[30], row[31], row[32]] if x
-                ),
-                # persons_email=row[16],                      # persons_email
+                # persons_email=row[16],  # persons_email
                 capacity_assessments_states_id=row[
                     17
                 ],  # capacity_assessments_states_id
@@ -130,16 +122,20 @@ def listar_capacity_assessments_por_usuario_sp(
                 guid_msft_adjustment=row[26],  # guid_msft_adjustment
                 total_records=row[27],  # total_records
                 is_deleted=row[28],  # eliminado lógico
+                current_step=row[29],  # pasos del flujo
+                user_session=row[30],  # usuario de la sesion
+                full_name=row[31],  # nombre completo
             )
             for row in result
         ]
+
+        return evaluacion
     except Exception as e:
         logging.error(f"Failed to fetch capacity assessments: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
 
 def codigo_numero_mayor(db: Session) -> Integer:
-
     try:
         query = text("""  
                          
@@ -147,13 +143,9 @@ SELECT MAX(CAST(SUBSTRING(code FROM '[^-]+$') AS INTEGER)) AS max_consecutivo
 FROM capacity_assessments ca
 WHERE code LIKE '%-%'
 limit 1;
-
     """)
-
         result = db.execute(query).first()
-
         return result
-
     except Exception as e:
         logging.error(f"Failed to fetch capacity assessments: {str(e)}")
         raise PruebaNotFoundError(str(e))

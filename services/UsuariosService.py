@@ -6,8 +6,18 @@ from dto.ListaGenerica import ListaGenerica
 from dto.ListadosDTO import Listados
 from exceptions import PruebaCreationError, PruebaNotFoundError
 import logging
-from dto.UsuariosDTO import UsuariosBase, UsuariosCreateBase, UsuariosEdicionBase, UsuariosUpdateBase
-from repository import DocumentypesRepository, UsersProgramsRepository, UsuariosRepository, ProgramsRepository
+from dto.UsuariosDTO import (
+    UsuariosBase,
+    UsuariosCreateBase,
+    UsuariosEdicionBase,
+    UsuariosUpdateBase,
+)
+from repository import (
+    DocumentypesRepository,
+    UsersProgramsRepository,
+    UsuariosRepository,
+    ProgramsRepository,
+)
 from dto.ResponseRequest import ResponseRequest
 from pathlib import Path
 import json
@@ -19,10 +29,12 @@ from entity.users import Users
 from entity.users_delegate import UsersDelegate
 from services import RolesService
 
+
 class InvitacionResponse(TypedDict):
     registro_exitoso: bool
     user_id: Optional[str]
     mensaje: str
+
 
 SCOPE = ["https://graph.microsoft.com/.default"]
 
@@ -31,48 +43,53 @@ def agregar_usuario_a_grupo(guid: str, access_token: str):
     group_id = (os.getenv("grupo_usuarios") or "").strip()
 
     if not group_id:
-        raise HTTPException(status_code=500, detail="La variable grupo_usuarios no esta configurada")
+        raise HTTPException(
+            status_code=500, detail="La variable grupo_usuarios no esta configurada"
+        )
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
-    check_membership_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/{guid}"
+    check_membership_url = (
+        f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/{guid}"
+    )
     membership_response = requests.get(check_membership_url, headers=headers)
 
     if membership_response.status_code == 200:
         return {
             "agregado": False,
             "guid_msft": guid,
-            "mensaje": "El usuario ya pertenece al grupo corporativo"
+            "mensaje": "El usuario ya pertenece al grupo corporativo",
         }
 
     if membership_response.status_code != 404:
-        raise HTTPException(status_code=membership_response.status_code, detail=membership_response.text)
+        raise HTTPException(
+            status_code=membership_response.status_code, detail=membership_response.text
+        )
 
     add_member_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/$ref"
-    payload = {
-        "@odata.id": f"https://graph.microsoft.com/v1.0/directoryObjects/{guid}"
-    }
+    payload = {"@odata.id": f"https://graph.microsoft.com/v1.0/directoryObjects/{guid}"}
     add_response = requests.post(add_member_url, headers=headers, json=payload)
 
     if add_response.status_code in (200, 204):
         return {
             "agregado": True,
             "guid_msft": guid,
-            "mensaje": "Usuario agregado correctamente al grupo corporativo"
+            "mensaje": "Usuario agregado correctamente al grupo corporativo",
         }
 
     if add_response.status_code == 400:
         raise HTTPException(
             status_code=400,
-            detail="No fue posible agregar el usuario al grupo. Verifique que el guid exista en Azure AD y sea un directory object valido."
+            detail="No fue posible agregar el usuario al grupo. Verifique que el guid exista en Azure AD y sea un directory object valido.",
         )
 
     raise HTTPException(status_code=add_response.status_code, detail=add_response.text)
- 
-def listar_usuarios(db: Session)-> list[UsuariosBase]:
+
+
+def listar_usuarios(db: Session) -> list[UsuariosBase]:
     try:
         usuarios = UsuariosRepository.listar(db)
         usuarios_dtos = [
@@ -88,7 +105,7 @@ def listar_usuarios(db: Session)-> list[UsuariosBase]:
                 other_name=usuario.other_name,
                 other_last_name=usuario.other_last_name,
                 position=usuario.position,
-                full_name=f"{usuario.first_name} {usuario.other_name or ''} {usuario.last_name} {usuario.other_last_name or ''}".strip()
+                full_name=f"{usuario.first_name} {usuario.other_name or ''} {usuario.last_name} {usuario.other_last_name or ''}".strip(),
             )
             for usuario in usuarios
         ]
@@ -97,6 +114,7 @@ def listar_usuarios(db: Session)-> list[UsuariosBase]:
         logging.error(f"Failed to list usuarios: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
+
 def get_msal_app():
     tenant_id = os.getenv("tenant_id")
     client_id = os.getenv("client_id")
@@ -104,9 +122,10 @@ def get_msal_app():
     return msal.ConfidentialClientApplication(
         client_id,
         authority=f"https://login.microsoftonline.com/{tenant_id}",
-        client_credential=client_secret
+        client_credential=client_secret,
     )
-    
+
+
 def get_access_token():
     app = get_msal_app()
     result = app.acquire_token_for_client(scopes=SCOPE)
@@ -114,14 +133,15 @@ def get_access_token():
         return result["access_token"]
     else:
         raise Exception("Could not get access token")
-    
+
+
 def obtener_usuario_entra_por_correo(correo: str) -> Optional[dict]:
     try:
         access_token = get_access_token()
         url = f"https://graph.microsoft.com/v1.0/users?$filter=mail eq '{correo}' or userPrincipalName eq '{correo}'"
         headers = {
             "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -137,12 +157,15 @@ def obtener_usuario_entra_por_correo(correo: str) -> Optional[dict]:
         return None
 
 
-
 def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
         correo_usuario = usuario.email
-        es_corporativo = correo_usuario.lower().endswith("@fpatrimonionatural.org.co") if correo_usuario else False
+        es_corporativo = (
+            correo_usuario.lower().endswith("@fpatrimonionatural.org.co")
+            if correo_usuario
+            else False
+        )
         es_invitado_por_dominio = not es_corporativo
 
         if usuario.is_guest and es_corporativo:
@@ -156,8 +179,10 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
             respuesta.mensaje = "Ya existe un usuario registrado con este correo o documento de identificación"
             return respuesta
 
-        # Doble verificación inmediatamente antes de insertar 
-        if not validar_usuario_existente(usuario.email, db, usuario.identification_number):
+        # Doble verificación inmediatamente antes de insertar
+        if not validar_usuario_existente(
+            usuario.email, db, usuario.identification_number
+        ):
 
             if usuario.is_guest or es_invitado_por_dominio:
                 usuario_entra = obtener_usuario_entra_por_correo(correo_usuario)
@@ -174,28 +199,40 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
                 else:
                     if not usuario.guid_msft:
                         usuario.guid_msft = respuestaUsuarioInvitado["user_id"]
-                    logging.info(f"Usuario invitado gestionado en AD con ID: {usuario.guid_msft}")
+                    logging.info(
+                        f"Usuario invitado gestionado en AD con ID: {usuario.guid_msft}"
+                    )
 
             raw_password = "AccesoSiva*.202"
-            hashed_password = bcrypt.hashpw(raw_password.encode('utf-8'), bcrypt.gensalt(rounds=10)).decode('utf-8')
-            hashed_password = hashed_password.replace('$2b$', '$2y$', 1)
+            hashed_password = bcrypt.hashpw(
+                raw_password.encode("utf-8"), bcrypt.gensalt(rounds=10)
+            ).decode("utf-8")
+            hashed_password = hashed_password.replace("$2b$", "$2y$", 1)
 
             new_usuario = Users(
                 guid_msft=usuario.guid_msft if usuario.guid_msft else None,
                 first_name=usuario.first_name,
                 last_name=usuario.last_name,
                 other_name=usuario.other_name if usuario.other_name else None,
-                other_last_name=usuario.other_last_name if usuario.other_last_name else None,
+                other_last_name=(
+                    usuario.other_last_name if usuario.other_last_name else None
+                ),
                 email=usuario.email,
                 position=usuario.position if usuario.position != -1 else None,
-                identification_type=usuario.identification_type if usuario.identification_type else None,
-                identification_number=usuario.identification_number if usuario.identification_number != -1 else None,
+                identification_type=(
+                    usuario.identification_type if usuario.identification_type else None
+                ),
+                identification_number=(
+                    usuario.identification_number
+                    if usuario.identification_number != -1
+                    else None
+                ),
                 is_active=usuario.is_active,
                 is_guest=usuario.is_guest,
-                password=hashed_password
+                password=hashed_password,
             )
             db.add(new_usuario)
-            
+
             try:
                 db.commit()
                 db.refresh(new_usuario)
@@ -203,13 +240,17 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
                 db.rollback()
                 # Capturar errores de constraint único
                 error_msg = str(commit_error).lower()
-                if 'unique' in error_msg or 'duplicate' in error_msg:
-                    if 'correo' in error_msg or 'email' in error_msg:
+                if "unique" in error_msg or "duplicate" in error_msg:
+                    if "correo" in error_msg or "email" in error_msg:
                         respuesta.solicitud_exitosa = False
-                        respuesta.mensaje = "Ya existe un usuario con este correo electrónico"
-                    elif 'identificacion' in error_msg:
+                        respuesta.mensaje = (
+                            "Ya existe un usuario con este correo electrónico"
+                        )
+                    elif "identificacion" in error_msg:
                         respuesta.solicitud_exitosa = False
-                        respuesta.mensaje = "Ya existe un usuario con este número de identificación"
+                        respuesta.mensaje = (
+                            "Ya existe un usuario con este número de identificación"
+                        )
                     else:
                         respuesta.solicitud_exitosa = False
                         respuesta.mensaje = "El usuario ya está registrado"
@@ -217,20 +258,24 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
                     return respuesta
                 else:
                     raise  # Re-lanzar si no es error de duplicado
-            
 
-            model_type = UsuariosRepository.obtener_model_type_por_usuario(int(new_usuario.id), db)
-            UsuariosRepository.reemplazar_programas_usuario(int(new_usuario.id), usuario.program_ids or [], db)
-            UsuariosRepository.reemplazar_roles_usuario(int(new_usuario.id), usuario.role_ids or [], model_type, db)
-            
+            model_type = UsuariosRepository.obtener_model_type_por_usuario(
+                int(new_usuario.id), db
+            )
+            UsuariosRepository.reemplazar_programas_usuario(
+                int(new_usuario.id), usuario.program_ids or [], db
+            )
+            UsuariosRepository.reemplazar_roles_usuario(
+                int(new_usuario.id), usuario.role_ids or [], model_type, db
+            )
+
             if usuario.delegados_ids is not None:
                 for delegado_id in usuario.delegados_ids:
                     nuevo_delegado = UsersDelegate(
-                        responsable_id=new_usuario.id,
-                        delegate_id=delegado_id
+                        responsable_id=new_usuario.id, delegate_id=delegado_id
                     )
                     db.add(nuevo_delegado)
-            
+
             try:
                 db.commit()
                 db.refresh(new_usuario)
@@ -238,13 +283,17 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
                 db.rollback()
                 # Capturar errores de constraint único
                 error_msg = str(commit_error).lower()
-                if 'unique' in error_msg or 'duplicate' in error_msg:
-                    if 'correo' in error_msg or 'email' in error_msg:
+                if "unique" in error_msg or "duplicate" in error_msg:
+                    if "correo" in error_msg or "email" in error_msg:
                         respuesta.solicitud_exitosa = False
-                        respuesta.mensaje = "Ya existe un usuario con este correo electrónico"
-                    elif 'identificacion' in error_msg:
+                        respuesta.mensaje = (
+                            "Ya existe un usuario con este correo electrónico"
+                        )
+                    elif "identificacion" in error_msg:
                         respuesta.solicitud_exitosa = False
-                        respuesta.mensaje = "Ya existe un usuario con este número de identificación"
+                        respuesta.mensaje = (
+                            "Ya existe un usuario con este número de identificación"
+                        )
                     else:
                         respuesta.solicitud_exitosa = False
                         respuesta.mensaje = "El usuario ya está registrado"
@@ -252,7 +301,7 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
                     return respuesta
                 else:
                     raise  # Re-lanzar si no es error de duplicado
-            
+
             logging.info(f"Created new usuario uuid: {new_usuario.guid}")
             respuesta.mensaje = "Usuario creado exitosamente"
             respuesta.identity = new_usuario.id
@@ -262,7 +311,7 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
             respuesta.solicitud_exitosa = False
             respuesta.mensaje = "El correo ya se encuentra registrado"
             return respuesta
-        
+
     except Exception as e:
         respuesta.solicitud_exitosa = False
         respuesta.mensaje = str(e)
@@ -271,8 +320,9 @@ def crear_usuario(usuario: UsuariosCreateBase, db: Session) -> ResponseRequest:
         # raise PruebaCreationError(str(e))
 
 
-
-def validar_usuario_existente(correo: str, db: Session, identificacion: str = None) -> bool:
+def validar_usuario_existente(
+    correo: str, db: Session, identificacion: str = None
+) -> bool:
     try:
         # Verificar por correo
         if correo:
@@ -280,18 +330,23 @@ def validar_usuario_existente(correo: str, db: Session, identificacion: str = No
             if usuario:
                 logging.info(f"Usuario with correo {correo} already exists")
                 return True
-        
+
         # Verificar por identificación si se proporciona
         if identificacion:
-            usuario_por_doc = UsuariosRepository.obtener_por_identificacion(identificacion, db)
+            usuario_por_doc = UsuariosRepository.obtener_por_identificacion(
+                identificacion, db
+            )
             if usuario_por_doc:
-                logging.info(f"Usuario with identificacion {identificacion} already exists")
+                logging.info(
+                    f"Usuario with identificacion {identificacion} already exists"
+                )
                 return True
-        
+
         return False
     except Exception as e:
         logging.error(f"Failed to validate existing usuario: {str(e)}")
         raise PruebaNotFoundError(str(e))
+
 
 def cuerpo_correo_invitados() -> str:
     url_sistema = os.getenv("url_sistema")
@@ -317,7 +372,7 @@ def reenviar_invitacion_usuario_AD(usuario: UsuariosCreateBase) -> InvitacionRes
         url = "https://graph.microsoft.com/v1.0/invitations"
         headers = {
             "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         payload = {
             "invitedUserEmailAddress": email,
@@ -326,7 +381,7 @@ def reenviar_invitacion_usuario_AD(usuario: UsuariosCreateBase) -> InvitacionRes
             "invitedUserDisplayName": f"{usuario.first_name} {usuario.other_name} {usuario.last_name} {usuario.other_last_name}".strip(),
             "invitedUserMessageInfo": {
                 "customizedMessageBody": cuerpo_correo_invitados(),
-            }
+            },
         }
 
         response = requests.post(url, headers=headers, json=payload)
@@ -335,7 +390,7 @@ def reenviar_invitacion_usuario_AD(usuario: UsuariosCreateBase) -> InvitacionRes
             return {
                 "registro_exitoso": False,
                 "user_id": None,
-                "mensaje": response.text
+                "mensaje": response.text,
             }
 
         user = response.json()
@@ -344,16 +399,12 @@ def reenviar_invitacion_usuario_AD(usuario: UsuariosCreateBase) -> InvitacionRes
         return {
             "registro_exitoso": True,
             "user_id": user_id,
-            "mensaje": "Invitación reenviada exitosamente"
+            "mensaje": "Invitación reenviada exitosamente",
         }
 
     except Exception as e:
-        return {
-            "registro_exitoso": False,
-            "user_id": None,
-            "mensaje": str(e)
-        }
-    
+        return {"registro_exitoso": False, "user_id": None, "mensaje": str(e)}
+
 
 def crear_usuario_invitado_AD(usuario: UsuariosCreateBase) -> InvitacionResponse:
     # group_id = "55492ef4-3010-4554-90c0-46c2ebcc911f"
@@ -365,7 +416,7 @@ def crear_usuario_invitado_AD(usuario: UsuariosCreateBase) -> InvitacionResponse
         url = "https://graph.microsoft.com/v1.0/invitations"
         headers = {
             "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         payload = {
             "invitedUserEmailAddress": email,
@@ -375,14 +426,9 @@ def crear_usuario_invitado_AD(usuario: UsuariosCreateBase) -> InvitacionResponse
             "invitedUserMessageInfo": {
                 "customizedMessageBody": cuerpo_correo_invitados(),
                 "ccRecipients": [
-                    {
-                        "emailAddress": {
-                            "address": "siva@patrimonionatural.org.co"
-                        }
-                    }
-                ]
-                
-            }
+                    {"emailAddress": {"address": "siva@patrimonionatural.org.co"}}
+                ],
+            },
         }
 
         response = requests.post(url, headers=headers, json=payload)
@@ -391,28 +437,29 @@ def crear_usuario_invitado_AD(usuario: UsuariosCreateBase) -> InvitacionResponse
             return {
                 "registro_exitoso": False,
                 "user_id": None,
-                "mensaje": response.text
+                "mensaje": response.text,
             }
 
         user = response.json()
         user_id = user["invitedUser"]["id"]
-        
 
         return {
             "registro_exitoso": True,
             "user_id": user_id,
-            "mensaje": "Usuario invitado creado exitosamente"
+            "mensaje": "Usuario invitado creado exitosamente",
         }
 
     except Exception as e:
-        return {
-            "registro_exitoso": False,
-            "user_id": None,
-            "mensaje": str(e)
-        }
+        return {"registro_exitoso": False, "user_id": None, "mensaje": str(e)}
 
 
-def validar_usuario_corporativo(guid: str, guid_msft: str, nombre: str = None, correo: str = None, db: Session = None) -> ResponseRequest:
+def validar_usuario_corporativo(
+    guid: str,
+    guid_msft: str,
+    nombre: str = None,
+    correo: str = None,
+    db: Session = None,
+) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=True)
     try:
         usuario_db = UsuariosRepository.obtener_por_guid(guid, db)
@@ -422,13 +469,15 @@ def validar_usuario_corporativo(guid: str, guid_msft: str, nombre: str = None, c
             return respuesta
 
         # Validar dominio del correo si se proporciona
-        es_corporativo = correo.lower().endswith("@patrimonionatural.org.co") if correo else True
+        es_corporativo = (
+            correo.lower().endswith("@patrimonionatural.org.co") if correo else True
+        )
         es_invitado_por_dominio = not es_corporativo
-        
+
         # Si es usuario invitado (dominio no corporativo), validar/crear en Entra
         # if es_invitado_por_dominio and correo:
         #     usuario_entra = obtener_usuario_entra_por_correo(correo)
-            
+
         #     if not usuario_entra:
         #         # Usuario no existe en Entra, crear invitación
         #         usuario_temp = UsuariosCreateBase(
@@ -439,7 +488,7 @@ def validar_usuario_corporativo(guid: str, guid_msft: str, nombre: str = None, c
         #         if not respuesta_invitacion["registro_exitoso"]:
         #             respuesta.solicitud_exitosa = False
         #             respuesta.mensaje = respuesta_invitacion["mensaje"]
-                    
+
         #         guid_msft = respuesta_invitacion["user_id"]
         #         logging.info(f"Usuario invitado creado en AD con ID: {guid_msft}")
         #     else:
@@ -465,22 +514,22 @@ def validar_usuario_corporativo(guid: str, guid_msft: str, nombre: str = None, c
         #     usuario_db.correo = correo
         #     db.commit()
         #     return respuesta
-            
+
         # Actualizar guid_msft
         if guid_msft:
             usuario_db.guid_msft = guid_msft
-        
+
         # Actualizar nombre si se proporciona
         # if nombre:
         #     usuario_db.nombre = nombre
-        
+
         # # Actualizar correo si se proporciona
         # if correo:
         #     usuario_db.correo = correo
-        
+
         # Marcar como validado
         # usuario_db.correo_corporativo_validado = True
-        
+
         db.commit()
         db.refresh(usuario_db)
 
@@ -494,16 +543,33 @@ def validar_usuario_corporativo(guid: str, guid_msft: str, nombre: str = None, c
         return respuesta
 
 
+def obtener_por_guid_msft(guid: str, db: Session) -> UsuariosEdicionBase | None:
+    try:
+        usuario = UsuariosRepository.obtener_por_guid_msft(guid, db)
+        if not usuario:
+            return None
+        return usuario
+    except Exception as e:
+        logging.error(f"Failed to get usuario para edicion: {str(e)}")
+        raise PruebaNotFoundError(str(e))
+
+
 def obtener_usuario_para_edicion(guid: str, db: Session) -> UsuariosEdicionBase | None:
     try:
         usuario = UsuariosRepository.obtener_por_guid(guid, db)
         if not usuario:
             return None
 
-        programas = UsersProgramsRepository.listar_ids_programas_por_usuario(int(usuario.id), db)
+        programas = UsersProgramsRepository.listar_ids_programas_por_usuario(
+            int(usuario.id), db
+        )
         roles = UsuariosRepository.listar_roles_por_usuario(int(usuario.id), db)
-        
-        delegados_query = db.query(UsersDelegate.delegate_id).filter(UsersDelegate.responsable_id == usuario.id).all()
+
+        delegados_query = (
+            db.query(UsersDelegate.delegate_id)
+            .filter(UsersDelegate.responsable_id == usuario.id)
+            .all()
+        )
         delegados_ids = [d[0] for d in delegados_query]
 
         return UsuariosEdicionBase(
@@ -520,11 +586,11 @@ def obtener_usuario_para_edicion(guid: str, db: Session) -> UsuariosEdicionBase 
             program_ids=programas,
             role_ids=roles,
             delegados_ids=delegados_ids,
+            id=usuario.id,
         )
     except Exception as e:
         logging.error(f"Failed to get usuario para edicion: {str(e)}")
         raise PruebaNotFoundError(str(e))
-
 
 
 def obtener_usuario_por_correo(email: str, db: Session) -> UsuariosEdicionBase | None:
@@ -544,55 +610,67 @@ def obtener_usuario_por_correo(email: str, db: Session) -> UsuariosEdicionBase |
             other_name=usuario.other_name,
             other_last_name=usuario.other_last_name,
             position=usuario.position,
-            id= usuario.id,
-         
-       
+            id=usuario.id,
         )
     except Exception as e:
         logging.error(f"Failed to get usuario para edicion: {str(e)}")
         raise PruebaNotFoundError(str(e))
 
 
-def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> ResponseRequest:
+def actualizar_usuario(
+    guid: str, payload: UsuariosUpdateBase, db: Session
+) -> ResponseRequest:
     respuesta = ResponseRequest(solicitud_exitosa=False)
 
     try:
         usuario = UsuariosRepository.obtener_por_guid(guid, db)
         if not usuario:
-            respuesta.mensaje = 'Usuario no encontrado'
+            respuesta.mensaje = "Usuario no encontrado"
             return respuesta
 
-        usuario.first_name = (payload.first_name or '').strip()
-        usuario.last_name = (payload.last_name or '').strip()
-        usuario.other_name = (payload.other_name or '').strip() or None
-        usuario.other_last_name = (payload.other_last_name or '').strip() or None
-        usuario.email = (payload.email or '').strip()
-        usuario.position = (payload.position or '').strip() or None
+        usuario.first_name = (payload.first_name or "").strip()
+        usuario.last_name = (payload.last_name or "").strip()
+        usuario.other_name = (payload.other_name or "").strip() or None
+        usuario.other_last_name = (payload.other_last_name or "").strip() or None
+        usuario.email = (payload.email or "").strip()
+        usuario.position = (payload.position or "").strip() or None
         usuario.identification_type = int(payload.identification_type)
         usuario.identification_number = int(payload.identification_number)
         usuario.is_active = bool(payload.is_active)
 
-        model_type = UsuariosRepository.obtener_model_type_por_usuario(int(usuario.id), db)
-        UsuariosRepository.reemplazar_programas_usuario(int(usuario.id), payload.program_ids or [], db)
-        UsuariosRepository.reemplazar_roles_usuario(int(usuario.id), payload.role_ids or [], model_type, db)
-        
+        model_type = UsuariosRepository.obtener_model_type_por_usuario(
+            int(usuario.id), db
+        )
+        UsuariosRepository.reemplazar_programas_usuario(
+            int(usuario.id), payload.program_ids or [], db
+        )
+        UsuariosRepository.reemplazar_roles_usuario(
+            int(usuario.id), payload.role_ids or [], model_type, db
+        )
+
         if payload.delegados_ids is not None:
-            db.query(UsersDelegate).filter(UsersDelegate.responsable_id == usuario.id).delete()
+            db.query(UsersDelegate).filter(
+                UsersDelegate.responsable_id == usuario.id
+            ).delete()
             for delegado_id in payload.delegados_ids:
                 nuevo_delegado = UsersDelegate(
-                    responsable_id=usuario.id,
-                    delegate_id=delegado_id
+                    responsable_id=usuario.id, delegate_id=delegado_id
                 )
                 db.add(nuevo_delegado)
-                
+
         UsuariosRepository.guardar(db)
 
-
         correo_usuario = usuario.email
-        es_corporativo = correo_usuario.lower().endswith("@fpatrimonionatural.org.co") if correo_usuario else False
+        es_corporativo = (
+            correo_usuario.lower().endswith("@fpatrimonionatural.org.co")
+            if correo_usuario
+            else False
+        )
         es_invitado_por_dominio = not es_corporativo
 
-        if (usuario.is_guest or es_invitado_por_dominio) and payload.reenviar_invitacion:
+        if (
+            usuario.is_guest or es_invitado_por_dominio
+        ) and payload.reenviar_invitacion:
             usuario_entra = obtener_usuario_entra_por_correo(correo_usuario)
             if not usuario_entra:
                 respuestaUsuarioInvitado = crear_usuario_invitado_AD(usuario)
@@ -607,11 +685,13 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> R
             else:
                 if not usuario.guid_msft:
                     usuario.guid_msft = respuestaUsuarioInvitado["user_id"]
-                logging.info(f"Usuario invitado gestionado en AD con ID: {usuario.guid_msft}")
+                logging.info(
+                    f"Usuario invitado gestionado en AD con ID: {usuario.guid_msft}"
+                )
             db.commit()
             db.refresh(usuario)
         respuesta.solicitud_exitosa = True
-        respuesta.mensaje = 'Usuario actualizado correctamente'
+        respuesta.mensaje = "Usuario actualizado correctamente"
         return respuesta
     except Exception as e:
         db.rollback()
@@ -619,13 +699,13 @@ def actualizar_usuario(guid: str, payload: UsuariosUpdateBase, db: Session) -> R
         respuesta.mensaje = str(e)
         logging.error(f"Failed to update usuario: {str(e)}")
         return respuesta
-    
-    
-def programs_user ( guid: str, db: Session ) :
-    respuesta = ResponseRequest(solicitud_exitosa=False)    
+
+
+def programs_user(guid: str, db: Session):
+    respuesta = ResponseRequest(solicitud_exitosa=False)
     usuario = UsuariosRepository.obtener_por_guid(guid, db)
     try:
-        programs = UsersProgramsRepository.listado_programas_por_usuario(usuario.id,db)
+        programs = UsersProgramsRepository.listado_programas_por_usuario(usuario.id, db)
         return programs
     except Exception as e:
         respuesta.solicitud_exitosa = False
@@ -633,83 +713,57 @@ def programs_user ( guid: str, db: Session ) :
         logging.error(f"Failed to validate usuario: {str(e)}")
         return respuesta
 
+
 def lista_generica(db: Session, user_oid: str):
     respuesta = ResponseRequest(solicitud_exitosa=False)
     try:
         programs = ProgramsRepository.listar(db)
         roles = RolesService.listar_roles(db)
-        tipos_documentos =  DocumentypesRepository.listar(db)
+        tipos_documentos = DocumentypesRepository.listar(db)
 
         listados = []
         lista_catalogos = []
-    
-        #Listado de programas
+
+        # Listado de programas
         for p in programs:
-            lista_catalogos.append(
-                ListaGenerica(
-                    identity=p.id,
-                    valor=p.name
-                )
-            )
-        
+            lista_catalogos.append(ListaGenerica(identity=p.id, valor=p.name))
+
         listados.append(
             Listados(
-                id_listado=0, 
-                tipo_listado="Programas", 
-                lista_generica=lista_catalogos
+                id_listado=0, tipo_listado="Programas", lista_generica=lista_catalogos
             )
         )
 
         lista_catalogos = []
         for p in roles:
-            lista_catalogos.append(
-                ListaGenerica(
-                    identity=p.id_rol,
-                    valor=p.rol
-                )
-            )
-        
+            lista_catalogos.append(ListaGenerica(identity=p.id_rol, valor=p.rol))
+
         listados.append(
-            Listados(
-                id_listado=1,
-                tipo_listado="Roles", 
-                lista_generica=lista_catalogos
-            )
+            Listados(id_listado=1, tipo_listado="Roles", lista_generica=lista_catalogos)
         )
 
         lista_catalogos = []
         for p in tipos_documentos:
-            lista_catalogos.append(
-                ListaGenerica(
-                    identity=p.id,
-                    valor=p.name
-                )
-            )
-        
+            lista_catalogos.append(ListaGenerica(identity=p.id, valor=p.name))
+
         listados.append(
             Listados(
                 id_listado=2,
-                tipo_listado="Tipos Documentos", 
-                lista_generica=lista_catalogos
+                tipo_listado="Tipos Documentos",
+                lista_generica=lista_catalogos,
             )
         )
-
 
         lista_catalogos = []
         usuarios_todos = UsuariosRepository.listar(db)
         for p in usuarios_todos:
             lista_catalogos.append(
-                ListaGenerica(
-                    identity=p.id,
-                    valor=f"{p.first_name} {p.last_name}"
-                )
+                ListaGenerica(identity=p.id, valor=f"{p.first_name} {p.last_name}")
             )
-        
+
         listados.append(
             Listados(
-                id_listado=3,
-                tipo_listado="Usuarios", 
-                lista_generica=lista_catalogos
+                id_listado=3, tipo_listado="Usuarios", lista_generica=lista_catalogos
             )
         )
 
@@ -719,5 +773,3 @@ def lista_generica(db: Session, user_oid: str):
         respuesta.mensaje = str(e)
         logging.error(f"Failed to obtener lista generica: {str(e)}")
         return respuesta
-    
-    

@@ -99,6 +99,9 @@ class CapacityAssessmentListSP(BaseModel):
     guid_msft_adjustment: Optional[UUID] = None
     total_records: Optional[int] = None
     is_deleted: Optional[bool] = None
+    current_step: Optional[int] = None
+    user_session: Optional[int] = None
+    full_name: Optional[str] = None
 
     class Config:
         from_attributes = True

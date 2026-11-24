@@ -259,6 +259,9 @@ def accion_solicitud_aprobacion(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# DOCUMENTO PDF
+
+
 def generar_pdf_solicitud(
     evaluacion_db: CapacityAssessmentsEntity, db: DbSession
 ) -> bytes:
@@ -460,6 +463,9 @@ def actualizar_url_sharepoint(
             else status.HTTP_400_BAD_REQUEST
         ),
     )
+
+
+# DOCUMENTO ASOCIADO
 
 
 @router.post("/{guid}/documento_asociado", response_model=ResponseRequest)
