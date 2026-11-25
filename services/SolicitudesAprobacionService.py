@@ -116,6 +116,7 @@ def crear_solicitud_aprobacion(
     db: Session,
     id_supervisor: int = None,
     id_programa: int = None,
+    regla: str = None,
 ) -> int:
     try:
 
@@ -130,7 +131,7 @@ def crear_solicitud_aprobacion(
             label_ajuste,
             label_pendiente,
         ) = FlujosAprobacionService.obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(
-            id_categoria_aprobacion, id_usuario_solicita, db, id_programa
+            id_categoria_aprobacion, id_usuario_solicita, db, id_programa, regla
         )
 
         if not id_flujo_aprobacion:
@@ -393,10 +394,14 @@ def validar_habilitar_acciones_solicitud_aprobacion(
                 ruta_usuario = ApprovalFlowRepository.obtener_paso(
                     pendiente.step_id, db, solo_activo=True
                 )
-            if ruta_usuario and (
+
+            if (ruta_usuario and (
+                pendiente.user_id != None and pendiente.user_id == usuario_actual.id
+            )) or (ruta_usuario and (
                 pendiente.user_id == usuario_actual.id
-                or not getattr(ruta_usuario, "is_supervisor", False)
-            ):
+                or (pendiente.user_id == None)
+                # or not getattr(ruta_usuario, "is_supervisor", False)
+            )):
                 historial_pendiente = pendiente
                 flujo_ruta = ruta_usuario
                 break
@@ -492,7 +497,7 @@ def validar_habilitar_acciones_solicitud_aprobacion(
 
     if not flujoRuta or (
         flujoRuta.is_supervisor and ((solicitudHistorial.user_id != usuario_actual.id))
-    ):
+    ) or (solicitudHistorial.user_id != None and solicitudHistorial.user_id != usuario_actual.id):
         print(
             "No se encontró un flujo de aprobación válido o el usuario no tiene permisos."
         )

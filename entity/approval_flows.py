@@ -73,3 +73,4 @@ class ApprovalFlow(Base):
         Boolean,
         server_default=text('false')
     )
+    configuration_rules: Mapped[Optional[str]] = mapped_column(Text)

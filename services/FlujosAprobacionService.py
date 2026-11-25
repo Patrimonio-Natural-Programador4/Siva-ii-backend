@@ -444,7 +444,7 @@ def actualizar_delegacion_roles_usuarios(payload: DelegacionRolesUsuariosBase, d
     return ResponseRequest(solicitud_exitosa=False, mensaje='No implementado')
 
 
-def obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(id_categoria: int, id_usuario: int, db: Session, id_programa: int = None) -> tuple:
+def obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(id_categoria: int, id_usuario: int, db: Session, id_programa: int = None, regla: str = None) -> tuple:
     try:
         print("id_categoria", id_categoria)
         print("id_usuario", id_usuario)
@@ -457,7 +457,13 @@ def obtener_flujo_aprobacion_x_categoria_x_usuario_inicio_flujo(id_categoria: in
             VWApprovalFlows.role_active == True,
             VWApprovalFlows.step_order == 1,
             VWApprovalFlows.program_id == id_programa
-        ).first()
+        )
+
+        if regla:
+            flujos_aprobacionDB = flujos_aprobacionDB.filter(
+                VWApprovalFlows.configuration_rules == regla
+            )
+        flujos_aprobacionDB = flujos_aprobacionDB.first()
 
         if not flujos_aprobacionDB:
             return None, None, None, None, None, None, None

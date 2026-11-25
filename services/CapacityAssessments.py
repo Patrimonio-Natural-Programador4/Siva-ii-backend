@@ -189,6 +189,7 @@ def crear(
                 db,
                 None,
                 id_programa=capacity_assessment.program_id,
+                regla="PIVA" if capacity_assessment.pillar_id == 4 else None
             )
         )
 
