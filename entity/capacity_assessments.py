@@ -86,23 +86,16 @@ class CapacityAssessments(Base):
     )
     user_session: Mapped[int] = mapped_column(BigInteger, nullable=False)
     create_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
-    approval_request_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False
-    )  # importante
+    approval_request_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     capacity_assessments_states_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False
-    )  # importante
-    implementer_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False
-    )  # importante
-    modality_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # importante
-    persons_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # importante
-    pid_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # importante
-    program_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # importante
-    #
+    )
+    implementer_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    modality_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    persons_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    pid_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    program_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     pillar_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-
-    # Fechas
     policy_approval_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
     document_signature_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
     start_date: Mapped[Optional[datetime.date]] = mapped_column(Date)
@@ -112,6 +105,8 @@ class CapacityAssessments(Base):
     code: Mapped[Optional[str]]
     url_sharepoint_ec: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_deleted: Mapped[Boolean] = mapped_column(Boolean, nullable=True)
+    # current_step: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=False)
+    # full_name: Mapped[Optional[str]] = mapped_column(Text, nullable=False)
 
     # created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
     # updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=6))
@@ -121,14 +116,10 @@ class CapacityAssessments(Base):
         "ApprovalRequests", back_populates="capacity_assessments"
     )
     approval_request: Mapped["ApprovalRequests"] = relationship("ApprovalRequests")
-
-    # Relacion simples
     capacity_assessments_state: Mapped["CapacityAssessmentsStates"] = relationship(
         "CapacityAssessmentsStates", back_populates="capacity_assessments"
     )
-    implementer: Mapped["Implementers"] = relationship(
-        "Implementers"
-    )  # back populates debe coincidir con el nombre de la contraparte
+    implementer: Mapped["Implementers"] = relationship("Implementers")
     modalitie: Mapped["Modalities"] = relationship(
         "Modalities", back_populates="capacity_assessments_modalitie"
     )

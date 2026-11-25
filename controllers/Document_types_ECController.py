@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse
 from fastapi import status
 import logging
 import json
+
+from sqlalchemy import String
 from dto.ResponseRequest import ResponseRequest
 from database.database import DbSession
 from dependencies.auth_dependency import get_current_user_oid
@@ -17,12 +19,12 @@ router = APIRouter(
 
 
 @router.get(
-    "", response_model=ResponseRequest
+    "/{guid}", response_model=ResponseRequest
 )  # user_oid: str = Depends(get_current_user_oid)
-def list_document_types_ec(db: DbSession):
+def list_document_types_ec(db: DbSession, guid):
     try:
         # return
-        result = Document_types_ECService.list_document_types_ec(db)
+        result = Document_types_ECService.list_document_types_ec(db, guid)
         data = json.loads(result.resultado) if result.resultado else {}
         return ResponseRequest(
             solicitud_exitosa=True,
