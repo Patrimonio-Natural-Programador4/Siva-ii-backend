@@ -5,7 +5,7 @@ from dto.Document_types_ECDTO import Document_types_EC
 from exceptions import PruebaNotFoundError
 
 
-def list_document_types_ec(db: Session, guid: String) -> Document_types_EC:
+def list_document_types_ec(db: Session, guid: str) -> Document_types_EC:
     try:
         query = text("""
         SELECT json_build_object(
