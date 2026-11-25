@@ -264,9 +264,9 @@ def generar_formato_ep(
         (2, True, True): "EPAECP4",  # falta plantilla
         (3, False, False): "EPCC",  # PENDIENTE CAMPOS
         (2, False, False): "EPC",  # falta plantilla
-        (3, False, True): "EPAECC",
-        (1, False, True): "EPAESA",
-        (2, False, True): "EPAEC",
+        (3, False, True): "EPAECC",  # PENDIENTE CAMPOS
+        (1, False, True): "EPAESA",  # PENDIENTE CAMPOS
+        (2, False, True): "EPAEC",  # falta plantilla
     }
 
     doc = PLANTILLAS.get((Ep.modality_id, bool(es_pilar_4), es_acta))

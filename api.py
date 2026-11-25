@@ -1,5 +1,16 @@
-from controllers import AcquisitionsController, AgreementsController, AgreementsProductsController, DisbursementController, DisbursementStateController, KfwObservationsController, SolicitudesAprobacionController, TdrController, ViajesController
-#from controllers import WordParametersController
+from controllers import (
+    AcquisitionsController,
+    AgreementsController,
+    AgreementsProductsController,
+    DisbursementController,
+    DisbursementStateController,
+    KfwObservationsController,
+    SolicitudesAprobacionController,
+    TdrController,
+    ViajesController,
+)
+
+# from controllers import WordParametersController
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -34,12 +45,13 @@ from controllers import PillarsControllers
 from controllers import ActivitiesController
 from controllers import GeneralCategoriesController
 from controllers import PadStatusController
+from controllers import Document_types_ECController
 
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from starlette.staticfiles import StaticFiles
 from pathlib import Path
-from fastapi_microsoft_identity import initialize 
+from fastapi_microsoft_identity import initialize
 from jose import jwt
 from functools import lru_cache
 import requests
@@ -47,28 +59,30 @@ import requests
 
 @lru_cache
 def _get_auth_settings():
-   
 
     tenant_id = os.getenv("tenant_id")
     client_id = os.getenv("client_id")
     required_scope = os.getenv("required_scope")
 
     if not tenant_id or not client_id:
-        raise Exception('tenant_id/client_id not found in settings.json')
+        raise Exception("tenant_id/client_id not found in settings.json")
 
     return {
-        'tenant_id': tenant_id,
-        'client_id': client_id,
-        'required_scope': required_scope
+        "tenant_id": tenant_id,
+        "client_id": client_id,
+        "required_scope": required_scope,
     }
 
 
 @lru_cache
 def _get_jwks(tenant_id: str):
-    discovery_url = f'https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys'
+    discovery_url = f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"
     response = requests.get(discovery_url, timeout=10)
     if response.status_code != 200:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='No fue posible obtener llaves de Azure AD')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No fue posible obtener llaves de Azure AD",
+        )
     return response.json()
 
 
@@ -76,10 +90,12 @@ def _has_required_scope_or_role(claims: dict, required_scope: str) -> bool:
     if not required_scope:
         return True
 
-    scopes = claims.get('scp', '')
-    roles = claims.get('roles', [])
+    scopes = claims.get("scp", "")
+    roles = claims.get("roles", [])
 
-    if isinstance(scopes, str) and required_scope.lower() in [s.lower() for s in scopes.split()]:
+    if isinstance(scopes, str) and required_scope.lower() in [
+        s.lower() for s in scopes.split()
+    ]:
         return True
 
     if isinstance(roles, list) and required_scope.lower() in [r.lower() for r in roles]:
@@ -89,16 +105,16 @@ def _has_required_scope_or_role(claims: dict, required_scope: str) -> bool:
 
 
 def _is_public_download_request(request: Request) -> bool:
-    if request.method.upper() != 'GET':
+    if request.method.upper() != "GET":
         return False
 
     path = request.url.path.lower()
     public_download_markers = [
-        '/soporte/',
-        '/documento',
-        '/archivo/',
-        '/facturas/',
-        '/exportar-excel'
+        "/soporte/",
+        "/documento",
+        "/archivo/",
+        "/facturas/",
+        "/exportar-excel",
     ]
 
     return any(marker in path for marker in public_download_markers)
@@ -108,19 +124,25 @@ def require_authenticated_user(request: Request):
     if _is_public_download_request(request):
         return
 
-    authorization_header = request.headers.get('Authorization')
+    authorization_header = request.headers.get("Authorization")
     if not authorization_header:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authorization header missing')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header missing",
+        )
 
     parts = authorization_header.split()
-    if len(parts) != 2 or parts[0].lower() != 'bearer':
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header must be 'Bearer <token>'")
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header must be 'Bearer <token>'",
+        )
 
     token = parts[1]
     settings = _get_auth_settings()
-    tenant_id = settings['tenant_id']
-    client_id = settings['client_id']
-    required_scope = settings['required_scope']
+    tenant_id = settings["tenant_id"]
+    client_id = settings["client_id"]
+    required_scope = settings["required_scope"]
 
     try:
         unverified_header = jwt.get_unverified_header(token)
@@ -128,46 +150,51 @@ def require_authenticated_user(request: Request):
 
         jwks = _get_jwks(tenant_id)
         rsa_key = {}
-        for key in jwks.get('keys', []):
-            if key.get('kid') == unverified_header.get('kid'):
+        for key in jwks.get("keys", []):
+            if key.get("kid") == unverified_header.get("kid"):
                 rsa_key = {
-                    'kty': key.get('kty'),
-                    'kid': key.get('kid'),
-                    'use': key.get('use'),
-                    'n': key.get('n'),
-                    'e': key.get('e')
+                    "kty": key.get("kty"),
+                    "kid": key.get("kid"),
+                    "use": key.get("use"),
+                    "n": key.get("n"),
+                    "e": key.get("e"),
                 }
                 break
 
         if not rsa_key:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='No se encontró llave pública válida para el token')
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No se encontró llave pública válida para el token",
+            )
 
-        token_audience = os.getenv('token_audience', '').strip()
-        token_version = unverified_claims.get('ver', '2.0')
-        if token_version == '1.0':
-            audience = token_audience or f'api://{client_id}'
-            issuer = f'https://sts.windows.net/{tenant_id}/'
+        token_audience = os.getenv("token_audience", "").strip()
+        token_version = unverified_claims.get("ver", "2.0")
+        if token_version == "1.0":
+            audience = token_audience or f"api://{client_id}"
+            issuer = f"https://sts.windows.net/{tenant_id}/"
         else:
             audience = token_audience or client_id
-            issuer = f'https://login.microsoftonline.com/{tenant_id}/v2.0'
+            issuer = f"https://login.microsoftonline.com/{tenant_id}/v2.0"
 
         payload = jwt.decode(
-            token,
-            rsa_key,
-            algorithms=['RS256'],
-            audience=audience,
-            issuer=issuer
+            token, rsa_key, algorithms=["RS256"], audience=audience, issuer=issuer
         )
 
         if not _has_required_scope_or_role(payload, required_scope):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Token sin scope/rol requerido')
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Token sin scope/rol requerido",
+            )
 
         request.state.user_claims = payload
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f'Token inválido: {str(e)}')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Token inválido: {str(e)}"
+        )
+
 
 def register_routes(app: FastAPI):
     # app.include_router(PruebaController.router)
@@ -176,47 +203,66 @@ def register_routes(app: FastAPI):
     app.include_router(RolesController.router, dependencies=auth_dependency)
     app.include_router(ProgramasController.router, dependencies=auth_dependency)
     app.include_router(FlujosAprobacionController.router, dependencies=auth_dependency)
-    app.include_router(SolicitudesAprobacionController.router, dependencies=auth_dependency)
+    app.include_router(
+        SolicitudesAprobacionController.router, dependencies=auth_dependency
+    )
     app.include_router(ViajesController.router, dependencies=auth_dependency)
     app.include_router(DocumentsApprovalController.router, dependencies=auth_dependency)
     # app.include_router(WordParametersController.router, dependencies=auth_dependency)
     app.include_router(PadsController.router, dependencies=auth_dependency)
     app.include_router(ImplementerTypesController.router, dependencies=auth_dependency)
-    app.include_router( ModalitiesController.router  , dependencies=auth_dependency)
-    app.include_router( DocumentTypes.router , dependencies=auth_dependency)
-    app.include_router( ImplementersController.router , dependencies=auth_dependency)
-    app.include_router( PidsControllerss.router , dependencies=auth_dependency)
-    app.include_router(CapacityAssessmentsStatesController.router, dependencies=auth_dependency)
-    app.include_router( PersonsController.router , dependencies=auth_dependency)#15
-    app.include_router( DocumentsTypesAgreementsController.router , dependencies=auth_dependency)#16
-    app.include_router( CapacityAssessmentsStatesController.router, dependencies=auth_dependency)#17
-    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#18
-    app.include_router(PreviousStudiesController.router , dependencies=auth_dependency)#19
-    app.include_router( PreviousStudiesStatesController.router , dependencies=auth_dependency)#20
-    app.include_router( CapacityAssessmentsController.router , dependencies=auth_dependency)#16
+    app.include_router(ModalitiesController.router, dependencies=auth_dependency)
+    app.include_router(DocumentTypes.router, dependencies=auth_dependency)
+    app.include_router(ImplementersController.router, dependencies=auth_dependency)
+    app.include_router(PidsControllerss.router, dependencies=auth_dependency)
+    app.include_router(
+        CapacityAssessmentsStatesController.router, dependencies=auth_dependency
+    )
+    app.include_router(PersonsController.router, dependencies=auth_dependency)  # 15
+    app.include_router(
+        DocumentsTypesAgreementsController.router, dependencies=auth_dependency
+    )  # 16
+    app.include_router(
+        CapacityAssessmentsStatesController.router, dependencies=auth_dependency
+    )  # 17
+    app.include_router(
+        CapacityAssessmentsController.router, dependencies=auth_dependency
+    )  # 18
+    app.include_router(
+        PreviousStudiesController.router, dependencies=auth_dependency
+    )  # 19
+    app.include_router(
+        PreviousStudiesStatesController.router, dependencies=auth_dependency
+    )  # 20
+    app.include_router(
+        CapacityAssessmentsController.router, dependencies=auth_dependency
+    )  # 16
     app.include_router(TdrController.router, dependencies=auth_dependency)
-    app.include_router( AgreementsController.router , dependencies=auth_dependency)
-    app.include_router( AgreementOriginsController.router , dependencies=auth_dependency)
-    app.include_router( AgreementTypesController.router , dependencies=auth_dependency)
-    app.include_router( PurchaseTypesController.router , dependencies=auth_dependency)
-    app.include_router( ExpenseCategoriesController.router , dependencies=auth_dependency)
-    app.include_router( CodesController.router , dependencies=auth_dependency)  
-    app.include_router( ContractTypesController.router , dependencies=auth_dependency)   
-    app.include_router( ContractsController.router , dependencies=auth_dependency)   
-    app.include_router( DisbursementStateController.router , dependencies=auth_dependency)    
-    app.include_router( DisbursementController.router , dependencies=auth_dependency)     
-    app.include_router( ProductsStateController.router , dependencies=auth_dependency)   
-    app.include_router( AgreementsProductsController.router , dependencies=auth_dependency)   
-    app.include_router( AcquisitionsController.router , dependencies=auth_dependency)  
-    app.include_router( RisksController.router , dependencies=auth_dependency)   
-    app.include_router( ActivitiesController.router , dependencies=auth_dependency)  
-    app.include_router( GeneralCategoriesController.router , dependencies=auth_dependency) 
-    app.include_router( PadStatusController.router , dependencies=auth_dependency)   
-    app.include_router( KfwObservationsController.router , dependencies=auth_dependency)            
-         
-    app.include_router( ContractsController.router , dependencies=auth_dependency)    
-    app.include_router( PillarsControllers.router , dependencies=auth_dependency)    
-     
+    app.include_router(AgreementsController.router, dependencies=auth_dependency)
+    app.include_router(AgreementOriginsController.router, dependencies=auth_dependency)
+    app.include_router(AgreementTypesController.router, dependencies=auth_dependency)
+    app.include_router(PurchaseTypesController.router, dependencies=auth_dependency)
+    app.include_router(ExpenseCategoriesController.router, dependencies=auth_dependency)
+    app.include_router(CodesController.router, dependencies=auth_dependency)
+    app.include_router(ContractTypesController.router, dependencies=auth_dependency)
+    app.include_router(ContractsController.router, dependencies=auth_dependency)
+    app.include_router(DisbursementStateController.router, dependencies=auth_dependency)
+    app.include_router(DisbursementController.router, dependencies=auth_dependency)
+    app.include_router(ProductsStateController.router, dependencies=auth_dependency)
+    app.include_router(
+        AgreementsProductsController.router, dependencies=auth_dependency
+    )
+    app.include_router(AcquisitionsController.router, dependencies=auth_dependency)
+    app.include_router(RisksController.router, dependencies=auth_dependency)
+    app.include_router(ActivitiesController.router, dependencies=auth_dependency)
+    app.include_router(GeneralCategoriesController.router, dependencies=auth_dependency)
+    app.include_router(PadStatusController.router, dependencies=auth_dependency)
+    app.include_router(KfwObservationsController.router, dependencies=auth_dependency)
+
+    app.include_router(ContractsController.router, dependencies=auth_dependency)
+    app.include_router(PillarsControllers.router, dependencies=auth_dependency)
+    app.include_router(Document_types_ECController.router, dependencies=auth_dependency)
+
 
 def register_middlewares(app: FastAPI):
     # Register CORS middleware
@@ -236,10 +282,9 @@ def configure(app: FastAPI):
     register_routes(app)
     configure_fake_data()
 
+
 def configure_api_keys():
-    configure_auth(os.getenv('tenant_id'), os.getenv('client_id'))
-
-
+    configure_auth(os.getenv("tenant_id"), os.getenv("client_id"))
 
 
 def configure_auth(tenant_id, client_id):
@@ -254,6 +299,7 @@ def configure_auth(tenant_id, client_id):
     #     redirect_uri='http://localhost:8000/auth/callback'
     # )
 
+
 def configure_fake_data():
     # This was added to make it easier to test the weather event reporting
     # We have /api/reports but until you submit new data each run, it's missing
@@ -265,5 +311,3 @@ def configure_fake_data():
     #     asyncio.run(report_service.add_report("Clouds over downtown.", loc))
     # except:
     #     print("NOTICE: Add default data not supported on this system (usually under uvicorn on linux)")
-
-
